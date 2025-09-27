@@ -31,6 +31,37 @@
         .icon-circle.bg-info {
             background-color: #36b9cc !important;
         }
+
+        /* Custom styling for statistics cards */
+        .statistics-card {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .statistics-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .badge-comparison {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .tooltip-icon {
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .tooltip-icon:hover {
+            opacity: 1;
+        }
+
+        .clickable-stat {
+            transition: color 0.2s;
+        }
+
+        .clickable-stat:hover {
+            color: #4e73df !important;
+        }
     </style>
 @endpush
 
@@ -203,38 +234,96 @@
         </div>
 
         <div class="col-xl-4">
-            <div class="card shadow mb-4">
+            <div class="card shadow mb-4 statistics-card">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-chart-bar mr-2"></i>Statistik Cepat</h6>
                 </div>
                 <div class="card-body">
                     <div class="row no-gutters align-items-center mb-3">
                         <div class="col-auto">
-                            <div class="icon-circle bg-primary"><i class="fas fa-calendar-check text-white"></i></div>
+                            <div class="icon-circle bg-primary">
+                                <i class="fas fa-calendar-check text-white"></i>
+                            </div>
                         </div>
                         <div class="col ml-3">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Pengabdian</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalPengabdian }}</div>
+                            <div class="d-flex align-items-center">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    Total Pengabdian
+                                    <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
+                                        title="Klik untuk melihat detail pengabdian" style="cursor: pointer;"></i>
+                                </div>
+                                @if ($stats['percentage_change_pengabdian'] != 0)
+                                    <span
+                                        class="badge badge-{{ $stats['percentage_change_pengabdian'] > 0 ? 'success' : 'danger' }} ml-2 badge-comparison">
+                                        {{ $stats['percentage_change_pengabdian'] > 0 ? '+' : '' }}{{ $stats['percentage_change_pengabdian'] }}%
+                                    </span>
+                                @endif
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat" style="cursor: pointer;"
+                                onclick="window.location.href='{{ route('admin.pengabdian.index') }}'">
+                                {{ $totalPengabdian }}
+                            </div>
+                            <div class="text-xs text-muted">
+                                Dibandingkan {{ $stats['previous_year'] }}
+                            </div>
                         </div>
                     </div>
                     <div class="row no-gutters align-items-center mb-3">
                         <div class="col-auto">
-                            <div class="icon-circle bg-success"><i class="fas fa-users text-white"></i></div>
+                            <div class="icon-circle bg-success">
+                                <i class="fas fa-users text-white"></i>
+                            </div>
                         </div>
                         <div class="col ml-3">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Dosen Terlibat
+                            <div class="d-flex align-items-center">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    Total Dosen Terlibat
+                                    <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
+                                        title="Klik untuk melihat detail dosen" style="cursor: pointer;"></i>
+                                </div>
+                                @if ($stats['percentage_change_dosen'] != 0)
+                                    <span
+                                        class="badge badge-{{ $stats['percentage_change_dosen'] > 0 ? 'success' : 'danger' }} ml-2 badge-comparison">
+                                        {{ $stats['percentage_change_dosen'] > 0 ? '+' : '' }}{{ $stats['percentage_change_dosen'] }}%
+                                    </span>
+                                @endif
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalDosenTerlibat }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat" style="cursor: pointer;"
+                                onclick="window.location.href='{{ route('admin.dosen.index') }}'">
+                                {{ $totalDosenTerlibat }}
+                            </div>
+                            <div class="text-xs text-muted">
+                                Dibandingkan {{ $stats['previous_year'] }}
+                            </div>
                         </div>
                     </div>
                     <div class="row no-gutters align-items-center">
                         <div class="col-auto">
-                            <div class="icon-circle bg-info"><i class="fas fa-user-graduate text-white"></i></div>
+                            <div class="icon-circle bg-info">
+                                <i class="fas fa-user-graduate text-white"></i>
+                            </div>
                         </div>
                         <div class="col ml-3">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Mahasiswa Terlibat
+                            <div class="d-flex align-items-center">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    Pengabdian yang Melibatkan Mahasiswa
+                                    <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
+                                        title="Klik untuk melihat detail mahasiswa" style="cursor: pointer;"></i>
+                                </div>
+                                @if ($stats['percentage_change_mahasiswa'] != 0)
+                                    <span
+                                        class="badge badge-{{ $stats['percentage_change_mahasiswa'] > 0 ? 'success' : 'danger' }} ml-2 badge-comparison">
+                                        {{ $stats['percentage_change_mahasiswa'] > 0 ? '+' : '' }}{{ $stats['percentage_change_mahasiswa'] }}%
+                                    </span>
+                                @endif
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalMahasiswaTerlibat }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat" style="cursor: pointer;"
+                                onclick="window.location.href='{{ route('admin.mahasiswa.index') }}'">
+                                {{ $stats['persentase_pengabdian_dengan_mahasiswa'] }}%
+                            </div>
+                            <div class="text-xs text-muted">
+                                {{ $pengabdianDenganMahasiswa }} dari {{ $totalPengabdian }} pengabdian
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -629,6 +718,19 @@ $dataMissing = implode('|', $dataMissingArr);
 
         // initial run
         window.initNeedActionModal();
+
+        // Initialize tooltips with configuration
+        $(function() {
+            $('[data-toggle="tooltip"]').tooltip({
+                placement: 'top',
+                trigger: 'hover focus',
+                delay: {
+                    "show": 500,
+                    "hide": 100
+                },
+                html: true
+            });
+        });
 
         // Polling: refresh latest pengabdian card every 15 seconds
         (function() {

@@ -24,14 +24,59 @@ class AdminController extends Controller
             ->get();
 
         // 2. Quick statistics
+        $currentYear = date('Y');
+        $previousYear = $currentYear - 1;
+
         $totalPengabdian = Pengabdian::count();
+        $totalPengabdianThisYear = Pengabdian::whereYear('tanggal_pengabdian', $currentYear)->count();
+        $totalPengabdianLastYear = Pengabdian::whereYear('tanggal_pengabdian', $previousYear)->count();
+
+        // Hitung persentase perubahan
+        $percentageChangePengabdian = $totalPengabdianLastYear > 0 ?
+            round((($totalPengabdianThisYear - $totalPengabdianLastYear) / $totalPengabdianLastYear) * 100, 1) : 0;
+
         $totalDosenTerlibat = DB::table('pengabdian_dosen')->distinct('nik')->count('nik');
+
+        // Untuk dosen, hitung perbandingan tahun ini vs tahun lalu
+        $dosenTerlibatThisYear = DB::table('pengabdian_dosen')
+            ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+            ->whereYear('pengabdian.tanggal_pengabdian', $currentYear)
+            ->distinct('pengabdian_dosen.nik')
+            ->count('pengabdian_dosen.nik');
+
+        $dosenTerlibatLastYear = DB::table('pengabdian_dosen')
+            ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+            ->whereYear('pengabdian.tanggal_pengabdian', $previousYear)
+            ->distinct('pengabdian_dosen.nik')
+            ->count('pengabdian_dosen.nik');
+
+        $percentageChangeDosen = $dosenTerlibatLastYear > 0 ?
+            round((($dosenTerlibatThisYear - $dosenTerlibatLastYear) / $dosenTerlibatLastYear) * 100, 1) : 0;
+
         $totalMahasiswaTerlibat = DB::table('pengabdian_mahasiswa')->distinct('nim')->count('nim');
+        $pengabdianDenganMahasiswa = Pengabdian::whereHas('mahasiswa')->count();
+        $persentasePengabdianDenganMahasiswa = $totalPengabdian > 0 ?
+            round(($pengabdianDenganMahasiswa / $totalPengabdian) * 100, 1) : 0;
+
+        // Perbandingan tahun ini vs tahun lalu untuk pengabdian dengan mahasiswa
+        $pengabdianDenganMahasiswaThisYear = Pengabdian::whereYear('tanggal_pengabdian', $currentYear)
+            ->whereHas('mahasiswa')->count();
+        $pengabdianDenganMahasiswaLastYear = Pengabdian::whereYear('tanggal_pengabdian', $previousYear)
+            ->whereHas('mahasiswa')->count();
+
+        $percentageChangeMahasiswa = $pengabdianDenganMahasiswaLastYear > 0 ?
+            round((($pengabdianDenganMahasiswaThisYear - $pengabdianDenganMahasiswaLastYear) / $pengabdianDenganMahasiswaLastYear) * 100, 1) : 0;
 
         $stats = [
             'total_pengabdian' => $totalPengabdian,
             'total_dosen' => $totalDosenTerlibat,
-            'total_mahasiswa' => $totalMahasiswaTerlibat,
+            'total_mahasiswa' => $pengabdianDenganMahasiswa,
+            'current_year' => $currentYear,
+            'previous_year' => $previousYear,
+            'percentage_change_pengabdian' => $percentageChangePengabdian,
+            'percentage_change_dosen' => $percentageChangeDosen,
+            'percentage_change_mahasiswa' => $percentageChangeMahasiswa,
+            'persentase_pengabdian_dengan_mahasiswa' => $persentasePengabdianDenganMahasiswa,
         ];
 
         // 3. Tasks / actions for "Perlu Tindakan"
@@ -164,6 +209,7 @@ class AdminController extends Controller
             'totalPengabdian',
             'totalDosenTerlibat',
             'totalMahasiswaTerlibat',
+            'pengabdianDenganMahasiswa',
             'laporanAkhirId',
             'pengabdianLengkap',
             'tanpaLaporanAkhir',
