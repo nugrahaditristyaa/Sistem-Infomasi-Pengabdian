@@ -15,7 +15,8 @@ class MahasiswaController extends Controller
      */
     public function index()
     {
-        $mahasiswa = Mahasiswa::orderBy('nama')->paginate(10);
+        // Get all mahasiswa for DataTables to handle
+        $mahasiswa = Mahasiswa::orderBy('nama')->get();
         return view('admin.mahasiswa.index', compact('mahasiswa'));
     }
 
@@ -120,9 +121,3 @@ class MahasiswaController extends Controller
         }
     }
 }
-
-
-
-
-
-

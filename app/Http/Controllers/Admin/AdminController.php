@@ -113,8 +113,7 @@ class AdminController extends Controller
         ];
 
         // Additional data for charts (kept for backward compatibility with the Blade)
-        // Data for document completeness chart
-        $pengabdianLengkap = $totalPengabdian - $tanpaLaporanAkhir;
+        // Data for document completeness chart - will be calculated after completeness logic
 
         // Hitung total pengabdian (sebagai ketua + anggota) untuk setiap dosen
         $dosenCounts = Dosen::withCount('pengabdian as jumlah_pengabdian')
@@ -124,11 +123,13 @@ class AdminController extends Controller
         $namaDosen = $dosenCounts->pluck('nama');
         $jumlahPengabdianDosen = $dosenCounts->pluck('jumlah_pengabdian');
 
-        // Treemap data for Luaran
+        // Treemap data for Luaran - only show items with count > 0
         $luaranCounts = JenisLuaran::withCount('luaran')->get();
-        $dataTreemap = $luaranCounts->map(function ($item) {
+        $dataTreemap = $luaranCounts->filter(function ($item) {
+            return $item->luaran_count > 0; // Only include items with actual data
+        })->map(function ($item) {
             return ['g' => $item->nama_jenis_luaran, 'v' => $item->luaran_count];
-        })->toArray();
+        })->values()->toArray(); // values() to reset array keys
 
         // Get list of document types for per-pengabdian status display
         $jenisDokumenList = JenisDokumen::orderBy('nama_jenis_dokumen')->get();
@@ -188,6 +189,10 @@ class AdminController extends Controller
 
         $needActionCount = count($pengabdianNeedingDocs);
 
+        // Calculate correct document completeness based on all 5 required documents
+        $pengabdianLengkap = $totalPengabdian - $needActionCount;
+        $pengabdianTidakLengkap = $needActionCount;
+
         // Compute counts per required document name
         $missingCounts = array_fill_keys($requiredDocNames, 0);
         foreach ($pengabdianNeedingDocs as $p) {
@@ -212,6 +217,7 @@ class AdminController extends Controller
             'pengabdianDenganMahasiswa',
             'laporanAkhirId',
             'pengabdianLengkap',
+            'pengabdianTidakLengkap',
             'tanpaLaporanAkhir',
             'hkiTanpaDokumen',
             'namaDosen',

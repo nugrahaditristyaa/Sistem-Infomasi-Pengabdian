@@ -16,6 +16,16 @@
             color: #fff;
         }
 
+        /* Sembunyikan teks default treemap yang tidak diinginkan */
+        #luaranTreemapChart canvas {
+            font-size: 0 !important;
+        }
+
+        /* Override semua teks pada treemap canvas */
+        .chart-area canvas text {
+            display: none !important;
+        }
+
         .list-group-item-action {
             color: #5a5c69;
         }
@@ -62,6 +72,47 @@
         .clickable-stat:hover {
             color: #4e73df !important;
         }
+
+        /* Sorting button styles */
+        #dosenSortBtn {
+            border: 1px solid #e3e6f0;
+            transition: all 0.2s ease;
+        }
+
+        #dosenSortBtn:hover {
+            background-color: #4e73df;
+            color: white;
+            border-color: #4e73df;
+        }
+
+        #dosenSortBtn.active {
+            background-color: #4e73df;
+            color: white;
+            border-color: #4e73df;
+        }
+
+        /* Chart container improvements */
+        .chart-bar {
+            position: relative;
+        }
+
+        .chart-bar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chart-bar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .chart-bar::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .chart-bar::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
     </style>
 @endpush
 
@@ -92,7 +143,7 @@
                                         href="{{ route('admin.pengabdian.show', $item->id_pengabdian) }}">{{ Str::limit($item->judul_pengabdian, 40) }}</a>
                                 </td>
                                 <td>{{ $item->ketua->nama ?? '-' }}</td>
-                                <td>{{ $item->created_at->format('d/m/Y') }}</td>
+                                <td>{{ $item->created_at ? $item->created_at->format('d/m/Y') : '-' }}</td>
                                 <td>
                                     {{-- Show overall completeness: Lengkap / Belum Lengkap (button opens modal detail) --}}
                                     @php
@@ -131,7 +182,9 @@
                                                 </div>
                                                 <div class="modal-body">
                                                     <p class="small text-muted">Ketua: {{ $item->ketua->nama ?? '-' }} —
-                                                        Ditambahkan: {{ $item->created_at->format('d/m/Y') }}</p>
+                                                        Ditambahkan:
+                                                        {{ $item->created_at ? $item->created_at->format('d/m/Y') : '-' }}
+                                                    </p>
                                                     <ul class="list-group">
                                                         @foreach ($requiredDocNames as $name)
                                                             @php
@@ -213,10 +266,28 @@
                 <div class="col-xl-6 mb-4">
                     <div class="card shadow">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Rekap Pengabdian per Dosen (Top 5 Ketua)</h6>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <h6 class="m-0 font-weight-bold text-primary">Rekap Pengabdian per Dosen</h6>
+                                <div>
+                                    <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-secondary"
+                                        data-order="desc" title="Urutkan jumlah (tertinggi)">
+                                        <i class="fas fa-sort-amount-down"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-body">
-                            <div class="chart-bar" style="height: 250px;"><canvas id="dosenChart"></canvas></div>
+                            {{-- Scrollable container for long lists of dosen --}}
+                            @php
+                                $dosenCount = count($namaDosen ?? []);
+                                // 40px per label as base height; min 250px, max 1200px
+                                $canvasHeight = max(250, min(1200, $dosenCount * 40));
+                            @endphp
+                            <div class="chart-bar" style="max-height: 400px; overflow-y: auto;">
+                                <div style="height: {{ $canvasHeight }}px;">
+                                    <canvas id="dosenChart" width="400" height="{{ $canvasHeight }}"></canvas>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -226,7 +297,17 @@
                             <h6 class="m-0 font-weight-bold text-primary">Distribusi Luaran</h6>
                         </div>
                         <div class="card-body">
-                            <div class="chart-area" style="height: 250px;"><canvas id="luaranTreemapChart"></canvas></div>
+                            @if (count($dataTreemap) > 0)
+                                <div class="chart-area" style="height: 250px;"><canvas id="luaranTreemapChart"></canvas>
+                                </div>
+                            @else
+                                <div class="d-flex align-items-center justify-content-center" style="height: 250px;">
+                                    <div class="text-center text-gray-500">
+                                        <i class="fas fa-chart-area fa-2x mb-2"></i>
+                                        <div>Belum ada data luaran</div>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -340,9 +421,34 @@
             </div>
 
             <div class="card shadow mb-4">
+                @php
+                    $hasMissingDocsForHeader = false;
+                    foreach (
+                        [
+                            'Laporan Akhir',
+                            'Surat Tugas Dosen',
+                            'Surat Permohonan',
+                            'Surat Ucapan Terima Kasih',
+                            'MoU/MoA/Dokumen Kerja Sama Kegiatan',
+                        ]
+                        as $rname
+                    ) {
+                        if (($missingCounts[$rname] ?? 0) > 0) {
+                            $hasMissingDocsForHeader = true;
+                            break;
+                        }
+                    }
+                @endphp
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-danger"><i class="fas fa-exclamation-triangle mr-2"></i>Perlu
-                        Tindakan</h6>
+                    @if ($hasMissingDocsForHeader)
+                        <h6 class="m-0 font-weight-bold text-danger">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>Perlu Tindakan
+                        </h6>
+                    @else
+                        <h6 class="m-0 font-weight-bold text-success">
+                            <i class="fas fa-check-circle mr-2"></i>Status Dokumen
+                        </h6>
+                    @endif
                 </div>
                 <div class="list-group list-group-flush">
                     {{-- Per-required document counts (click to filter modal) --}}
@@ -356,17 +462,40 @@
                             'MoU/MoA/Dokumen Kerja Sama Kegiatan',
                         ];
                     @endphp
-                    @foreach ($requiredDocNames as $rname)
-                        <a href="#" data-toggle="modal" data-target="#needActionModal"
-                            data-filter="{{ $rname }}"
-                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="font-weight-bold">{{ $rname }}</div>
-                                <div class="small text-gray-500">Pengabdian yang belum memiliki dokumen ini</div>
+                    @php
+                        $hasMissingDocs = false;
+                        foreach ($requiredDocNames as $rname) {
+                            if (($missingCounts[$rname] ?? 0) > 0) {
+                                $hasMissingDocs = true;
+                                break;
+                            }
+                        }
+                    @endphp
+
+                    @if ($hasMissingDocs)
+                        @foreach ($requiredDocNames as $rname)
+                            @php $missingCount = $missingCounts[$rname] ?? 0; @endphp
+                            @if ($missingCount > 0)
+                                <a href="#" data-toggle="modal" data-target="#needActionModal"
+                                    data-filter="{{ $rname }}"
+                                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="font-weight-bold">{{ $rname }}</div>
+                                        <div class="small text-gray-500">Pengabdian yang belum memiliki dokumen ini</div>
+                                    </div>
+                                    <span class="badge badge-danger badge-pill">{{ $missingCount }}</span>
+                                </a>
+                            @endif
+                        @endforeach
+                    @else
+                        <div class="list-group-item text-center py-4">
+                            <div class="text-success mb-2">
+                                <i class="fas fa-check-circle fa-2x"></i>
                             </div>
-                            <span class="badge badge-danger badge-pill">{{ $missingCounts[$rname] ?? 0 }}</span>
-                        </a>
-                    @endforeach
+                            <div class="font-weight-bold text-success">Semua Dokumen Lengkap!</div>
+                            <div class="small text-gray-500">Tidak ada pengabdian yang memerlukan tindakan</div>
+                        </div>
+                    @endif
 
                     {{-- 'Belum ada Laporan Akhir' quick link removed per request --}}
                 </div>
@@ -429,7 +558,7 @@
             data: {
                 labels: ["Dokumen Lengkap", "Belum Lengkap"],
                 datasets: [{
-                    data: [{{ $pengabdianLengkap }}, {{ $tanpaLaporanAkhir }}],
+                    data: [{{ $pengabdianLengkap }}, {{ $pengabdianTidakLengkap }}],
                     backgroundColor: ['#1cc88a', '#f6c23e'],
                     hoverBackgroundColor: ['#17a673', '#dda20a'],
                     borderColor: '#fff',
@@ -462,77 +591,291 @@
             }
         });
 
-        // 2. Grafik Rekap Pengabdian per Dosen (Horizontal Bar Chart)
-        new Chart(document.getElementById("dosenChart"), {
-            type: 'bar',
-            data: {
-                labels: @json($namaDosen),
-                datasets: [{
-                    label: "Jumlah Pengabdian",
-                    data: @json($jumlahPengabdianDosen),
-                    backgroundColor: '#4e73df',
-                }],
-            },
-            options: {
-                indexAxis: 'y',
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
+        // 2. Grafik Rekap Pengabdian per Dosen (Horizontal Bar Chart dengan angka di kanan)
+        let dosenChart;
+        let originalDosenData = {
+            labels: @json($namaDosen),
+            data: @json($jumlahPengabdianDosen)
+        };
+
+        // Function untuk membuat atau update chart dosen
+        function createDosenChart(sortOrder = 'desc') {
+            // Kombinasi data untuk sorting
+            let combinedData = originalDosenData.labels.map((label, index) => ({
+                name: label,
+                value: originalDosenData.data[index]
+            }));
+
+            // Sort data
+            combinedData.sort((a, b) => {
+                return sortOrder === 'asc' ? a.value - b.value : b.value - a.value;
+            });
+
+            // Pisahkan kembali setelah sort
+            let sortedLabels = combinedData.map(item => item.name);
+            let sortedData = combinedData.map(item => item.value);
+
+            // Destroy chart lama jika ada
+            if (dosenChart) {
+                dosenChart.destroy();
+            }
+
+            dosenChart = new Chart(document.getElementById("dosenChart"), {
+                type: 'bar',
+                data: {
+                    labels: sortedLabels,
+                    datasets: [{
+                        label: "Jumlah Pengabdian",
+                        data: sortedData,
+                        backgroundColor: '#4e73df',
+                        borderRadius: 4,
+                        borderSkipped: false,
+                    }],
+                },
+                options: {
+                    indexAxis: 'y',
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.x} pengabdian`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            display: true,
+                            color: '#2d3e50',
+                            anchor: 'end',
+                            align: 'right',
+                            offset: 4,
+                            font: {
+                                weight: 'bold',
+                                size: 11
+                            },
+                            formatter: function(value) {
+                                return value;
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            right: 30 // Padding untuk angka di kanan
                         }
                     }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
                 }
+            });
+        }
+
+        // Buat chart pertama kali (default descending)
+        createDosenChart('desc');
+
+        // Event handler untuk tombol sort
+        document.getElementById('dosenSortBtn').addEventListener('click', function() {
+            const currentOrder = this.getAttribute('data-order');
+            const newOrder = currentOrder === 'desc' ? 'asc' : 'desc';
+
+            // Update button
+            this.setAttribute('data-order', newOrder);
+            const icon = this.querySelector('i');
+
+            if (newOrder === 'asc') {
+                icon.className = 'fas fa-sort-amount-up';
+                this.setAttribute('title', 'Urutkan jumlah (terendah)');
+            } else {
+                icon.className = 'fas fa-sort-amount-down';
+                this.setAttribute('title', 'Urutkan jumlah (tertinggi)');
             }
+
+            // Update chart
+            createDosenChart(newOrder);
         });
 
-        // 3. Grafik Distribusi Luaran (Treemap)
-        new Chart(document.getElementById("luaranTreemapChart"), {
-            type: 'treemap',
-            data: {
-                datasets: [{
-                    label: 'Jumlah Luaran',
-                    tree: @json($dataTreemap),
-                    key: 'v',
-                    groups: ['g'],
-                    backgroundColor: (ctx) => {
-                        const colors = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
-                            '#858796'
-                        ];
-                        return ctx.type === 'data' ? colors[ctx.dataIndex % colors.length] :
-                            'transparent';
-                    },
-                    labels: {
-                        display: true,
-                        color: 'white',
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        },
-                        formatter: (ctx) => ctx.type === 'data' ? [ctx.raw.g, ctx.raw.v] : null
-                    },
-                }],
+        // Plugin untuk override treemap dan menggambar label kustom
+        const treemapCleanPlugin = {
+            id: 'treemapClean',
+            beforeDraw: (chart) => {
+                if (chart.config.type !== 'treemap') return;
+
+                // Clear semua drawing operations default
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.restore();
             },
-            options: {
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
+            afterDraw: (chart) => {
+                if (chart.config.type !== 'treemap') return;
+
+                const ctx = chart.ctx;
+                const dataset = chart.data.datasets[0];
+
+                // Clear area dulu untuk menghilangkan teks default
+                ctx.save();
+                ctx.clearRect(0, 0, chart.width, chart.height);
+
+                // Gambar ulang rectangles tanpa teks default
+                chart.getDatasetMeta(0).data.forEach((element, index) => {
+                    const data = dataset.tree[index];
+                    if (data && data.v > 0) {
+                        const rect = element.getProps(['x', 'y', 'width', 'height']);
+                        const colors = [
+                            '#4e73df', '#1cc88a', '#36b9cc',
+                            '#f6c23e', '#e74a3b', '#858796',
+                            '#6f42c1', '#fd7e14', '#20c997'
+                        ];
+
+                        // Gambar rectangle
+                        ctx.fillStyle = colors[index % colors.length];
+                        ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+
+                        // Gambar border
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+
+                        // Gambar label kustom hanya jika area cukup besar
+                        if (rect.width > 80 && rect.height > 50) {
+                            const centerX = rect.x + rect.width / 2;
+                            const centerY = rect.y + rect.height / 2;
+
+                            ctx.fillStyle = 'white';
+                            ctx.font = 'bold 12px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+
+                            // Gambar nama
+                            ctx.fillText(data.g, centerX, centerY - 8);
+                            // Gambar jumlah
+                            ctx.fillText(`(${data.v})`, centerX, centerY + 8);
+                        }
+                    }
+                });
+
+                ctx.restore();
+            }
+        };
+
+        Chart.register(treemapCleanPlugin);
+
+        // 3. Grafik Distribusi Luaran (Alternative: Horizontal Bar)
+        @if (count($dataTreemap) > 0)
+            // Uncomment untuk gunakan bar chart sebagai alternatif:
+            /*
+            new Chart(document.getElementById("luaranTreemapChart"), {
+                type: 'bar',
+                data: {
+                    labels: @json(array_column($dataTreemap, 'g')),
+                    datasets: [{
+                        label: 'Jumlah Luaran',
+                        data: @json(array_column($dataTreemap, 'v')),
+                        backgroundColor: [
+                            '#4e73df', '#1cc88a', '#36b9cc',
+                            '#f6c23e', '#e74a3b', '#858796',
+                            '#6f42c1', '#fd7e14', '#20c997'
+                        ]
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+            */
+
+            // Treemap dengan perbaikan
+            new Chart(document.getElementById("luaranTreemapChart"), {
+                type: 'treemap',
+                data: {
+                    datasets: [{
+                        label: 'Jumlah Luaran',
+                        tree: @json($dataTreemap),
+                        key: 'v',
+                        groups: ['g'],
+                        backgroundColor: (ctx) => {
+                            const colors = [
+                                '#4e73df', '#1cc88a', '#36b9cc',
+                                '#f6c23e', '#e74a3b', '#858796',
+                                '#6f42c1', '#fd7e14', '#20c997'
+                            ];
+                            return ctx.type === 'data' ?
+                                colors[ctx.dataIndex % colors.length] :
+                                'transparent';
+                        },
+                        borderColor: 'white',
+                        borderWidth: 2,
+                        spacing: 1,
+                        labels: {
+                            display: false,
+                            font: {
+                                size: 0
+                            }
+                        },
+                        // Override default rendering
+                        displayColors: false,
+                        captions: {
+                            display: false
+                        }
+                    }],
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    interaction: {
+                        intersect: false
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => `${ctx.raw.g}: ${ctx.raw.v}`
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: true,
+                            mode: 'nearest',
+                            callbacks: {
+                                // Hilangkan title sepenuhnya
+                                title: () => null,
+                                // Hanya tampilkan label yang bersih
+                                label: (context) => {
+                                    const dataPoint = context.raw;
+                                    if (dataPoint && dataPoint.g && dataPoint.v) {
+                                        return `${dataPoint.g}: ${dataPoint.v} luaran`;
+                                    }
+                                    return null;
+                                },
+                                // Hilangkan semua callback lainnya
+                                beforeLabel: () => null,
+                                afterLabel: () => null,
+                                beforeBody: () => null,
+                                afterBody: () => null,
+                                footer: () => null
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        @endif
     </script>
     {{-- Modal: Daftar Pengabdian Perlu Tindakan --}}
     <div class="modal fade" id="needActionModal" tabindex="-1" role="dialog" aria-labelledby="needActionModalLabel"
