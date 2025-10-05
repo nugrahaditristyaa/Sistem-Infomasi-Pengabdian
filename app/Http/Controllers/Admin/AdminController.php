@@ -13,8 +13,21 @@ use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
-    public function dashboard()
+    public function dashboard(Request $request)
     {
+        // Get year filter parameter - default to current year
+        $currentYear = date('Y');
+        $filterYear = $request->get('year', $currentYear);
+
+        // Get available years from pengabdian data for dropdown
+        $availableYears = Pengabdian::selectRaw('YEAR(tanggal_pengabdian) as year')
+            ->whereNotNull('tanggal_pengabdian')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year')
+            ->filter()
+            ->values();
+
         // 1. Latest pengabdian (used by dashboard view)
         // Eager-load dokumen and the dokumen's jenisDokumen for per-type status
         // Show the most recently added pengabdian (by created_at)
@@ -23,60 +36,276 @@ class AdminController extends Controller
             ->take(5)
             ->get();
 
-        // 2. Quick statistics
-        $currentYear = date('Y');
-        $previousYear = $currentYear - 1;
+        // 2. Dynamic Quick Statistics based on filter
+        if ($filterYear === 'all') {
+            // Show all time statistics
+            $totalPengabdian = Pengabdian::count();
+            $totalDosenTerlibat = DB::table('pengabdian_dosen')->distinct('nik')->count('nik');
+            $pengabdianDenganMahasiswa = Pengabdian::whereHas('mahasiswa')->count();
 
-        $totalPengabdian = Pengabdian::count();
-        $totalPengabdianThisYear = Pengabdian::whereYear('tanggal_pengabdian', $currentYear)->count();
-        $totalPengabdianLastYear = Pengabdian::whereYear('tanggal_pengabdian', $previousYear)->count();
+            // Comparison with previous year
+            $previousYear = $currentYear - 1;
+            $totalPengabdianComparison = Pengabdian::whereYear('tanggal_pengabdian', $currentYear)->count();
+            $totalPengabdianPrevious = Pengabdian::whereYear('tanggal_pengabdian', $previousYear)->count();
 
-        // Hitung persentase perubahan
-        $percentageChangePengabdian = $totalPengabdianLastYear > 0 ?
-            round((($totalPengabdianThisYear - $totalPengabdianLastYear) / $totalPengabdianLastYear) * 100, 1) : 0;
+            $dosenTerlibatComparison = DB::table('pengabdian_dosen')
+                ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->whereYear('pengabdian.tanggal_pengabdian', $currentYear)
+                ->distinct('pengabdian_dosen.nik')
+                ->count('pengabdian_dosen.nik');
 
-        $totalDosenTerlibat = DB::table('pengabdian_dosen')->distinct('nik')->count('nik');
+            $dosenTerlibatPrevious = DB::table('pengabdian_dosen')
+                ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->whereYear('pengabdian.tanggal_pengabdian', $previousYear)
+                ->distinct('pengabdian_dosen.nik')
+                ->count('pengabdian_dosen.nik');
 
-        // Untuk dosen, hitung perbandingan tahun ini vs tahun lalu
-        $dosenTerlibatThisYear = DB::table('pengabdian_dosen')
-            ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
-            ->whereYear('pengabdian.tanggal_pengabdian', $currentYear)
-            ->distinct('pengabdian_dosen.nik')
-            ->count('pengabdian_dosen.nik');
+            $pengabdianDenganMahasiswaComparison = Pengabdian::whereYear('tanggal_pengabdian', $currentYear)
+                ->whereHas('mahasiswa')->count();
+            $pengabdianDenganMahasiswaPrevious = Pengabdian::whereYear('tanggal_pengabdian', $previousYear)
+                ->whereHas('mahasiswa')->count();
 
-        $dosenTerlibatLastYear = DB::table('pengabdian_dosen')
-            ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
-            ->whereYear('pengabdian.tanggal_pengabdian', $previousYear)
-            ->distinct('pengabdian_dosen.nik')
-            ->count('pengabdian_dosen.nik');
+            $yearLabel = "vs $previousYear";
+        } else {
+            // Show filtered year statistics  
+            $totalPengabdian = Pengabdian::whereYear('tanggal_pengabdian', $filterYear)->count();
+            $totalDosenTerlibat = DB::table('pengabdian_dosen')
+                ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->whereYear('pengabdian.tanggal_pengabdian', $filterYear)
+                ->distinct('pengabdian_dosen.nik')
+                ->count('pengabdian_dosen.nik');
 
-        $percentageChangeDosen = $dosenTerlibatLastYear > 0 ?
-            round((($dosenTerlibatThisYear - $dosenTerlibatLastYear) / $dosenTerlibatLastYear) * 100, 1) : 0;
+            $pengabdianDenganMahasiswa = Pengabdian::whereYear('tanggal_pengabdian', $filterYear)
+                ->whereHas('mahasiswa')->count();
 
-        $totalMahasiswaTerlibat = DB::table('pengabdian_mahasiswa')->distinct('nim')->count('nim');
-        $pengabdianDenganMahasiswa = Pengabdian::whereHas('mahasiswa')->count();
+            // Comparison with previous year from filtered year
+            $previousFilterYear = $filterYear - 1;
+            $totalPengabdianComparison = $totalPengabdian;
+            $totalPengabdianPrevious = Pengabdian::whereYear('tanggal_pengabdian', $previousFilterYear)->count();
+
+            $dosenTerlibatComparison = $totalDosenTerlibat;
+            $dosenTerlibatPrevious = DB::table('pengabdian_dosen')
+                ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->whereYear('pengabdian.tanggal_pengabdian', $previousFilterYear)
+                ->distinct('pengabdian_dosen.nik')
+                ->count('pengabdian_dosen.nik');
+
+            $pengabdianDenganMahasiswaComparison = $pengabdianDenganMahasiswa;
+            $pengabdianDenganMahasiswaPrevious = Pengabdian::whereYear('tanggal_pengabdian', $previousFilterYear)
+                ->whereHas('mahasiswa')->count();
+
+            $yearLabel = "vs $previousFilterYear";
+        }
+
+        // Calculate percentage changes
+        $percentageChangePengabdian = $totalPengabdianPrevious > 0 ?
+            round((($totalPengabdianComparison - $totalPengabdianPrevious) / $totalPengabdianPrevious) * 100, 1) : ($totalPengabdianComparison > 0 ? 100 : 0);
+
+        $percentageChangeDosen = $dosenTerlibatPrevious > 0 ?
+            round((($dosenTerlibatComparison - $dosenTerlibatPrevious) / $dosenTerlibatPrevious) * 100, 1) : ($dosenTerlibatComparison > 0 ? 100 : 0);
+
+        $percentageChangeMahasiswa = $pengabdianDenganMahasiswaPrevious > 0 ?
+            round((($pengabdianDenganMahasiswaComparison - $pengabdianDenganMahasiswaPrevious) / $pengabdianDenganMahasiswaPrevious) * 100, 1) : ($pengabdianDenganMahasiswaComparison > 0 ? 100 : 0);
+
+        // Calculate percentage of pengabdian with mahasiswa
         $persentasePengabdianDenganMahasiswa = $totalPengabdian > 0 ?
             round(($pengabdianDenganMahasiswa / $totalPengabdian) * 100, 1) : 0;
 
-        // Perbandingan tahun ini vs tahun lalu untuk pengabdian dengan mahasiswa
-        $pengabdianDenganMahasiswaThisYear = Pengabdian::whereYear('tanggal_pengabdian', $currentYear)
-            ->whereHas('mahasiswa')->count();
-        $pengabdianDenganMahasiswaLastYear = Pengabdian::whereYear('tanggal_pengabdian', $previousYear)
-            ->whereHas('mahasiswa')->count();
+        // Calculate stats per prodi (Kolaborasi, Khusus Informatika, Khusus Sistem Informasi)
+        if ($filterYear === 'all') {
+            // All time stats per prodi
+            // Pengabdian Kolaborasi: memiliki minimal 1 dosen dari Informatika DAN minimal 1 dosen dari Sistem Informasi
+            $pengabdianKolaborasi = DB::table('pengabdian')
+                ->whereExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', 'Informatika');
+                })
+                ->whereExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', 'Sistem Informasi');
+                })
+                ->count();
 
-        $percentageChangeMahasiswa = $pengabdianDenganMahasiswaLastYear > 0 ?
-            round((($pengabdianDenganMahasiswaThisYear - $pengabdianDenganMahasiswaLastYear) / $pengabdianDenganMahasiswaLastYear) * 100, 1) : 0;
+            // Pengabdian Khusus Informatika: hanya memiliki dosen dari prodi Informatika
+            $pengabdianKhususInformatika = DB::table('pengabdian')
+                ->whereExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', 'Informatika');
+                })
+                ->whereNotExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', '!=', 'Informatika');
+                })
+                ->count();
+
+            // Pengabdian Khusus Sistem Informasi: hanya memiliki dosen dari prodi Sistem Informasi
+            $pengabdianKhususSistemInformasi = DB::table('pengabdian')
+                ->whereExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', 'Sistem Informasi');
+                })
+                ->whereNotExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', '!=', 'Sistem Informasi');
+                })
+                ->count();
+
+            // Count unique dosen per prodi (all time)
+            $dosenInformatika = DB::table('pengabdian_dosen')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->where('dosen.prodi', 'Informatika')
+                ->distinct('pengabdian_dosen.nik')
+                ->count('pengabdian_dosen.nik');
+
+            $dosenSistemInformasi = DB::table('pengabdian_dosen')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->where('dosen.prodi', 'Sistem Informasi')
+                ->distinct('pengabdian_dosen.nik')
+                ->count('pengabdian_dosen.nik');
+
+            // Count unique mahasiswa per prodi (all time)
+            $mahasiswaInformatika = DB::table('pengabdian_mahasiswa')
+                ->join('mahasiswa', 'pengabdian_mahasiswa.nim', '=', 'mahasiswa.nim')
+                ->where('mahasiswa.prodi', 'Informatika')
+                ->distinct('pengabdian_mahasiswa.nim')
+                ->count('pengabdian_mahasiswa.nim');
+
+            $mahasiswaSistemInformasi = DB::table('pengabdian_mahasiswa')
+                ->join('mahasiswa', 'pengabdian_mahasiswa.nim', '=', 'mahasiswa.nim')
+                ->where('mahasiswa.prodi', 'Sistem Informasi')
+                ->distinct('pengabdian_mahasiswa.nim')
+                ->count('pengabdian_mahasiswa.nim');
+        } else {
+            // Filtered year stats per prodi
+            // Pengabdian Kolaborasi: memiliki minimal 1 dosen dari Informatika DAN minimal 1 dosen dari Sistem Informasi
+            $pengabdianKolaborasi = DB::table('pengabdian')
+                ->whereYear('tanggal_pengabdian', $filterYear)
+                ->whereExists(function ($query) use ($filterYear) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', 'Informatika');
+                })
+                ->whereExists(function ($query) use ($filterYear) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', 'Sistem Informasi');
+                })
+                ->count();
+
+            // Pengabdian Khusus Informatika: hanya memiliki dosen dari prodi Informatika
+            $pengabdianKhususInformatika = DB::table('pengabdian')
+                ->whereYear('tanggal_pengabdian', $filterYear)
+                ->whereExists(function ($query) use ($filterYear) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', 'Informatika');
+                })
+                ->whereNotExists(function ($query) use ($filterYear) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', '!=', 'Informatika');
+                })
+                ->count();
+
+            // Pengabdian Khusus Sistem Informasi: hanya memiliki dosen dari prodi Sistem Informasi
+            $pengabdianKhususSistemInformasi = DB::table('pengabdian')
+                ->whereYear('tanggal_pengabdian', $filterYear)
+                ->whereExists(function ($query) use ($filterYear) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', 'Sistem Informasi');
+                })
+                ->whereNotExists(function ($query) use ($filterYear) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', '!=', 'Sistem Informasi');
+                })
+                ->count();
+
+            // Count unique dosen per prodi (filtered year)
+            $dosenInformatika = DB::table('pengabdian_dosen')
+                ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->where('dosen.prodi', 'Informatika')
+                ->whereYear('pengabdian.tanggal_pengabdian', $filterYear)
+                ->distinct('pengabdian_dosen.nik')
+                ->count('pengabdian_dosen.nik');
+
+            $dosenSistemInformasi = DB::table('pengabdian_dosen')
+                ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->where('dosen.prodi', 'Sistem Informasi')
+                ->whereYear('pengabdian.tanggal_pengabdian', $filterYear)
+                ->distinct('pengabdian_dosen.nik')
+                ->count('pengabdian_dosen.nik');
+
+            // Count unique mahasiswa per prodi (filtered year)
+            $mahasiswaInformatika = DB::table('pengabdian_mahasiswa')
+                ->join('pengabdian', 'pengabdian_mahasiswa.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('mahasiswa', 'pengabdian_mahasiswa.nim', '=', 'mahasiswa.nim')
+                ->where('mahasiswa.prodi', 'Informatika')
+                ->whereYear('pengabdian.tanggal_pengabdian', $filterYear)
+                ->distinct('pengabdian_mahasiswa.nim')
+                ->count('pengabdian_mahasiswa.nim');
+
+            $mahasiswaSistemInformasi = DB::table('pengabdian_mahasiswa')
+                ->join('pengabdian', 'pengabdian_mahasiswa.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('mahasiswa', 'pengabdian_mahasiswa.nim', '=', 'mahasiswa.nim')
+                ->where('mahasiswa.prodi', 'Sistem Informasi')
+                ->whereYear('pengabdian.tanggal_pengabdian', $filterYear)
+                ->distinct('pengabdian_mahasiswa.nim')
+                ->count('pengabdian_mahasiswa.nim');
+        }
 
         $stats = [
             'total_pengabdian' => $totalPengabdian,
             'total_dosen' => $totalDosenTerlibat,
             'total_mahasiswa' => $pengabdianDenganMahasiswa,
-            'current_year' => $currentYear,
-            'previous_year' => $previousYear,
+            'current_year' => $filterYear === 'all' ? $currentYear : $filterYear,
+            'previous_year' => $filterYear === 'all' ? $currentYear - 1 : $filterYear - 1,
             'percentage_change_pengabdian' => $percentageChangePengabdian,
             'percentage_change_dosen' => $percentageChangeDosen,
             'percentage_change_mahasiswa' => $percentageChangeMahasiswa,
             'persentase_pengabdian_dengan_mahasiswa' => $persentasePengabdianDenganMahasiswa,
+            'year_label' => $yearLabel,
+            'filter_year' => $filterYear,
+            'pengabdian_kolaborasi' => $pengabdianKolaborasi,
+            'pengabdian_khusus_informatika' => $pengabdianKhususInformatika,
+            'pengabdian_khusus_sistem_informasi' => $pengabdianKhususSistemInformasi,
+            'dosen_informatika' => $dosenInformatika,
+            'dosen_sistem_informasi' => $dosenSistemInformasi,
+            'mahasiswa_informatika' => $mahasiswaInformatika,
+            'mahasiswa_sistem_informasi' => $mahasiswaSistemInformasi,
         ];
 
         // 3. Tasks / actions for "Perlu Tindakan"
@@ -115,16 +344,28 @@ class AdminController extends Controller
         // Additional data for charts (kept for backward compatibility with the Blade)
         // Data for document completeness chart - will be calculated after completeness logic
 
-        // Hitung total pengabdian (sebagai ketua + anggota) untuk setiap dosen
-        $dosenCounts = Dosen::withCount('pengabdian as jumlah_pengabdian')
-            ->orderBy('jumlah_pengabdian', 'desc')
-            ->get(); // Anda bisa menambahkan ->take(5) jika hanya ingin top 5
+        // Hitung total pengabdian (sebagai ketua + anggota) untuk setiap dosen dengan filter tahun
+        $dosenQuery = Dosen::withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
+            if ($filterYear !== 'all') {
+                $query->whereYear('tanggal_pengabdian', $filterYear);
+            }
+        }]);
+
+        $dosenCounts = $dosenQuery->orderBy('jumlah_pengabdian', 'desc')
+            ->get();
 
         $namaDosen = $dosenCounts->pluck('nama');
         $jumlahPengabdianDosen = $dosenCounts->pluck('jumlah_pengabdian');
 
-        // Treemap data for Luaran - only show items with count > 0
-        $luaranCounts = JenisLuaran::withCount('luaran')->get();
+        // Treemap data for Luaran - only show items with count > 0 dengan filter tahun
+        $luaranCounts = JenisLuaran::withCount(['luaran as luaran_count' => function ($query) use ($filterYear) {
+            $query->whereHas('pengabdian', function ($q) use ($filterYear) {
+                if ($filterYear !== 'all') {
+                    $q->whereYear('tanggal_pengabdian', $filterYear);
+                }
+            });
+        }])->get();
+
         $dataTreemap = $luaranCounts->filter(function ($item) {
             return $item->luaran_count > 0; // Only include items with actual data
         })->map(function ($item) {
@@ -161,8 +402,12 @@ class AdminController extends Controller
             $completenessMap[$p->id_pengabdian] = $isComplete;
         }
 
-        // Build a list of all Pengabdian that are missing one or more required documents
-        $allPengabdian = Pengabdian::with(['ketua', 'dokumen.jenisDokumen'])->get();
+        // Build a list of all Pengabdian that are missing one or more required documents dengan filter tahun
+        $pengabdianQuery = Pengabdian::with(['ketua', 'dokumen.jenisDokumen']);
+        if ($filterYear !== 'all') {
+            $pengabdianQuery->whereYear('tanggal_pengabdian', $filterYear);
+        }
+        $allPengabdian = $pengabdianQuery->get();
         $pengabdianNeedingDocs = [];
         foreach ($allPengabdian as $p) {
             $missing = [];
@@ -190,7 +435,8 @@ class AdminController extends Controller
         $needActionCount = count($pengabdianNeedingDocs);
 
         // Calculate correct document completeness based on all 5 required documents
-        $pengabdianLengkap = $totalPengabdian - $needActionCount;
+        $totalPengabdianFiltered = $allPengabdian->count();
+        $pengabdianLengkap = $totalPengabdianFiltered - $needActionCount;
         $pengabdianTidakLengkap = $needActionCount;
 
         // Compute counts per required document name
@@ -213,7 +459,6 @@ class AdminController extends Controller
             'stats',
             'totalPengabdian',
             'totalDosenTerlibat',
-            'totalMahasiswaTerlibat',
             'pengabdianDenganMahasiswa',
             'laporanAkhirId',
             'pengabdianLengkap',
@@ -227,7 +472,10 @@ class AdminController extends Controller
             'completenessMap',
             'pengabdianNeedingDocs',
             'needActionCount',
-            'missingCounts'
+            'missingCounts',
+            'filterYear',
+            'availableYears',
+            'currentYear'
         ));
     }
 }

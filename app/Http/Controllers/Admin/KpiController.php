@@ -18,7 +18,7 @@ class KpiController extends Controller
     public function index()
     {
         $kpi = Kpi::orderBy('kode')->paginate(10);
-        return view('admin.kpi.index', compact('kpi'));
+        return view('InQA.kpi.index', compact('kpi'));
     }
 
     /**
@@ -89,7 +89,8 @@ class KpiController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nama_indikator' => 'required|string|max:255',
+            'kode' => 'required|string|max:50|unique:kpi,kode,' . $id . ',id_kpi',
+            'indikator' => 'required|string|max:255',
             'target' => 'required|integer|min:0',
             'satuan' => 'required|string|max:50',
         ]);
@@ -165,11 +166,3 @@ class KpiController extends Controller
         }
     }
 }
-
-
-
-
-
-
-
-

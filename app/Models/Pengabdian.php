@@ -16,7 +16,8 @@ class Pengabdian extends Model
         'judul_pengabdian',
         'tanggal_pengabdian',
         'ketua_pengabdian',
-        'id_luaran_wajib'
+        'id_luaran_wajib',
+        'jumlah_luaran_direncanakan',
     ];
 
     protected $casts = [

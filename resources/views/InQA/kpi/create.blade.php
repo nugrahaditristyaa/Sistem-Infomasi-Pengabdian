@@ -1,18 +1,18 @@
-@extends('admin.layouts.main')
+@extends('inQA.layouts.main')
 
 @section('content')
     <div class="container-fluid">
         <h4 class="mb-3">Tambah KPI</h4>
         <div class="card">
             <div class="card-body">
-                <form method="POST" action="{{ route('admin.kpi.store') }}">
+                <form method="POST" action="{{ route('inqa.kpi.store') }}">
                     @csrf
                     <div class="mb-3">
                         <label class="form-label">Kode</label>
                         <input type="text" class="form-control" name="kode" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Nama Indikator</label>
+                        <label class="form-label">Indikator</label>
                         <input type="text" class="form-control" name="nama_indikator" required>
                     </div>
                     <div class="mb-3">
@@ -24,7 +24,7 @@
                         <input type="text" class="form-control" name="satuan" required>
                     </div>
                     <button class="btn btn-primary" type="submit">Simpan</button>
-                    <a href="{{ route('admin.kpi.index') }}" class="btn btn-secondary">Batal</a>
+                    <a href="{{ route('inqa.kpi.index') }}" class="btn btn-secondary">Batal</a>
                 </form>
             </div>
         </div>

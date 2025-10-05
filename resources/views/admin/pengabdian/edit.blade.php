@@ -71,20 +71,6 @@
         @csrf
         @method('PUT')
 
-        <!-- Debug panel: shows last captured FormData summary (saved to localStorage) -->
-        <div id="last-submit-debug" style="display:none;margin-bottom:1rem;">
-            <div class="alert alert-warning" role="alert">
-                <strong>Debug info:</strong>
-                <div id="last-submit-debug-content" style="margin-top:6px;font-size:13px;color:#856404"></div>
-                <div style="margin-top:8px;">
-                    <button type="button" id="copy-debug-json" class="btn btn-sm btn-outline-secondary">Salin JSON</button>
-                    <button type="button" id="clear-debug-json" class="btn btn-sm btn-outline-danger">Hapus</button>
-                </div>
-                <div class="small text-muted mt-2">Catatan: info ini hanya bersifat diagnostik dan disimpan di browser Anda
-                    (localStorage).</div>
-            </div>
-        </div>
-
         {{-- Informasi Utama --}}
         <div class="card shadow mb-4">
             <div class="card-header py-3">
@@ -538,337 +524,35 @@
                         }
                     }
 
-                    // Persist to localStorage so it's available after navigation
-                    try {
-                        localStorage.setItem('last_pengabdian_submit_debug', JSON.stringify({
-                            time: new Date().toISOString(),
-                            summary: summary
-                        }));
-                    } catch (e) {
-                        console.warn('Could not save debug info to localStorage', e);
-                    }
 
-                    // Show a small in-page banner so the user can see and copy quickly
-                    var banner = document.getElementById('submit-debug-banner');
-                    if (!banner) {
-                        banner = document.createElement('div');
-                        banner.id = 'submit-debug-banner';
-                        banner.style.position = 'fixed';
-                        banner.style.right = '20px';
-                        banner.style.top = '80px';
-                        banner.style.zIndex = 2147483647;
-                        banner.style.background = '#fff3cd';
-                        banner.style.border = '1px solid #ffeeba';
-                        banner.style.padding = '12px 16px';
-                        banner.style.boxShadow = '0 2px 6px rgba(0,0,0,0.12)';
-                        banner.style.fontSize = '13px';
-                        banner.style.color = '#856404';
-                        document.body.appendChild(banner);
-                    }
-                    var html = '<strong>Debug: form submission captured</strong><br/>';
-                    if (summary.files.length) {
-                        html += '<div style="margin-top:6px;"><em>Files:</em><ul style="margin:6px 0 0 18px;">';
-                        summary.files.forEach(function(f) {
-                            html += '<li>' + f.field + ': ' + f.name + ' (' + f.human + ')</li>';
-                        });
-                        html += '</ul></div>';
-                    } else {
-                        html += '<div style="margin-top:6px;">No files detected in FormData (0)</div>';
-                    }
-                    html +=
-                        '<div style="margin-top:6px;font-size:12px;color:#6c757d;">Saved to localStorage key: <code>last_pengabdian_submit_debug</code></div>';
-                    banner.innerHTML = html;
 
-                    // leave banner visible for a few seconds so user can copy
-                    setTimeout(function() {
-                        try {
-                            banner.parentNode && banner.parentNode.removeChild(banner);
-                        } catch (e) {}
-                    }, 8000);
-
-                } catch (err) {
-                    console.error('Error collecting submit debug info', err);
                 }
                 // allow the form to submit normally
             }, true);
         })();
-    </script>
-    <script>
-        // Capture-level submit snapshot (v2) - logs inputs, file lists and FormData entries
-        (function() {
-            function humanFileSize(bytes) {
-                if (bytes === 0) return '0 B';
-                var i = Math.floor(Math.log(bytes) / Math.log(1024));
-                var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-                return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
-            }
-
-            function snapshotForm(formEl) {
-                try {
-                    var snap = {
-                        time: new Date().toISOString(),
-                        location: window.location.href,
-                        ua: navigator.userAgent,
-                        formId: formEl.id || null,
-                        inputs: [],
-                        formDataHasFiles: false,
-                        formDataEntries: []
-                    };
-                    // inputs
-                    var inputs = formEl.querySelectorAll('input, select, textarea');
-                    inputs.forEach(function(inp) {
-                        try {
-                            var obj = {
-                                name: inp.name || null,
-                                type: inp.type || inp.tagName,
-                                disabled: inp.disabled || false
-                            };
-                            if (inp.type === 'file') {
-                                obj.files = [];
-                                var fls = inp.files || [];
-                                for (var i = 0; i < fls.length; i++) {
-                                    obj.files.push({
-                                        name: fls[i].name,
-                                        size: fls[i].size,
-                                        human: humanFileSize(fls[i].size)
-                                    });
-                                }
-                            } else {
-                                obj.valuePreview = (inp.value || '').toString().slice(0, 200);
-                            }
-                            snap.inputs.push(obj);
-                        } catch (e) {
-                            /* ignore per-input */
-                        }
-                    });
-
-                    // FormData entries
-                    try {
-                        var fd = new FormData(formEl);
-                        for (var pair of fd.entries()) {
-                            var key = pair[0];
-                            var val = pair[1];
-                            if (val instanceof File) {
-                                snap.formDataHasFiles = true;
-                                snap.formDataEntries.push({
-                                    key: key,
-                                    fileName: val.name,
-                                    size: val.size,
-                                    human: humanFileSize(val.size)
-                                });
-                            } else {
-                                snap.formDataEntries.push({
-                                    key: key,
-                                    valuePreview: (val || '').toString().slice(0, 200)
-                                });
-                            }
-                        }
-                    } catch (e) {
-                        snap.formDataError = String(e);
-                    }
-
-                    try {
-                        localStorage.setItem('last_pengabdian_submit_debug_v2', JSON.stringify(snap));
-                    } catch (e) {
-                        console.warn('save v2 failed', e);
-                    }
-                    // also put into previous key for older UI
-                    try {
-                        localStorage.setItem('last_pengabdian_submit_debug', JSON.stringify({
-                            time: snap.time,
-                            summary: {
-                                files: snap.formDataEntries.filter(function(e) {
-                                    return e.fileName
-                                }).map(function(f) {
-                                    return {
-                                        field: f.key,
-                                        name: f.fileName,
-                                        size: f.size,
-                                        human: f.human
-                                    };
-                                })
-                            }
-                        }));
-                    } catch (e) {}
-                    console.log('[DEBUG v2] snapshot saved', snap);
-                    return snap;
-                } catch (e) {
-                    console.error('snapshot error', e);
-                    return null;
-                }
-            }
-
-            // Listen at document capture phase to ensure we see submit before other handlers
-            document.addEventListener('submit', function(ev) {
-                try {
-                    var formEl = ev.target && (ev.target.tagName === 'FORM' ? ev.target : ev.target.closest &&
-                        ev.target.closest('form'));
-                    if (!formEl) return;
-                    snapshotForm(formEl);
-                } catch (e) {
-                    console.warn('submit-capture fail', e);
-                }
-                // do not prevent submission
-            }, true);
-
-            // Also log when the submit button is clicked
-            document.addEventListener('click', function(ev) {
-                try {
-                    var btn = ev.target.closest && ev.target.closest(
-                        'button[type="submit"], input[type="submit"]');
-                    if (!btn) return;
-                    var formEl = btn.form || document.getElementById('pengabdianForm');
-                    if (!formEl) return;
-                    // snapshot immediately
-                    snapshotForm(formEl);
-                } catch (e) {
-                    console.warn('submit-click-capture fail', e);
-                }
-            }, true);
-        })();
-    </script>
-    <!-- Floating debug button (always visible) -->
-    <button id="show-last-debug-btn" title="Tampilkan debug terakhir"
-        style="position:fixed;right:18px;bottom:18px;z-index:2147483647;background:#ffc107;border:0;padding:10px 12px;border-radius:50px;box-shadow:0 2px 8px rgba(0,0,0,0.15);color:#212529;font-weight:600">DBG</button>
-
-    <!-- Persistent banner container for debug (hidden by default) -->
-    <div id="submit-debug-banner-container"
-        style="display:none;position:fixed;right:20px;top:80px;z-index:2147483647;background:#fff3cd;border:1px solid #ffeeba;padding:12px 16px;box-shadow:0 2px 6px rgba(0,0,0,0.12);font-size:13px;color:#856404;max-width:360px;">
-        <div id="submit-debug-banner-inner"></div>
-        <div style="margin-top:8px;text-align:right;"><button id="close-submit-debug-banner"
-                class="btn btn-sm btn-light">Tutup</button></div>
-    </div>
-
-    <script>
-        (function() {
-            function humanFileSize(bytes) {
-                if (bytes === 0) return '0 B';
-                var i = Math.floor(Math.log(bytes) / Math.log(1024));
-                var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-                return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
-            }
-
-            function renderDebugInto(container, raw) {
-                try {
-                    var parsed = JSON.parse(raw);
-                } catch (e) {
-                    container.innerText = 'Tidak dapat membaca debug data';
-                    return;
-                }
-                var html = '<div><strong>Waktu:</strong> ' + (parsed.time || '') + '</div>';
-                if (parsed.summary && parsed.summary.files && parsed.summary.files.length) {
-                    html += '<div style="margin-top:6px;"><em>Files:</em><ul style="margin:6px 0 0 18px;">';
-                    parsed.summary.files.forEach(function(f) {
-                        html += '<li>' + f.field + ': ' + f.name + ' (' + (f.human || humanFileSize(f.size ||
-                            0)) + ')</li>';
-                    });
-                    html += '</ul></div>';
-                } else {
-                    html += '<div style="margin-top:6px;">No files captured in last submit.</div>';
-                }
-                html +=
-                    '<div style="margin-top:6px;font-size:12px;color:#6c757d;">localStorage key: <code>last_pengabdian_submit_debug</code></div>';
-                container.innerHTML = html;
-            }
-
-            document.getElementById('show-last-debug-btn').addEventListener('click', function() {
-                try {
-                    var raw = localStorage.getItem('last_pengabdian_submit_debug');
-                    var banner = document.getElementById('submit-debug-banner-container');
-                    var inner = document.getElementById('submit-debug-banner-inner');
-                    if (!raw) {
-                        inner.innerHTML =
-                            '<div><strong>Tidak ada debug tersimpan.</strong><div class="small text-muted">Silakan lakukan submit untuk menangkap data.</div></div>';
-                    } else {
-                        renderDebugInto(inner, raw);
-                    }
-                    banner.style.display = 'block';
-                } catch (e) {
-                    console.warn(e);
-                    alert('Gagal menampilkan debug');
-                }
-            });
-
-            document.getElementById('close-submit-debug-banner').addEventListener('click', function() {
-                document.getElementById('submit-debug-banner-container').style.display = 'none';
-            });
-        })();
-    </script>
-    <script>
-        // Populate last-submit debug panel from localStorage and wire copy/clear buttons
-        (function() {
-            try {
-                var raw = localStorage.getItem('last_pengabdian_submit_debug');
-                if (!raw) return;
-                var parsed = JSON.parse(raw);
-                var container = document.getElementById('last-submit-debug');
-                var content = document.getElementById('last-submit-debug-content');
-                if (!container || !content) return;
-                var html = '<div><strong>Waktu:</strong> ' + (parsed.time || '') + '</div>';
-                if (parsed.summary && parsed.summary.files && parsed.summary.files.length) {
-                    html += '<div style="margin-top:6px;"><em>Files:</em><ul style="margin:6px 0 0 18px;">';
-                    parsed.summary.files.forEach(function(f) {
-                        html += '<li>' + f.field + ': ' + f.name + ' (' + f.human + ')</li>';
-                    });
-                    html += '</ul></div>';
-                } else {
-                    html += '<div style="margin-top:6px;">No files captured in last submit.</div>';
-                }
-                content.innerHTML = html;
-                container.style.display = 'block';
-
-                document.getElementById('copy-debug-json').addEventListener('click', function() {
-                    try {
-                        navigator.clipboard.writeText(raw).then(function() {
-                            alert('Debug JSON disalin ke clipboard.');
-                        }, function(err) {
-                            alert('Gagal menyalin: ' + err);
-                        });
-                    } catch (e) {
-                        prompt('Salin manual JSON berikut:', raw);
-                    }
+        };
+        if (inp.type === 'file') {
+            obj.files = [];
+            var fls = inp.files || [];
+            for (var i = 0; i < fls.length; i++) {
+                obj.files.push({
+                    name: fls[i].name,
+                    size: fls[i].size,
+                    human: humanFileSize(fls[i].size)
                 });
+            }
+        } else {
+            obj.valuePreview = (inp.value || '').toString().slice(0, 200);
+        }
+        snap.inputs.push(obj);
+        }
+        catch (e) {
+            /* ignore per-input */
+        }
+        });
+        })();
+    </script>
 
-                document.getElementById('clear-debug-json').addEventListener('click', function() {
-                    if (!confirm('Hapus debug info yang tersimpan di browser?')) return;
-                    try {
-                        localStorage.removeItem('last_pengabdian_submit_debug');
-                    } catch (e) {}
-                    container.style.display = 'none';
-                });
-            } catch (e) {
-                console.warn('Tidak bisa membaca debug info dari localStorage', e);
-            }
-        })();
-    </script>
-    <script>
-        // also show last file-selection entries (what inputs had files chosen)
-        (function() {
-            try {
-                var selRaw = localStorage.getItem('last_pengabdian_file_selection');
-                var target = document.getElementById('last-submit-debug-content');
-                if (!selRaw || !target) return;
-                var parsedSel = JSON.parse(selRaw);
-                if (!parsedSel.picks || !parsedSel.picks.length) return;
-                var html =
-                    '<div style="margin-top:8px;"><strong>Terakhir memilih file:</strong><ul style="margin:6px 0 0 18px;">';
-                parsedSel.picks.slice(-5).reverse().forEach(function(p) {
-                    if (p.files && p.files.length) {
-                        html += '<li>' + p.time + ' — ' + p.field + ': ' + p.files.map(function(f) {
-                            return f.name + ' (' + (f.size ? (Math.round(f.size / 1024) + ' KB') :
-                                '?') + ')';
-                        }).join(', ') + '</li>';
-                    } else {
-                        html += '<li>' + p.time + ' — ' + p.field + ': (no files)</li>';
-                    }
-                });
-                html += '</ul></div>';
-                target.innerHTML = target.innerHTML + html;
-            } catch (e) {
-                console.warn('No selection debug', e);
-            }
-        })();
-    </script>
     <script type="text/html" id="sumber-dana-template">
          <div class="row sumber-dana-item mb-3">
             <div class="col-md-3"><div class="form-group mb-0"><label>Jenis <span class="text-danger">*</span></label><select name="sumber_dana[__INDEX__][jenis]" class="form-control jenis-sumber-dana" required><option value="" disabled selected>— Pilih —</option><option value="Internal">Internal</option><option value="Eksternal">Eksternal</option></select></div></div>

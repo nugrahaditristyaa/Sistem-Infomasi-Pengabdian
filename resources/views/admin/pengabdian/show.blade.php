@@ -84,6 +84,11 @@
 
                     {{-- Luaran Kegiatan --}}
                     <h5 class="detail-section-title">Luaran Kegiatan</h5>
+
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Total Luaran Direncanakan</small>
+                        <span class="font-weight-bold text-primary">{{ $pengabdian->jumlah_luaran_direncanakan }}</span>
+                    </div>
                     <div class="mb-3">
                         <small class="text-muted d-block">Luaran Wajib</small>
                         <span
@@ -128,7 +133,8 @@
                                                     <hr class="my-3">
                                                     <div>
                                                         <small class="text-muted d-block mb-1">Anggota Pencipta
-                                                            (Dosen)</small>
+                                                            (Dosen)
+                                                        </small>
                                                         @foreach ($luaran->detailHki->dosen as $dosenHki)
                                                             <span
                                                                 class="badge badge-info mr-1">{{ $dosenHki->nama }}</span>
@@ -209,7 +215,7 @@
                                 <div class="d-flex w-100 justify-content-between">
                                     <span>
                                         {{ $dana->nama_sumber }}
-                                        @if(strtolower($dana->jenis) == 'internal')
+                                        @if (strtolower($dana->jenis) == 'internal')
                                             <span class="badge badge-success ml-1">Internal</span>
                                         @elseif(strtolower($dana->jenis) == 'eksternal')
                                             <span class="badge badge-danger ml-1">Eksternal</span>

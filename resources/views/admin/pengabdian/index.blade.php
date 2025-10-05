@@ -151,7 +151,8 @@
                                     <th>Anggota Pengabdian</th>
                                     <th>Mahasiswa Yang Terlibat</th>
                                     <th>Mitra</th>
-                                    <th>Luaran</th>
+                                    <th>Jumlah Luaran Yang Direncanakan</th>
+                                    <th>Hasil Luaran Kegiatan PkM</th>
                                     <th class="text-right-numeric">Total Dana</th>
                                     <th class="aksi-column">Aksi</th>
                                 </tr>
@@ -272,6 +273,10 @@
                                             @else
                                                 -
                                             @endif
+                                        </td>
+
+                                        <td style="text-align: center; font-weight: bold;">
+                                            {{ $item->jumlah_luaran_direncanakan }}
                                         </td>
 
                                         {{-- =============================================== --}}

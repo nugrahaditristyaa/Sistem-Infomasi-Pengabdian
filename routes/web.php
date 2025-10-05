@@ -22,7 +22,7 @@ Route::get('/', function () {
 });
 
 Route::get('/login', [App\Http\Controllers\AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
@@ -59,12 +59,12 @@ Route::middleware(['auth:admin'])->group(function () {
 //                   AKHIR PERBAIKAN
 // ==========================================================
 
-
-// Staff InQA: KPI Management (tetap sama)
+// Staff InQA: KPI Management
 Route::middleware(['auth:admin', 'role:Staff InQA'])->group(function () {
     Route::prefix('inqa')->as('inqa.')->group(function () {
-        Route::resource('kpi', KpiController::class);
-        Route::get('kpi-monitoring', [KpiController::class, 'monitoring'])->name('kpi.monitoring');
-        Route::post('kpi-monitoring', [KpiController::class, 'storeMonitoring'])->name('kpi.monitoring.store');
+        Route::get('/dashboard', [\App\Http\Controllers\InQA\InQaController::class, 'dashboard'])->name('dashboard');
+        Route::resource('kpi', \App\Http\Controllers\InQA\InQaController::class);
+        Route::get('kpi-monitoring', [\App\Http\Controllers\InQA\InQaController::class, 'monitoring'])->name('kpi.monitoring');
+        Route::post('kpi-monitoring', [\App\Http\Controllers\InQA\InQaController::class, 'storeMonitoring'])->name('kpi.monitoring.store');
     });
 });

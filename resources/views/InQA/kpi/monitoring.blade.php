@@ -1,4 +1,4 @@
-@extends('admin.layouts.main')
+@extends('InQA.layouts.main')
 
 @section('content')
     <div class="container-fluid">
@@ -7,7 +7,7 @@
         </div>
         <div class="card mb-3">
             <div class="card-body">
-                <form method="POST" action="{{ route('admin.kpi.monitoring.store') }}">
+                <form method="POST" action="{{ route('inqa.kpi.store') }}">
                     @csrf
                     <div class="row g-3 align-items-end">
                         <div class="col-md-2">

@@ -14,7 +14,7 @@ class Kpi extends Model
 
     protected $fillable = [
         'kode',
-        'nama_indikator',
+        'indikator',
         'target',
         'satuan'
     ];

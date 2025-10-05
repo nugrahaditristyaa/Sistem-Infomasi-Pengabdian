@@ -153,6 +153,24 @@
                     @enderror
                 </div>
 
+                {{-- KODE TAMBAHAN DIMULAI DI SINI --}}
+                <div class="form-group">
+                    <label for="jumlah_luaran_direncanakan">
+                        Total Luaran Direncanakan (Sesuai Proposal) <span class="text-danger">*</span>
+                    </label>
+                    <input type="number" id="jumlah_luaran_direncanakan" name="jumlah_luaran_direncanakan"
+                        class="form-control @error('jumlah_luaran_direncanakan') is-invalid @enderror"
+                        value="{{ old('jumlah_luaran_direncanakan') }}"
+                        placeholder="Masukkan Jumlah Luaran Yang Direncanakan Contoh: 5" required>
+                    <small class="form-text text-muted">
+                        Masukkan total jumlah luaran (wajib + tambahan) yang dijanjikan di proposal awal.
+                    </small>
+                    @error('jumlah_luaran_direncanakan')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                {{-- KODE TAMBAHAN SELESAI --}}
+
             </div>
         </div>
 
@@ -298,6 +316,11 @@
                 @error('sumber_dana')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
+
+                <p class="small text-muted">
+                    Untuk pendanaan internal, catat pencairan dana Tahap I (70%) dan Tahap II (30%) sebagai dua baris
+                    terpisah dengan <strong>Nama Sumber</strong> yang sama.
+                </p>
                 <div id="sumber-dana-container">
                     @forelse (old('sumber_dana', []) as $index => $dana)
                         <div class="row sumber-dana-item mb-3">
@@ -957,6 +980,30 @@
                         const detailHkiContainer = $('#detail-hki');
                         detailHkiContainer.toggle(isHkiChecked);
                         detailHkiContainer.find('input, select').prop('required', isHkiChecked);
+
+                        // Clear all HKI form data when unchecked
+                        if (!isHkiChecked) {
+                            // Clear all text inputs
+                            detailHkiContainer.find('input[type="text"], input[type="date"]').val(
+                                '').removeClass('is-invalid');
+
+                            // Clear file input
+                            detailHkiContainer.find('input[type="file"]').val('');
+                            detailHkiContainer.find('.custom-file-label').removeClass('selected')
+                                .text('Pilih file...');
+
+                            // Clear Select2 dropdown (anggota dosen)
+                            const select2Element = detailHkiContainer.find('select[multiple]');
+                            if (select2Element.hasClass('select2-hidden-accessible')) {
+                                select2Element.val(null).trigger('change');
+                            } else {
+                                select2Element.val([]);
+                            }
+
+                            // Remove any error states
+                            detailHkiContainer.find('.invalid-feedback').hide();
+                            detailHkiContainer.find('.is-invalid').removeClass('is-invalid');
+                        }
 
                     }).filter(':checked').trigger('change');
                 },

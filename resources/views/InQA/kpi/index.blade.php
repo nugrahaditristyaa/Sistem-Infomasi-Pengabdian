@@ -1,13 +1,13 @@
-@extends('admin.layouts.main')
+@extends('InQA.layouts.main')
 
 @section('content')
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4>KPI</h4>
-            <a href="{{ route('admin.kpi.create') }}" class="btn btn-primary">Tambah</a>
+            <a href="{{ route('inqa.kpi.create') }}" class="btn btn-primary">Tambah</a>
         </div>
         <div class="mb-3">
-            <a href="{{ route('admin.kpi.monitoring') }}" class="btn btn-outline-secondary">Monitoring KPI</a>
+            <a href="{{ route('inqa.kpi.monitoring') }}" class="btn btn-outline-secondary">Monitoring KPI</a>
         </div>
         <div class="card">
             <div class="card-body table-responsive">

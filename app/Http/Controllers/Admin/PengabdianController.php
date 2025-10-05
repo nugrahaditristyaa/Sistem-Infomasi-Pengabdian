@@ -79,6 +79,7 @@ class PengabdianController extends Controller
             'nama_mitra'            => 'required|string|max:255',
             'lokasi_kegiatan'       => 'required|string|max:255',
             'tanggal_pengabdian'    => ['required', new ValidTanggal(2000, 'Tanggal Pengabdian')],
+            'jumlah_luaran_direncanakan' => 'required|integer|min:0',
             'ketua_nik'             => 'required|exists:dosen,nik',
             'dosen_ids'             => 'nullable|array',
             'dosen_ids.*'           => 'nullable|exists:dosen,nik|different:ketua_nik',
@@ -170,6 +171,7 @@ class PengabdianController extends Controller
                 'id_luaran_wajib' => $request->id_luaran_wajib,
                 'tanggal_pengabdian' => $request->tanggal_pengabdian,
                 'ketua_pengabdian' => $request->ketua_nik,
+                'jumlah_luaran_direncanakan' => $request->jumlah_luaran_direncanakan,
             ]);
 
             $dosenData = [$request->ketua_nik => ['status_anggota' => 'ketua']];
@@ -435,6 +437,7 @@ class PengabdianController extends Controller
                 'id_luaran_wajib' => $request->id_luaran_wajib,
                 'tanggal_pengabdian' => $request->tanggal_pengabdian,
                 'ketua_pengabdian' => $request->ketua_nik,
+                'jumlah_luaran_direncanakan' => $request->jumlah_luaran_direncanakan, 
             ]);
 
             $dosenData = [$request->ketua_nik => ['status_anggota' => 'ketua']];
