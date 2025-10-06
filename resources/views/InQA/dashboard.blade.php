@@ -19,9 +19,6 @@
                         @endforeach
                     </select>
                 </form>
-                <a href="{{ route('inqa.kpi.create') }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-                    <i class="fas fa-plus fa-sm text-white-50"></i> Tambah KPI
-                </a>
             </div>
         </div>
 

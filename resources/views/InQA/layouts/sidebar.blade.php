@@ -27,26 +27,12 @@
         KPI Management
     </div>
 
-    <!-- Nav Item - KPI -->
+    <!-- Nav Item - Data KPI -->
     <li class="nav-item {{ request()->routeIs('inqa.kpi.*') ? 'active' : '' }}">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseKpi"
-            aria-expanded="true" aria-controls="collapseKpi">
+        <a class="nav-link" href="{{ route('inqa.kpi.index') }}">
             <i class="fas fa-fw fa-chart-bar"></i>
-            <span>KPI</span>
+            <span>Data KPI</span>
         </a>
-        <div id="collapseKpi" class="collapse {{ request()->routeIs('inqa.kpi.*') ? 'show' : '' }}"
-            aria-labelledby="headingKpi" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Kelola KPI:</h6>
-                <a class="collapse-item {{ request()->routeIs('inqa.kpi.index') ? 'active' : '' }}"
-                    href="{{ route('inqa.kpi.index') }}">Daftar KPI</a>
-                <a class="collapse-item {{ request()->routeIs('inqa.kpi.create') ? 'active' : '' }}"
-                    href="{{ route('inqa.kpi.create') }}">Tambah KPI</a>
-                <div class="dropdown-divider"></div>
-                <a class="collapse-item {{ request()->routeIs('inqa.kpi.monitoring') ? 'active' : '' }}"
-                    href="{{ route('inqa.kpi.monitoring') }}">Monitoring KPI</a>
-            </div>
-        </div>
     </li>
 
     <!-- Divider -->

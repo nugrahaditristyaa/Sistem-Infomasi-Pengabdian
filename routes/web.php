@@ -63,8 +63,6 @@ Route::middleware(['auth:admin'])->group(function () {
 Route::middleware(['auth:admin', 'role:Staff InQA'])->group(function () {
     Route::prefix('inqa')->as('inqa.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\InQA\InQaController::class, 'dashboard'])->name('dashboard');
-        Route::resource('kpi', \App\Http\Controllers\InQA\InQaController::class);
-        Route::get('kpi-monitoring', [\App\Http\Controllers\InQA\InQaController::class, 'monitoring'])->name('kpi.monitoring');
-        Route::post('kpi-monitoring', [\App\Http\Controllers\InQA\InQaController::class, 'storeMonitoring'])->name('kpi.monitoring.store');
+        Route::resource('kpi', \App\Http\Controllers\Inqa\InqaKpiController::class);
     });
 });
