@@ -254,6 +254,81 @@
                     background: #a8a8a8;
                 }
 
+                /* Chart Scrollable Styles */
+                .chart-bar-scrollable {
+                    background: #f8f9fc;
+                }
+
+                .chart-bar-scrollable::-webkit-scrollbar {
+                    width: 8px;
+                }
+
+                .chart-bar-scrollable::-webkit-scrollbar-track {
+                    background: #e3e6f0;
+                    border-radius: 4px;
+                }
+
+                .chart-bar-scrollable::-webkit-scrollbar-thumb {
+                    background: #4e73df;
+                    border-radius: 4px;
+                }
+
+                .chart-bar-scrollable::-webkit-scrollbar-thumb:hover {
+                    background: #2e59d9;
+                }
+
+                /* Enhanced chart container */
+                .chart-container-enhanced {
+                    position: relative;
+                    transition: all 0.3s ease;
+                }
+
+                .chart-container-enhanced:hover {
+                    box-shadow: inset 0 0 10px rgba(78, 115, 223, 0.1);
+                }
+
+                /* Chart Container Toggle */
+                .chart-container {
+                    transition: all 0.4s ease-in-out;
+                    opacity: 1;
+                }
+
+                .chart-container.d-none {
+                    opacity: 0;
+                    transform: translateY(-20px);
+                }
+
+                /* Toggle Buttons */
+                .btn-group .btn {
+                    transition: all 0.2s ease;
+                    border-radius: 0.375rem !important;
+                }
+
+                .btn-group .btn:first-child {
+                    border-top-right-radius: 0 !important;
+                    border-bottom-right-radius: 0 !important;
+                }
+
+                .btn-group .btn:last-child {
+                    border-top-left-radius: 0 !important;
+                    border-bottom-left-radius: 0 !important;
+                }
+
+                .btn-group .btn.active {
+                    transform: scale(1.05);
+                    box-shadow: 0 2px 8px rgba(78, 115, 223, 0.3);
+                }
+
+                /* Badge Animation */
+                #currentViewBadge {
+                    transition: all 0.3s ease;
+                }
+
+                /* Chart Info Text */
+                #chartInfoText {
+                    transition: all 0.3s ease;
+                }
+
                 /* Responsive adjustments */
                 @media (max-width: 768px) {
                     .statistics-card {
@@ -295,7 +370,11 @@
                     }
 
                     .chart-bar {
-                        max-height: 300px !important;
+                        height: 350px !important;
+                    }
+
+                    .chart-bar-scrollable {
+                        max-height: 400px !important;
                     }
                 }
 
@@ -325,6 +404,11 @@
                     .statistics-card .badge {
                         font-size: 0.6rem !important;
                         padding: 0.2rem 0.4rem !important;
+                    }
+
+                    .chart-bar-scrollable {
+                        max-height: 300px !important;
+                        padding: 10px !important;
                     }
                 }
         </style>
@@ -601,36 +685,80 @@
                     </div>
                 </div>
 
-                <!-- [ 2. Rekap Pengabdian per Dosen ] (Grafik Batang Horizontal) -->
+                <!-- [ 2. Rekap Pengabdian per Dosen ] (Unified Chart with Toggle) -->
                 <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex align-items-center justify-content-between">
-                        <div>
-                            <h6 class="m-0 font-weight-bold text-primary">
-                                <i class="fas fa-chart-bar mr-2"></i>Rekap Pengabdian per Dosen
-                            </h6>
-                            @if ($filterYear !== 'all')
-                                <small class="text-muted">
-                                    <i class="fas fa-filter mr-1"></i>Tahun: {{ $filterYear }}
-                                </small>
-                            @endif
+                    <div class="card-header py-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-chart-bar mr-2"></i>Rekap Pengabdian per Dosen
+                                    <span id="currentViewBadge" class="badge badge-info ml-2">Top 5</span>
+                                </h6>
+                                @if ($filterYear !== 'all')
+                                    <small class="text-muted">
+                                        <i class="fas fa-filter mr-1"></i>Tahun: {{ $filterYear }}
+                                    </small>
+                                @endif
+                            </div>
+                            <div class="col-md-6 text-right">
+                                <div class="btn-group mr-2" role="group" aria-label="View Toggle">
+                                    <button id="viewTop5Btn" type="button" class="btn btn-sm btn-primary active"
+                                        title="Tampilkan 5 dosen teratas">
+                                        <i class="fas fa-trophy mr-1"></i>Top 5
+                                    </button>
+                                    <button id="viewAllBtn" type="button" class="btn btn-sm btn-outline-primary"
+                                        title="Tampilkan semua dosen">
+                                        <i class="fas fa-list mr-1"></i>Semua
+                                    </button>
+                                </div>
+                                <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-order="desc" title="Urutkan jumlah (tertinggi)">
+                                    <i class="fas fa-sort-amount-down"></i>
+                                </button>
+                            </div>
                         </div>
-                        <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-secondary"
-                            data-order="desc" title="Urutkan jumlah (tertinggi)">
-                            <i class="fas fa-sort-amount-down"></i>
-                        </button>
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <small id="chartInfoText" class="text-muted">
+                                    <i class="fas fa-info-circle mr-1"></i>Menampilkan 5 dosen dengan pengabdian terbanyak
+                                </small>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body">
                         @php
-                            $dosenCount = count($namaDosen ?? []);
-                            $canvasHeight = max(250, min(600, $dosenCount * 40));
+                            $allDosenCount = count($namaDosen ?? []);
+                            $top5DosenCount = min($allDosenCount, 5);
+                            $maxCanvasHeight = max(600, $allDosenCount * 60);
                         @endphp
-                        <div class="chart-bar" style="max-height: 500px; overflow-y: auto;">
-                            <div style="height: {{ $canvasHeight }}px;">
-                                <canvas id="dosenChart" width="400" height="{{ $canvasHeight }}"></canvas>
+
+                        <!-- Top 5 Chart Container -->
+                        <div id="top5ChartContainer" class="chart-container">
+                            <div class="chart-bar" style="height: {{ max(400, $top5DosenCount * 80) }}px;">
+                                <canvas id="dosenChart" width="100%"
+                                    height="{{ max(400, $top5DosenCount * 80) }}"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- All Data Chart Container -->
+                        <div id="allChartContainer" class="chart-container d-none">
+                            <div class="chart-bar-scrollable"
+                                style="max-height: 600px; overflow-y: auto; overflow-x: hidden; border: 1px solid #e3e6f0; border-radius: 8px; padding: 20px; background-color: #f8f9fc;">
+                                <div style="height: {{ $maxCanvasHeight }}px; min-width: 900px;">
+                                    <canvas id="dosenAllChart" width="100%" height="{{ $maxCanvasHeight }}"></canvas>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-scroll mr-1"></i>
+                                    <strong>Tips:</strong> Gunakan scroll untuk navigasi. Total: <span
+                                        class="font-weight-bold text-primary">{{ $allDosenCount }}</span> dosen
+                                </small>
                             </div>
                         </div>
                     </div>
                 </div>
+
 
                 <!-- [ 3. Distribusi Luaran ] (Grafik Treemap) -->
                 <div class="card shadow mb-4">
@@ -1010,7 +1138,11 @@
                     return sortOrder === 'asc' ? a.value - b.value : b.value - a.value;
                 });
 
-                // Pisahkan kembali setelah sort
+                // Batasi hanya 5 dosen terbanyak
+                const maxDisplay = 5;
+                combinedData = combinedData.slice(0, maxDisplay);
+
+                // Pisahkan kembali setelah sort dan limit
                 let sortedLabels = combinedData.map(item => item.name);
                 let sortedData = combinedData.map(item => item.value);
 
@@ -1039,14 +1171,18 @@
                             x: {
                                 beginAtZero: true,
                                 ticks: {
-                                    precision: 0
+                                    precision: 0,
+                                    font: {
+                                        size: 12
+                                    }
                                 }
                             },
                             y: {
                                 ticks: {
                                     font: {
-                                        size: 11
-                                    }
+                                        size: 14
+                                    },
+                                    maxTicksLimit: 5
                                 }
                             }
                         },
@@ -1066,10 +1202,10 @@
                                 color: '#2d3e50',
                                 anchor: 'end',
                                 align: 'right',
-                                offset: 4,
+                                offset: 8,
                                 font: {
                                     weight: 'bold',
-                                    size: 11
+                                    size: 14
                                 },
                                 formatter: function(value) {
                                     return value;
@@ -1078,7 +1214,10 @@
                         },
                         layout: {
                             padding: {
-                                right: 30 // Padding untuk angka di kanan
+                                right: 50, // Padding lebih besar untuk angka di kanan
+                                top: 10,
+                                bottom: 10,
+                                left: 10
                             }
                         }
                     }
@@ -1087,6 +1226,195 @@
 
             // Buat chart pertama kali (default descending)
             createDosenChart('desc');
+
+            // 2b. Grafik Rekap Lengkap Pengabdian per Dosen (All Data with Scroll)
+            let dosenAllChart;
+            let originalAllDosenData = {
+                labels: @json($namaDosen),
+                data: @json($jumlahPengabdianDosen)
+            };
+
+            // Function untuk membuat chart semua dosen
+            function createDosenAllChart(sortOrder = 'desc') {
+                // Kombinasi data untuk sorting
+                let combinedAllData = originalAllDosenData.labels.map((label, index) => ({
+                    name: label,
+                    value: originalAllDosenData.data[index]
+                }));
+
+                // Sort data
+                combinedAllData.sort((a, b) => {
+                    return sortOrder === 'asc' ? a.value - b.value : b.value - a.value;
+                });
+
+                // Pisahkan kembali setelah sort (tampilkan semua data)
+                let sortedAllLabels = combinedAllData.map(item => item.name);
+                let sortedAllData = combinedAllData.map(item => item.value);
+
+                // Destroy chart lama jika ada
+                if (dosenAllChart) {
+                    dosenAllChart.destroy();
+                }
+
+                dosenAllChart = new Chart(document.getElementById("dosenAllChart"), {
+                    type: 'bar',
+                    data: {
+                        labels: sortedAllLabels,
+                        datasets: [{
+                            label: "Jumlah Pengabdian",
+                            data: sortedAllData,
+                            backgroundColor: '#4e73df',
+                            borderRadius: 6,
+                            borderSkipped: false,
+                        }],
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        maintainAspectRatio: false,
+                        responsive: true,
+                        interaction: {
+                            intersect: false,
+                            mode: 'nearest'
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0,
+                                    font: {
+                                        size: 12
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    font: {
+                                        size: 12
+                                    },
+                                    maxRotation: 0,
+                                    minRotation: 0
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: '#4e73df',
+                                borderWidth: 1,
+                                cornerRadius: 6,
+                                displayColors: true,
+                                callbacks: {
+                                    title: function(context) {
+                                        return context[0].label;
+                                    },
+                                    label: function(context) {
+                                        return `Jumlah Pengabdian: ${context.parsed.x}`;
+                                    },
+                                    afterLabel: function(context) {
+                                        const totalPengabdian = sortedAllData.reduce((a, b) => a + b, 0);
+                                        const percentage = ((context.parsed.x / totalPengabdian) * 100).toFixed(1);
+                                        return `Persentase: ${percentage}%`;
+                                    }
+                                }
+                            },
+                            datalabels: {
+                                display: true,
+                                color: '#2d3e50',
+                                anchor: 'end',
+                                align: 'right',
+                                offset: 8,
+                                font: {
+                                    weight: 'bold',
+                                    size: 11
+                                },
+                                formatter: function(value) {
+                                    return value > 0 ? value : '';
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                right: 60, // Extra padding untuk data labels
+                                top: 15,
+                                bottom: 15,
+                                left: 15
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Buat chart semua dosen pertama kali
+            createDosenAllChart('desc');
+
+            // Toggle functionality untuk switch antara Top 5 dan All Data
+            const viewTop5Btn = document.getElementById('viewTop5Btn');
+            const viewAllBtn = document.getElementById('viewAllBtn');
+            const top5Container = document.getElementById('top5ChartContainer');
+            const allContainer = document.getElementById('allChartContainer');
+            const currentViewBadge = document.getElementById('currentViewBadge');
+            const chartInfoText = document.getElementById('chartInfoText');
+
+            // Function to switch to Top 5 view
+            function switchToTop5() {
+                // Update buttons
+                viewTop5Btn.classList.remove('btn-outline-primary');
+                viewTop5Btn.classList.add('btn-primary', 'active');
+                viewAllBtn.classList.remove('btn-primary', 'active');
+                viewAllBtn.classList.add('btn-outline-primary');
+
+                // Update badge and info text
+                currentViewBadge.textContent = 'Top 5';
+                currentViewBadge.className = 'badge badge-info ml-2';
+                chartInfoText.innerHTML =
+                    '<i class="fas fa-info-circle mr-1"></i>Menampilkan 5 dosen dengan pengabdian terbanyak';
+
+                // Switch containers
+                allContainer.classList.add('d-none');
+                top5Container.classList.remove('d-none');
+            }
+
+            // Function to switch to All Data view
+            function switchToAll() {
+                // Update buttons
+                viewAllBtn.classList.remove('btn-outline-primary');
+                viewAllBtn.classList.add('btn-primary', 'active');
+                viewTop5Btn.classList.remove('btn-primary', 'active');
+                viewTop5Btn.classList.add('btn-outline-primary');
+
+                // Update badge and info text
+                currentViewBadge.textContent = 'Semua Data';
+                currentViewBadge.className = 'badge badge-success ml-2';
+                const totalDosen = @json(count($namaDosen ?? []));
+                chartInfoText.innerHTML =
+                    `<i class="fas fa-scroll mr-1"></i>Menampilkan semua dosen dengan scroll (Total: ${totalDosen} dosen)`;
+
+                // Switch containers
+                top5Container.classList.add('d-none');
+                allContainer.classList.remove('d-none');
+            }
+
+            // Event listeners for toggle buttons
+            if (viewTop5Btn && viewAllBtn) {
+                viewTop5Btn.addEventListener('click', function() {
+                    switchToTop5();
+                });
+
+                viewAllBtn.addEventListener('click', function() {
+                    switchToAll();
+                });
+            }
 
             // Event handler untuk tombol sort (dengan error handling)
             const dosenSortBtn = document.getElementById('dosenSortBtn');
@@ -1107,8 +1435,12 @@
                         this.setAttribute('title', 'Urutkan jumlah (tertinggi)');
                     }
 
-                    // Update chart
-                    createDosenChart(newOrder);
+                    // Update chart berdasarkan view yang aktif
+                    if (!top5Container.classList.contains('d-none')) {
+                        createDosenChart(newOrder);
+                    } else {
+                        createDosenAllChart(newOrder);
+                    }
                 });
             }
 

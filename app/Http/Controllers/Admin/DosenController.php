@@ -36,7 +36,7 @@ class DosenController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nik' => 'required|digits:16|unique:dosen,nik',
+            'nik' => 'required|string|max:8|unique:dosen,nik',
             'nama' => 'required|string|max:255',
             'nidn' => 'nullable|digits:10|unique:dosen,nidn',
             'jabatan' => 'nullable|string|max:100',
@@ -45,7 +45,7 @@ class DosenController extends Controller
             'email' => 'required|email|unique:dosen,email|max:255',
         ], [
             'nik.required' => 'NIK wajib diisi.',
-            'nik.digits' => 'NIK harus 16 digit angka.',
+            'nik.digits' => 'NIK harus terdiri dari 8 digit.',
             'nik.unique' => 'NIK ini sudah terdaftar.',
             'nama.required' => 'Nama wajib diisi.',
             'nidn.digits' => 'NIDN harus 10 digit angka.',
@@ -94,7 +94,8 @@ class DosenController extends Controller
         $request->validate([
             'nik' => [
                 'required',
-                'digits:16',
+                'string',
+                'max:8',
                 Rule::unique('dosen', 'nik')->ignore($dosen->nik, 'nik'),
             ],
             'nama' => 'required|string|max:255',
@@ -114,7 +115,7 @@ class DosenController extends Controller
             ],
         ], [
             'nik.required' => 'NIK wajib diisi.',
-            'nik.digits' => 'NIK harus 16 digit angka.',
+            'nik.digits' => 'NIK harus 8 digit angka.',
             'nik.unique' => 'NIK ini sudah terdaftar.',
             'nama.required' => 'Nama wajib diisi.',
             'nidn.digits' => 'NIDN harus 10 digit angka.',

@@ -3,104 +3,50 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\Dosen;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
 class DosenSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public function run()
     {
-        // 1. Mengosongkan tabel dengan aman
-        Schema::disableForeignKeyConstraints();
-        DB::table('dosen')->truncate();
-        Schema::enableForeignKeyConstraints();
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        Dosen::truncate();
 
-        // 2. Data dosen dummy untuk testing
-        $dosenData = [
-            [
-                'nama' => 'Dr. Ahmad Suharto',
-                'nik' => '3507123456789012',
-                'nidn' => '0012345678',
-                'jabatan' => 'Profesor',
-                'prodi' => 'Teknik Informatika',
-                'bidang_keahlian' => 'Kecerdasan Buatan',
-                'email' => 'ahmad.suharto@kampus.ac.id',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama' => 'Dr. Sari Wulandari',
-                'nik' => '3507123456789013',
-                'nidn' => '0012345679',
-                'jabatan' => 'Lektor Kepala',
-                'prodi' => 'Sistem Informasi',
-                'bidang_keahlian' => 'Basis Data',
-                'email' => 'sari.wulandari@kampus.ac.id',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama' => 'M. Budi Santoso, S.Kom., M.T.',
-                'nik' => '3507123456789014',
-                'nidn' => '0012345680',
-                'jabatan' => 'Lektor',
-                'prodi' => 'Teknik Informatika',
-                'bidang_keahlian' => 'Jaringan Komputer',
-                'email' => 'budi.santoso@kampus.ac.id',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama' => 'Indah Permatasari, S.Kom., M.Kom.',
-                'nik' => '3507123456789015',
-                'nidn' => '0012345681',
-                'jabatan' => 'Asisten Ahli',
-                'prodi' => 'Sistem Informasi',
-                'bidang_keahlian' => 'Pengembangan Web',
-                'email' => 'indah.permatasari@kampus.ac.id',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama' => 'Agus Setiawan, S.Kom., M.T.',
-                'nik' => '3507123456789016',
-                'nidn' => '0012345682',
-                'jabatan' => 'Lektor',
-                'prodi' => 'Teknik Informatika',
-                'bidang_keahlian' => 'Keamanan Siber',
-                'email' => 'agus.setiawan@kampus.ac.id',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ];
+        $csvFile = fopen(database_path("seeders/data/data_dosen.csv"), "r");
 
-        // Generate lebih banyak data dosen dummy
-        $jabatan = ['Lektor', 'Asisten Ahli', 'Profesor', 'Lektor Kepala'];
-        $prodi = ['Teknik Informatika', 'Sistem Informasi', 'Manajemen Informatika', 'Ilmu Komputer'];
-        $keahlian = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Pengembangan Web', 'Basis Data', 'Keamanan Siber', 'Machine Learning', 'Data Science', 'Mobile Development'];
+        $firstline = true;
+        while (($data = fgetcsv($csvFile, 2000, ",")) !== FALSE) {
+            if (!$firstline) {
+                $prodi = null;
+                if (isset($data[6]) && $data[6] == '71') {
+                    $prodi = 'Informatika';
+                } elseif (isset($data[6]) && $data[6] == '72') {
+                    $prodi = 'Sistem Informasi';
+                }
 
-        for ($i = 6; $i <= 20; $i++) {
-            $nama = 'Dosen ' . $i;
-            $dosenData[] = [
-                'nama' => $nama,
-                'nik' => '35' . str_pad(mt_rand(1, 999999999999999), 15, '0', STR_PAD_LEFT),
-                'nidn' => '00' . str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT),
-                'jabatan' => $jabatan[array_rand($jabatan)],
-                'prodi' => $prodi[array_rand($prodi)],
-                'bidang_keahlian' => $keahlian[array_rand($keahlian)],
-                'email' => Str::lower(str_replace([' ', '.'], '', $nama)) . '@kampus.ac.id',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+                $nik = $data[5] ?? null;
+                $nama = isset($data[8]) ? trim($data[8]) : null; // Ambil nama
+
+                // ==========================================================
+                //    TAMBAHKAN PENGECEKAN NAMA TIDAK KOSONG DI SINI
+                // ==========================================================
+                if ($prodi && !empty($nik) && !empty($nama)) {
+                    Dosen::firstOrCreate(
+                        ['nik' => $nik],
+                        [
+                            "nama"  => $nama,
+                            "nidn"  => $data[9],
+                            "prodi" => $prodi,
+                            "email" => $nik . '@example.com',
+                        ]
+                    );
+                }
+            }
+            $firstline = false;
         }
 
-        // 3. Masukkan semua data dosen ke database
-        DB::table('dosen')->insert($dosenData);
-
-        $this->command->info(count($dosenData) . ' data dosen berhasil di-seed.');
+        fclose($csvFile);
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
     }
 }
