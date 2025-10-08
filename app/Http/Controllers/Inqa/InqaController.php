@@ -569,6 +569,9 @@ class InQaController extends Controller
                     })
                     ->count();
 
+            case 'IKT.I.5.g': // Persentase Pengabdian Pendidikan/Pelatihan
+                return $this->calculateEducationalServicePercentage($filterYear);
+
             default:
                 // Untuk KPI lain, gunakan data monitoring jika ada
                 $monitoring = MonitoringKpi::where('id_kpi', $kpi->id_kpi)
@@ -579,5 +582,62 @@ class InQaController extends Controller
 
                 return $monitoring ?? 0;
         }
+    }
+
+    /**
+     * Hitung persentase pengabdian yang judulnya mengandung kata kunci pendidikan/pelatihan
+     * 
+     * @param string|int $filterYear
+     * @return float
+     */
+    private function calculateEducationalServicePercentage($filterYear)
+    {
+        // Kata kunci untuk pengabdian pendidikan/pelatihan
+        $keywords = [
+            'siswa',
+            'sma',
+            'pembelajaran',
+            'pelatihan',
+            'latihan',
+            'pembekalan',
+            'pendampingan',
+            'sd',
+            'pengenalan',
+            'penulisan',
+            'pemanfaatan',
+            'peningkatan',
+            'uji',
+            'kompetisi',
+            'sekolah'
+        ];
+
+        $baseQuery = Pengabdian::query();
+
+        // Filter by year if not 'all'
+        if ($filterYear !== 'all') {
+            $baseQuery->whereYear('tanggal_pengabdian', $filterYear);
+        }
+
+        // Hitung total pengabdian
+        $totalPengabdian = $baseQuery->count();
+
+        if ($totalPengabdian == 0) {
+            return 0;
+        }
+
+        // Hitung pengabdian yang mengandung kata kunci
+        $educationalQuery = clone $baseQuery;
+        $educationalQuery->where(function ($query) use ($keywords) {
+            foreach ($keywords as $keyword) {
+                $query->orWhere('judul_pengabdian', 'LIKE', "%{$keyword}%");
+            }
+        });
+
+        $educationalCount = $educationalQuery->count();
+
+        // Hitung persentase
+        $percentage = ($educationalCount / $totalPengabdian) * 100;
+
+        return round($percentage, 2);
     }
 }

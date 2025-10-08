@@ -187,6 +187,61 @@
 
         </div>
 
+        <!-- KPI IKT.I.5.g Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-left-success shadow h-100 py-3">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    KPI IKT.I.5.g - Pengabdian Pendidikan/Pelatihan
+                                    @if ($filterYear !== 'all')
+                                        <small class="text-lowercase">(Tahun {{ $filterYear }})</small>
+                                    @endif
+                                </div>
+                                @php
+                                    $educationalKpi = collect($kpiRadarData)->firstWhere('kode', 'IKT.I.5.g');
+                                    $actualPercentage = $educationalKpi ? $educationalKpi['capaian'] : 0;
+                                    $targetPercentage = 5; // Target 5%
+                                    $achievement =
+                                        $targetPercentage > 0 ? ($actualPercentage / $targetPercentage) * 100 : 0;
+                                @endphp
+                                <div class="h5 mb-2 font-weight-bold text-gray-800">
+                                    {{ number_format($actualPercentage, 2) }}%
+                                    <small class="text-muted">(Target: {{ $targetPercentage }}%)</small>
+                                    @if ($achievement >= 100)
+                                        <span class="badge badge-success ml-2">Tercapai</span>
+                                    @elseif ($achievement >= 75)
+                                        <span class="badge badge-warning ml-2">Mendekati Target</span>
+                                    @else
+                                        <span class="badge badge-danger ml-2">Belum Tercapai</span>
+                                    @endif
+                                </div>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar 
+                                        @if ($achievement >= 100) bg-success
+                                        @elseif ($achievement >= 75) bg-warning
+                                        @else bg-danger @endif
+                                    "
+                                        style="width: {{ min($achievement, 100) }}%"></div>
+                                </div>
+                                <div class="text-xs text-muted">
+                                    <strong>Metode:</strong> Persentase pengabdian dengan kata kunci pendidikan (siswa, sma,
+                                    pembelajaran, pelatihan, dll.)
+                                    <br>
+                                    <strong>Rumus:</strong> (Jumlah PkM dengan keyword / Total PkM) × 100%
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- KPI Radar Chart Row -->
         <div class="row">
             <div class="col-12">
