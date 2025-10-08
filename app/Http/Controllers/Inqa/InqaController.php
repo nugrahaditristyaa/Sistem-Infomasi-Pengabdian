@@ -305,6 +305,9 @@ class InQaController extends Controller
             'mahasiswa_sistem_informasi' => $mahasiswaSistemInformasi,
         ];
 
+        // KPI Radar Chart Data
+        $kpiRadarData = $this->getKpiRadarData($filterYear);
+
         return view('inqa.dashboard', compact(
             'totalKpi',
             'totalMonitoring',
@@ -313,7 +316,8 @@ class InQaController extends Controller
             'recentMonitoring',
             'stats',
             'filterYear',
-            'availableYears'
+            'availableYears',
+            'kpiRadarData'
         ));
     }
 
@@ -469,6 +473,111 @@ class InQaController extends Controller
                 ->with('success', 'Data monitoring KPI berhasil ditambahkan');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get KPI Radar Chart Data
+     *
+     * @param string|int $filterYear
+     * @return array
+     */
+    private function getKpiRadarData($filterYear)
+    {
+        // Ambil semua KPI
+        $kpis = Kpi::orderBy('kode')->get();
+
+        $radarData = [];
+
+        foreach ($kpis as $kpi) {
+            // Hitung capaian berdasarkan data pengabdian
+            $capaian = $this->calculateKpiAchievement($kpi, $filterYear);
+
+            // Hitung persentase capaian (capaian/target * 100)
+            $persentaseCapaian = $kpi->target > 0 ? ($capaian / $kpi->target * 100) : 0;
+
+            // Batasi maksimal 100%
+            $persentaseCapaian = min($persentaseCapaian, 100);
+
+            $radarData[] = [
+                'kode' => $kpi->kode,
+                'indikator' => $kpi->indikator,
+                'target' => $kpi->target,
+                'capaian' => $capaian,
+                'persentase' => round($persentaseCapaian, 1),
+                'satuan' => $kpi->satuan,
+                'status' => $persentaseCapaian >= 100 ? 'Tercapai' : ($persentaseCapaian >= 75 ? 'Hampir Tercapai' : 'Belum Tercapai')
+            ];
+        }
+
+        return $radarData;
+    }
+
+    /**
+     * Calculate KPI Achievement based on Pengabdian data
+     *
+     * @param Kpi $kpi
+     * @param string|int $filterYear
+     * @return float
+     */
+    private function calculateKpiAchievement($kpi, $filterYear)
+    {
+        $baseQuery = Pengabdian::query();
+
+        // Filter by year if not 'all'
+        if ($filterYear !== 'all') {
+            $baseQuery->whereYear('tanggal_pengabdian', $filterYear);
+        }
+
+        // Simulasi perhitungan capaian berdasarkan kode KPI
+        // Ini bisa disesuaikan dengan logika bisnis yang sesungguhnya
+        switch ($kpi->kode) {
+            case 'KPI001': // Jumlah Pengabdian
+                return $baseQuery->count();
+
+            case 'KPI002': // Jumlah Dosen Terlibat
+                return DB::table('pengabdian_dosen')
+                    ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                    ->when($filterYear !== 'all', function ($query) use ($filterYear) {
+                        return $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
+                    })
+                    ->distinct('pengabdian_dosen.nik')
+                    ->count();
+
+            case 'KPI003': // Jumlah Mahasiswa Terlibat
+                return DB::table('pengabdian_mahasiswa')
+                    ->join('pengabdian', 'pengabdian_mahasiswa.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                    ->when($filterYear !== 'all', function ($query) use ($filterYear) {
+                        return $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
+                    })
+                    ->distinct('pengabdian_mahasiswa.nim')
+                    ->count();
+
+            case 'KPI004': // Jumlah Mitra
+                return DB::table('pengabdian')
+                    ->join('mitra', 'pengabdian.id_pengabdian', '=', 'mitra.id_pengabdian')
+                    ->when($filterYear !== 'all', function ($query) use ($filterYear) {
+                        return $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
+                    })
+                    ->count();
+
+            case 'KPI005': // Jumlah Luaran
+                return DB::table('luaran')
+                    ->join('pengabdian', 'luaran.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                    ->when($filterYear !== 'all', function ($query) use ($filterYear) {
+                        return $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
+                    })
+                    ->count();
+
+            default:
+                // Untuk KPI lain, gunakan data monitoring jika ada
+                $monitoring = MonitoringKpi::where('id_kpi', $kpi->id_kpi)
+                    ->when($filterYear !== 'all', function ($query) use ($filterYear) {
+                        return $query->where('tahun', $filterYear);
+                    })
+                    ->sum('nilai_capai');
+
+                return $monitoring ?? 0;
         }
     }
 }

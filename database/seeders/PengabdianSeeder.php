@@ -14,20 +14,17 @@ class PengabdianSeeder extends Seeder
     public function run()
     {
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-
-        // Kosongkan tabel-tabel yang akan diisi oleh seeder ini
         Pengabdian::truncate();
         DB::table('pengabdian_dosen')->truncate();
         DB::table('pengabdian_mahasiswa')->truncate();
         DB::table('sumber_dana')->truncate();
         DB::table('mitra')->truncate();
 
-        // Ambil semua data dosen dari database dan urutkan dari nama terpanjang
         $sortedDosen = Dosen::all()->sortByDesc(function ($dosen) {
             return strlen($dosen->nama);
         });
 
-        $csvFile = fopen(database_path("seeders/data/data_pengabdian.csv"), "r");
+        $csvFile = fopen(database_path("seeders/data/data_pengabdian_fti.csv"), "r");
 
         $firstline = true;
         while (($data = fgetcsv($csvFile, 2000, ",")) !== FALSE) {
@@ -35,10 +32,15 @@ class PengabdianSeeder extends Seeder
                 $pengabdian = Pengabdian::create([
                     "tanggal_pengabdian" => Carbon::parse($data[2])->format('Y-m-d'),
                     "judul_pengabdian"   => $data[3],
-                    "id_luaran_wajib"    => 1, // Sesuaikan jika perlu
+                    "id_luaran_wajib"    => 1,
                 ]);
 
-                // Proses Dosen (Ketua & Anggota) dengan logika pencocokan
+                if($pengabdian) {
+                    $pengabdian->luaran()->create([
+                        'id_jenis_luaran' => 1,
+                    ]);
+                }
+
                 if (!empty($data[8])) {
                     $stringDosenDariCsv = $data[8];
                     $dosenDitemukan = [];
@@ -61,7 +63,6 @@ class PengabdianSeeder extends Seeder
                     }
                 }
 
-                // Proses Mahasiswa
                 if (!empty($data[10])) {
                     $mahasiswaNames = explode(',', $data[10]);
                     $mahasiswaNims = explode(',', $data[11]);
@@ -80,18 +81,14 @@ class PengabdianSeeder extends Seeder
                     }
                 }
 
-                // Proses Sumber Dana
                 $pengabdian->sumberDana()->create([
                     'jenis'       => $data[7],
                     'nama_sumber' => $data[5],
                     'jumlah_dana' => (int) preg_replace('/[^0-9]/', '', $data[4])
                 ]);
 
-                // Proses Mitra
                 if (!empty($data[13])) {
-                     $pengabdian->mitra()->create([
-                        'nama_mitra' => $data[13]
-                    ]);
+                     $pengabdian->mitra()->create(['nama_mitra' => $data[13]]);
                 }
             }
             $firstline = false;

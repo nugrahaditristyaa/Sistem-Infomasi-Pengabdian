@@ -13,6 +13,8 @@ class InqaKpiController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+
     public function index()
     {
         try {
@@ -84,12 +86,12 @@ class InqaKpiController extends Controller
             $kpi = Kpi::findOrFail($id);
 
             $request->validate([
-                'nama_indikator' => 'required|string|max:255',
+                'indikator' => 'required|string|max:255',
                 'target' => 'required|numeric|min:0',
                 'satuan' => 'required|string|max:50',
             ], [
-                'nama_indikator.required' => 'Nama indikator wajib diisi.',
-                'nama_indikator.max' => 'Nama indikator maksimal 255 karakter.',
+                'indikator.required' => 'Nama indikator wajib diisi.',
+                'indikator.max' => 'Nama indikator maksimal 255 karakter.',
                 'target.required' => 'Target wajib diisi.',
                 'target.numeric' => 'Target harus berupa angka.',
                 'target.min' => 'Target tidak boleh kurang dari 0.',
@@ -99,7 +101,7 @@ class InqaKpiController extends Controller
 
             DB::beginTransaction();
 
-            $kpi->nama_indikator = trim($request->nama_indikator);
+            $kpi->indikator = trim($request->indikator);
             $kpi->target = $request->target;
             $kpi->satuan = trim($request->satuan);
             $kpi->save();
@@ -116,6 +118,84 @@ class InqaKpiController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error in InqaKpiController@update: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat memperbarui KPI.')
+                ->withInput();
+        }
+    }
+
+    /**
+     * Update KPI by code (for AJAX modal form)
+     */
+    public function updateByCode(Request $request, string $kode)
+    {
+        try {
+            $kpi = Kpi::where('kode', $kode)->firstOrFail();
+
+            $request->validate([
+                'indikator' => 'required|string|max:500',
+                'target' => 'required|numeric|min:0',
+                'satuan' => 'required|string|max:50',
+            ], [
+                'indikator.required' => 'Nama indikator wajib diisi.',
+                'indikator.max' => 'Nama indikator maksimal 500 karakter.',
+                'target.required' => 'Target (Angka) wajib diisi.',
+                'target.numeric' => 'Target (Angka) harus berupa angka.',
+                'target.min' => 'Target (Angka) tidak boleh kurang dari 0.',
+                'satuan.required' => 'Satuan wajib diisi.',
+                'satuan.max' => 'Satuan maksimal 50 karakter.',
+            ]);
+
+            DB::beginTransaction();
+
+            $kpi->indikator = trim($request->indikator);
+            $kpi->target = $request->target;
+            $kpi->satuan = trim($request->satuan);
+            $kpi->save();
+
+            DB::commit();
+
+            // Return JSON response for AJAX
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'KPI berhasil diperbarui.',
+                    'data' => [
+                        'kode' => $kpi->kode,
+                        'indikator' => $kpi->indikator,
+                        'target' => $kpi->target,
+                        'satuan' => $kpi->satuan
+                    ]
+                ]);
+            }
+
+            return redirect()->route('inqa.kpi.index')
+                ->with('success', 'KPI berhasil diperbarui.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terdapat kesalahan dalam pengisian form.',
+                    'errors' => $e->validator->errors()
+                ], 422);
+            }
+
+            return redirect()->back()
+                ->withErrors($e->validator)
+                ->withInput();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error in InqaKpiController@updateByCode: ' . $e->getMessage());
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat memperbarui KPI.'
+                ], 500);
+            }
+
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan saat memperbarui KPI.')
                 ->withInput();

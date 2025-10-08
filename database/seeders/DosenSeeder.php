@@ -13,32 +13,30 @@ class DosenSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         Dosen::truncate();
 
-        $csvFile = fopen(database_path("seeders/data/data_dosen.csv"), "r");
+        $csvFile = fopen(database_path("seeders/data/data_dosen_fti.csv"), "r");
 
         $firstline = true;
-        while (($data = fgetcsv($csvFile, 2000, ",")) !== FALSE) {
+        while (($data = fgetcsv($csvFile, 2000, ";")) !== FALSE) { // Menggunakan pemisah titik koma (;)
             if (!$firstline) {
+                // Mapping prodi berdasarkan kode
                 $prodi = null;
-                if (isset($data[6]) && $data[6] == '71') {
+                if (isset($data[1]) && $data[1] == '71') {
                     $prodi = 'Informatika';
-                } elseif (isset($data[6]) && $data[6] == '72') {
+                } elseif (isset($data[1]) && $data[1] == '72') {
                     $prodi = 'Sistem Informasi';
                 }
 
-                $nik = $data[5] ?? null;
-                $nama = isset($data[8]) ? trim($data[8]) : null; // Ambil nama
+                $nik = $data[0] ?? null;
+                $nama = isset($data[3]) ? trim($data[3]) : null;
 
-                // ==========================================================
-                //    TAMBAHKAN PENGECEKAN NAMA TIDAK KOSONG DI SINI
-                // ==========================================================
                 if ($prodi && !empty($nik) && !empty($nama)) {
                     Dosen::firstOrCreate(
                         ['nik' => $nik],
                         [
                             "nama"  => $nama,
-                            "nidn"  => $data[9],
+                            "nidn"  => $data[4],
                             "prodi" => $prodi,
-                            "email" => $nik . '@example.com',
+                            "email" => str_replace(' ', '.', strtolower($nama)) . '@example.com',
                         ]
                     );
                 }

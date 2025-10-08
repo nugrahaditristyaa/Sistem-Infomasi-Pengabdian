@@ -64,5 +64,8 @@ Route::middleware(['auth:admin', 'role:Staff InQA'])->group(function () {
     Route::prefix('inqa')->as('inqa.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\InQA\InQaController::class, 'dashboard'])->name('dashboard');
         Route::resource('kpi', \App\Http\Controllers\Inqa\InqaKpiController::class);
+
+        // buat route khusus untuk update KPI berdasarkan kode (untuk modal AJAX)
+        Route::put('kpi/update/{kode}', [\App\Http\Controllers\Inqa\InqaKpiController::class, 'updateByCode'])->name('kpi.updateByCode');
     });
 });

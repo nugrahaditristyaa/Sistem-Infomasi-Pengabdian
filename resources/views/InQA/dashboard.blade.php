@@ -13,7 +13,7 @@
                     <select name="year" class="form-control form-control-sm" onchange="this.form.submit()">
                         <option value="all" {{ $filterYear == 'all' ? 'selected' : '' }}>Semua Tahun</option>
                         @foreach ($availableYears as $year)
-                            <option value="{{ $year }}" {{ $filterYear == $year ? 'selected' : '' }}>
+                            <option value="{{ $year }}" {{ $filterYear == $year ? 'selected' : '2024' }}>
                                 {{ $year }}
                             </option>
                         @endforeach
@@ -186,5 +186,276 @@
 
 
         </div>
+
+        <!-- KPI Radar Chart Row -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-radar-chart mr-2"></i>Capaian KPI
+                            @if ($filterYear !== 'all')
+                                <small class="text-muted">(Tahun {{ $filterYear }})</small>
+                            @endif
+                        </h6>
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <span class="badge badge-info mr-2">
+                                    <i class="fas fa-sync-alt mr-1"></i>Target Dinamis
+                                </span>
+                                <small class="text-muted">
+                                    Target dapat diubah secara real-time
+                                </small>
+                            </div>
+                            <a href="{{ route('inqa.kpi.index') }}" class="btn btn-sm btn-primary" data-toggle="tooltip"
+                                title="Klik untuk mengubah target KPI">
+                                <i class="fas fa-edit mr-1"></i>Edit Target KPI
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Radar Chart -->
+                            <div class="col-lg-8">
+                                <div class="chart-area">
+                                    <canvas id="kpiRadarChart" width="100%" height="50"></canvas>
+                                </div>
+                            </div>
+                            <!-- KPI Legend -->
+                            <div class="col-lg-4">
+                                <h6 class="font-weight-bold text-primary mb-3">Detail Capaian KPI</h6>
+                                <div class="kpi-legend" style="max-height: 400px; overflow-y: auto;">
+                                    @foreach ($kpiRadarData as $index => $kpi)
+                                        <div class="kpi-item mb-3 p-3 border rounded"
+                                            style="background-color: {{ $kpi['persentase'] >= 100 ? '#d4edda' : ($kpi['persentase'] >= 75 ? '#fff3cd' : '#f8d7da') }}">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="mb-1 font-weight-bold text-dark">{{ $kpi['kode'] }}</h6>
+                                                <span
+                                                    class="badge badge-{{ $kpi['persentase'] >= 100 ? 'success' : ($kpi['persentase'] >= 75 ? 'warning' : 'danger') }}">
+                                                    {{ $kpi['persentase'] }}%
+                                                </span>
+                                            </div>
+                                            <p class="mb-2 text-dark small">{{ $kpi['indikator'] }}</p>
+                                            <div class="row text-sm">
+                                                <div class="col-6">
+                                                    <strong>Target:</strong><br>
+                                                    <span class="text-primary">{{ number_format($kpi['target']) }}
+                                                        {{ $kpi['satuan'] }}</span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <strong>Capaian:</strong><br>
+                                                    <span class="text-success">{{ number_format($kpi['capaian']) }}
+                                                        {{ $kpi['satuan'] }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="progress mt-2" style="height: 6px;">
+                                                <div class="progress-bar bg-{{ $kpi['persentase'] >= 100 ? 'success' : ($kpi['persentase'] >= 75 ? 'warning' : 'danger') }}"
+                                                    style="width: {{ min($kpi['persentase'], 100) }}%"></div>
+                                            </div>
+                                            <small class="text-muted">Status: {{ $kpi['status'] }}</small>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Statistics -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <div class="row text-center">
+                                        <div class="col-md-3">
+                                            <h5 class="mb-1">{{ count($kpiRadarData) }}</h5>
+                                            <small>Total KPI</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h5 class="mb-1 text-success">
+                                                {{ collect($kpiRadarData)->where('persentase', '>=', 100)->count() }}</h5>
+                                            <small>Tercapai (≥100%)</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h5 class="mb-1 text-warning">
+                                                {{ collect($kpiRadarData)->whereBetween('persentase', [75, 99.9])->count() }}
+                                            </h5>
+                                            <small>Hampir Tercapai (75-99%)</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h5 class="mb-1 text-danger">
+                                                {{ collect($kpiRadarData)->where('persentase', '<', 75)->count() }}</h5>
+                                            <small>Belum Tercapai (<75%)< /small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
+
+    @push('scripts')
+        <script>
+            // KPI Radar Chart
+            document.addEventListener('DOMContentLoaded', function() {
+                const kpiData = @json($kpiRadarData);
+
+                // Prepare data for radar chart
+                const labels = kpiData.map(item => item.kode);
+
+                // Normalize data for radar chart (max value determines 100%)
+                const maxTarget = Math.max(...kpiData.map(item => item.target));
+                const maxCapaian = Math.max(...kpiData.map(item => item.capaian));
+                const chartMax = Math.max(maxTarget, maxCapaian);
+
+                // Calculate percentage for chart display
+                const targetData = kpiData.map(item => (item.target / chartMax) * 100);
+                const capaianData = kpiData.map(item => (item.capaian / chartMax) * 100);
+
+                // Radar Chart Configuration
+                const ctx = document.getElementById('kpiRadarChart').getContext('2d');
+                const radarChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Target KPI',
+                            data: targetData,
+                            backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                            borderColor: 'rgba(78, 115, 223, 0.8)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                            fill: true
+                        }, {
+                            label: 'Capaian Aktual',
+                            data: capaianData,
+                            backgroundColor: 'rgba(28, 200, 138, 0.2)',
+                            borderColor: 'rgba(28, 200, 138, 1)',
+                            borderWidth: 3,
+                            pointBackgroundColor: 'rgba(28, 200, 138, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(28, 200, 138, 1)',
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                min: 0,
+                                max: 100,
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 20,
+                                    callback: function(value) {
+                                        // Convert percentage back to actual value for display
+                                        const actualValue = Math.round((value / 100) * chartMax);
+                                        return actualValue.toLocaleString();
+                                    }
+                                },
+                                pointLabels: {
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.1)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const kpi = kpiData[context.dataIndex];
+                                        const actualValue = Math.round((context.parsed.r / 100) * chartMax);
+
+                                        if (context.datasetIndex === 0) {
+                                            return [
+                                                `Target KPI: ${kpi.target.toLocaleString()} ${kpi.satuan}`,
+                                                `Dapat diubah melalui halaman KPI`
+                                            ];
+                                        } else {
+                                            const persentase = kpi.target > 0 ? Math.round((kpi.capaian /
+                                                kpi.target) * 100) : 0;
+                                            return [
+                                                `${context.dataset.label}: ${kpi.capaian.toLocaleString()} ${kpi.satuan}`,
+                                                `Target: ${kpi.target.toLocaleString()} ${kpi.satuan}`,
+                                                `Persentase Capaian: ${persentase}%`,
+                                                `Status: ${kpi.status}`
+                                            ];
+                                        }
+                                    },
+                                    title: function(context) {
+                                        const kpi = kpiData[context[0].dataIndex];
+                                        return `${kpi.kode}: ${kpi.indikator}`;
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false
+                        }
+                    }
+                });
+
+                // Auto refresh chart when year filter changes
+                const yearSelect = document.querySelector('select[name="year"]');
+                if (yearSelect) {
+                    yearSelect.addEventListener('change', function() {
+                        // Chart will refresh with page reload
+                    });
+                }
+
+                // Function to update chart with new KPI data
+                window.updateKpiChart = function(newKpiData) {
+                    // Recalculate max values
+                    const newMaxTarget = Math.max(...newKpiData.map(item => item.target));
+                    const newMaxCapaian = Math.max(...newKpiData.map(item => item.capaian));
+                    const newChartMax = Math.max(newMaxTarget, newMaxCapaian);
+
+                    // Update data
+                    const newTargetData = newKpiData.map(item => (item.target / newChartMax) * 100);
+                    const newCapaianData = newKpiData.map(item => (item.capaian / newChartMax) * 100);
+
+                    // Update chart datasets
+                    radarChart.data.datasets[0].data = newTargetData;
+                    radarChart.data.datasets[1].data = newCapaianData;
+
+                    // Update scale max
+                    radarChart.options.scales.r.ticks.callback = function(value) {
+                        const actualValue = Math.round((value / 100) * newChartMax);
+                        return actualValue.toLocaleString();
+                    };
+
+                    // Refresh chart
+                    radarChart.update();
+                };
+
+                // Listen for storage events (when KPI is updated from another tab/window)
+                window.addEventListener('storage', function(e) {
+                    if (e.key === 'kpiUpdated') {
+                        location.reload(); // Reload to get fresh data
+                    }
+                });
+            });
+        </script>
+    @endpush
+
 @endsection

@@ -88,4 +88,5 @@ class Pengabdian extends Model
     {
         return $this->belongsTo(LuaranWajib::class, 'id_luaran_wajib', 'id_luaran_wajib');
     }
+    
 }
