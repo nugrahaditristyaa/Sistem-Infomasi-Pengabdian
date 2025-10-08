@@ -202,18 +202,16 @@
                                 </div>
                                 @php
                                     $educationalKpi = collect($kpiRadarData)->firstWhere('kode', 'IKT.I.5.g');
-                                    $actualPercentage = $educationalKpi ? $educationalKpi['capaian'] : 0;
-                                    $targetPercentage = 5; // Target 5%
+                                    $realisasiPercentage = $educationalKpi ? $educationalKpi['realisasi'] : 0;
+                                    $targetPercentage = $educationalKpi ? $educationalKpi['target'] : 5; // Default target 5%
                                     $achievement =
-                                        $targetPercentage > 0 ? ($actualPercentage / $targetPercentage) * 100 : 0;
+                                        $targetPercentage > 0 ? ($realisasiPercentage / $targetPercentage) * 100 : 0;
                                 @endphp
                                 <div class="h5 mb-2 font-weight-bold text-gray-800">
-                                    {{ number_format($actualPercentage, 2) }}%
+                                    Realisasi: {{ number_format($realisasiPercentage, 2) }}%
                                     <small class="text-muted">(Target: {{ $targetPercentage }}%)</small>
                                     @if ($achievement >= 100)
                                         <span class="badge badge-success ml-2">Tercapai</span>
-                                    @elseif ($achievement >= 75)
-                                        <span class="badge badge-warning ml-2">Mendekati Target</span>
                                     @else
                                         <span class="badge badge-danger ml-2">Belum Tercapai</span>
                                     @endif
@@ -221,7 +219,6 @@
                                 <div class="progress mb-2" style="height: 8px;">
                                     <div class="progress-bar 
                                         @if ($achievement >= 100) bg-success
-                                        @elseif ($achievement >= 75) bg-warning
                                         @else bg-danger @endif
                                     "
                                         style="width: {{ min($achievement, 100) }}%"></div>
@@ -242,13 +239,67 @@
             </div>
         </div>
 
+        <!-- KPI IKT.I.5.h Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-left-info shadow h-100 py-3">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    KPI IKT.I.5.h - Pengabdian INFOKOM
+                                    @if ($filterYear !== 'all')
+                                        <small class="text-lowercase">(Tahun {{ $filterYear }})</small>
+                                    @endif
+                                </div>
+                                @php
+                                    $infokomKpi = collect($kpiRadarData)->firstWhere('kode', 'IKT.I.5.h');
+                                    $realisasiInfokom = $infokomKpi ? $infokomKpi['realisasi'] : 0;
+                                    $targetInfokom = $infokomKpi ? $infokomKpi['target'] : 70; // Default target 70%
+                                    $achievementInfokom =
+                                        $targetInfokom > 0 ? ($realisasiInfokom / $targetInfokom) * 100 : 0;
+                                @endphp
+                                <div class="h5 mb-2 font-weight-bold text-gray-800">
+                                    Realisasi: {{ number_format($realisasiInfokom, 2) }}%
+                                    <small class="text-muted">(Target: {{ $targetInfokom }}%)</small>
+                                    @if ($achievementInfokom >= 100)
+                                        <span class="badge badge-success ml-2">Tercapai</span>
+                                    @else
+                                        <span class="badge badge-danger ml-2">Belum Tercapai</span>
+                                    @endif
+                                </div>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar 
+                                        @if ($achievementInfokom >= 100) bg-success
+                                        @else bg-danger @endif
+                                    "
+                                        style="width: {{ min($achievementInfokom, 100) }}%"></div>
+                                </div>
+                                <div class="text-xs text-muted">
+                                    <strong>Metode:</strong> Persentase pengabdian dengan kata kunci INFOKOM (AI, Algoritma,
+                                    Aplikasi, Big Data, Digital, ICT, Informatika, Komputer, dll.)
+                                    <br>
+                                    <strong>Rumus:</strong> (Jumlah PkM INFOKOM / Total PkM) × 100%
+                                    <br>
+                                    <strong>Total Keywords:</strong> 57 kata kunci teknologi informasi dan komputer
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-microchip fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- KPI Radar Chart Row -->
         <div class="row">
             <div class="col-12">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold text-primary">
-                            <i class="fas fa-radar-chart mr-2"></i>Capaian KPI
+                            <i class="fas fa-radar-chart mr-2"></i>Realisasi KPI
                             @if ($filterYear !== 'all')
                                 <small class="text-muted">(Tahun {{ $filterYear }})</small>
                             @endif
@@ -278,15 +329,15 @@
                             </div>
                             <!-- KPI Legend -->
                             <div class="col-lg-4">
-                                <h6 class="font-weight-bold text-primary mb-3">Detail Capaian KPI</h6>
+                                <h6 class="font-weight-bold text-primary mb-3">Detail Realisasi KPI</h6>
                                 <div class="kpi-legend" style="max-height: 400px; overflow-y: auto;">
                                     @foreach ($kpiRadarData as $index => $kpi)
                                         <div class="kpi-item mb-3 p-3 border rounded"
-                                            style="background-color: {{ $kpi['persentase'] >= 100 ? '#d4edda' : ($kpi['persentase'] >= 75 ? '#fff3cd' : '#f8d7da') }}">
+                                            style="background-color: {{ $kpi['persentase'] >= 100 ? '#d4edda' : '#f8d7da' }}">
                                             <div class="d-flex justify-content-between align-items-start mb-2">
                                                 <h6 class="mb-1 font-weight-bold text-dark">{{ $kpi['kode'] }}</h6>
                                                 <span
-                                                    class="badge badge-{{ $kpi['persentase'] >= 100 ? 'success' : ($kpi['persentase'] >= 75 ? 'warning' : 'danger') }}">
+                                                    class="badge badge-{{ $kpi['persentase'] >= 100 ? 'success' : 'danger' }}">
                                                     {{ $kpi['persentase'] }}%
                                                 </span>
                                             </div>
@@ -298,13 +349,13 @@
                                                         {{ $kpi['satuan'] }}</span>
                                                 </div>
                                                 <div class="col-6">
-                                                    <strong>Capaian:</strong><br>
-                                                    <span class="text-success">{{ number_format($kpi['capaian']) }}
+                                                    <strong>Realisasi:</strong><br>
+                                                    <span class="text-success">{{ number_format($kpi['realisasi']) }}
                                                         {{ $kpi['satuan'] }}</span>
                                                 </div>
                                             </div>
                                             <div class="progress mt-2" style="height: 6px;">
-                                                <div class="progress-bar bg-{{ $kpi['persentase'] >= 100 ? 'success' : ($kpi['persentase'] >= 75 ? 'warning' : 'danger') }}"
+                                                <div class="progress-bar bg-{{ $kpi['persentase'] >= 100 ? 'success' : 'danger' }}"
                                                     style="width: {{ min($kpi['persentase'], 100) }}%"></div>
                                             </div>
                                             <small class="text-muted">Status: {{ $kpi['status'] }}</small>
@@ -319,25 +370,19 @@
                             <div class="col-12">
                                 <div class="alert alert-info">
                                     <div class="row text-center">
-                                        <div class="col-md-3">
+                                        <div class="col-md-4">
                                             <h5 class="mb-1">{{ count($kpiRadarData) }}</h5>
                                             <small>Total KPI</small>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-4">
                                             <h5 class="mb-1 text-success">
                                                 {{ collect($kpiRadarData)->where('persentase', '>=', 100)->count() }}</h5>
                                             <small>Tercapai (≥100%)</small>
                                         </div>
-                                        <div class="col-md-3">
-                                            <h5 class="mb-1 text-warning">
-                                                {{ collect($kpiRadarData)->whereBetween('persentase', [75, 99.9])->count() }}
-                                            </h5>
-                                            <small>Hampir Tercapai (75-99%)</small>
-                                        </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-4">
                                             <h5 class="mb-1 text-danger">
-                                                {{ collect($kpiRadarData)->where('persentase', '<', 75)->count() }}</h5>
-                                            <small>Belum Tercapai (<75%)< /small>
+                                                {{ collect($kpiRadarData)->where('persentase', '<', 100)->count() }}</h5>
+                                            <small>Belum Tercapai (<100%)< /small>
                                         </div>
                                     </div>
                                 </div>
@@ -361,12 +406,12 @@
 
                 // Normalize data for radar chart (max value determines 100%)
                 const maxTarget = Math.max(...kpiData.map(item => item.target));
-                const maxCapaian = Math.max(...kpiData.map(item => item.capaian));
-                const chartMax = Math.max(maxTarget, maxCapaian);
+                const maxRealisasi = Math.max(...kpiData.map(item => item.realisasi));
+                const chartMax = Math.max(maxTarget, maxRealisasi);
 
                 // Calculate percentage for chart display
                 const targetData = kpiData.map(item => (item.target / chartMax) * 100);
-                const capaianData = kpiData.map(item => (item.capaian / chartMax) * 100);
+                const realisasiData = kpiData.map(item => (item.realisasi / chartMax) * 100);
 
                 // Radar Chart Configuration
                 const ctx = document.getElementById('kpiRadarChart').getContext('2d');
@@ -386,8 +431,8 @@
                             pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
                             fill: true
                         }, {
-                            label: 'Capaian Aktual',
-                            data: capaianData,
+                            label: 'Realisasi',
+                            data: realisasiData,
                             backgroundColor: 'rgba(28, 200, 138, 0.2)',
                             borderColor: 'rgba(28, 200, 138, 1)',
                             borderWidth: 3,
@@ -447,10 +492,10 @@
                                                 `Dapat diubah melalui halaman KPI`
                                             ];
                                         } else {
-                                            const persentase = kpi.target > 0 ? Math.round((kpi.capaian /
+                                            const persentase = kpi.target > 0 ? Math.round((kpi.realisasi /
                                                 kpi.target) * 100) : 0;
                                             return [
-                                                `${context.dataset.label}: ${kpi.capaian.toLocaleString()} ${kpi.satuan}`,
+                                                `${context.dataset.label}: ${kpi.realisasi.toLocaleString()} ${kpi.satuan}`,
                                                 `Target: ${kpi.target.toLocaleString()} ${kpi.satuan}`,
                                                 `Persentase Capaian: ${persentase}%`,
                                                 `Status: ${kpi.status}`
@@ -482,16 +527,16 @@
                 window.updateKpiChart = function(newKpiData) {
                     // Recalculate max values
                     const newMaxTarget = Math.max(...newKpiData.map(item => item.target));
-                    const newMaxCapaian = Math.max(...newKpiData.map(item => item.capaian));
-                    const newChartMax = Math.max(newMaxTarget, newMaxCapaian);
+                    const newMaxRealisasi = Math.max(...newKpiData.map(item => item.realisasi));
+                    const newChartMax = Math.max(newMaxTarget, newMaxRealisasi);
 
                     // Update data
                     const newTargetData = newKpiData.map(item => (item.target / newChartMax) * 100);
-                    const newCapaianData = newKpiData.map(item => (item.capaian / newChartMax) * 100);
+                    const newRealisasiData = newKpiData.map(item => (item.realisasi / newChartMax) * 100);
 
                     // Update chart datasets
                     radarChart.data.datasets[0].data = newTargetData;
-                    radarChart.data.datasets[1].data = newCapaianData;
+                    radarChart.data.datasets[1].data = newRealisasiData;
 
                     // Update scale max
                     radarChart.options.scales.r.ticks.callback = function(value) {

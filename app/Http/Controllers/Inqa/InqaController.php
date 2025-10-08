@@ -503,10 +503,10 @@ class InQaController extends Controller
                 'kode' => $kpi->kode,
                 'indikator' => $kpi->indikator,
                 'target' => $kpi->target,
-                'capaian' => $capaian,
+                'realisasi' => $capaian,
                 'persentase' => round($persentaseCapaian, 1),
                 'satuan' => $kpi->satuan,
-                'status' => $persentaseCapaian >= 100 ? 'Tercapai' : ($persentaseCapaian >= 75 ? 'Hampir Tercapai' : 'Belum Tercapai')
+                'status' => $persentaseCapaian >= 100 ? 'Tercapai' : 'Belum Tercapai'
             ];
         }
 
@@ -571,6 +571,9 @@ class InQaController extends Controller
 
             case 'IKT.I.5.g': // Persentase Pengabdian Pendidikan/Pelatihan
                 return $this->calculateEducationalServicePercentage($filterYear);
+
+            case 'IKT.I.5.h': // Persentase Pengabdian INFOKOM
+                return $this->calculateInfokomServicePercentage($filterYear);
 
             default:
                 // Untuk KPI lain, gunakan data monitoring jika ada
@@ -637,6 +640,111 @@ class InQaController extends Controller
 
         // Hitung persentase
         $percentage = ($educationalCount / $totalPengabdian) * 100;
+
+        return round($percentage, 2);
+    }
+
+    /**
+     * Hitung persentase pengabdian yang judulnya mengandung kata kunci INFOKOM
+     * 
+     * @param string|int $filterYear
+     * @return float
+     */
+    private function calculateInfokomServicePercentage($filterYear)
+    {
+        // Kata kunci untuk pengabdian INFOKOM
+        $keywords = [
+            'AI',
+            'Algoritma',
+            'Berbasis Komputer',
+            'Computational Thinking',
+            'Digital',
+            'ICT',
+            'Informatika',
+            'Komputer',
+            'Komputerisasi',
+            'Logika',
+            'Online',
+            'Teknologi',
+            'Teknologi Informasi',
+            'TI',
+            'Online Business',
+            'Web',
+            'Website',
+            'Web Profil',
+            'Web Service',
+            'Webinar',
+            'Wikipedia',
+            'WordPress',
+            'Aplikasi',
+            'Aplikasi Registrasi',
+            'Aplikasi SLiMS',
+            'Google Apps',
+            'Google Form',
+            'Google Meet',
+            'Google Suite',
+            'Google Workspace',
+            'Moodle',
+            'Program Aplikasi',
+            'Big Data',
+            'Data Elektronik',
+            'Sistem',
+            'Sistem Database',
+            'Sistem Informasi',
+            'Sistem Informasi Administrasi',
+            'Sistem Informasi Manajemen',
+            'Competitive Programming',
+            'Construct 3',
+            'Game Development',
+            'Kodular',
+            'Logika Pemrograman',
+            'Pemrograman Aplikasi',
+            'Pemrograman C++',
+            'Programming',
+            'Unity',
+            'Infrastruktur Teknologi Informasi',
+            'Jaringan Komputer',
+            'Media Sosial',
+            'Multimedia',
+            'Social Media',
+            'Sony Vegas Pro',
+            'Video',
+            'Video Pembelajaran',
+            'Video Tutorial',
+            'Android',
+            'e-Learning',
+            'Internet of Things',
+            'IoT',
+            'Robotika',
+            'Smartphone'
+        ];
+
+        $baseQuery = Pengabdian::query();
+
+        // Filter by year if not 'all'
+        if ($filterYear !== 'all') {
+            $baseQuery->whereYear('tanggal_pengabdian', $filterYear);
+        }
+
+        // Hitung total pengabdian
+        $totalPengabdian = $baseQuery->count();
+
+        if ($totalPengabdian == 0) {
+            return 0;
+        }
+
+        // Hitung pengabdian yang mengandung kata kunci INFOKOM
+        $infokomQuery = clone $baseQuery;
+        $infokomQuery->where(function ($query) use ($keywords) {
+            foreach ($keywords as $keyword) {
+                $query->orWhere('judul_pengabdian', 'LIKE', "%{$keyword}%");
+            }
+        });
+
+        $infokomCount = $infokomQuery->count();
+
+        // Hitung persentase
+        $percentage = ($infokomCount / $totalPengabdian) * 100;
 
         return round($percentage, 2);
     }
