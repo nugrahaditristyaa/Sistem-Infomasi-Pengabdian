@@ -396,6 +396,66 @@
             </div>
         </div>
 
+        <!-- KPI PGB.I.7.9 Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-left-primary shadow h-100 py-3">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    KPI PGB.I.7.9 - Pertumbuhan Proposal (3 Tahun)
+                                    @if ($filterYear !== 'all')
+                                        <small class="text-lowercase">(Tahun {{ $filterYear }} vs
+                                            {{ $filterYear - 3 }})</small>
+                                    @else
+                                        <small class="text-lowercase">({{ date('Y') }} vs
+                                            {{ date('Y') - 3 }})</small>
+                                    @endif
+                                </div>
+                                @php
+                                    $growthKpi = collect($kpiRadarData)->firstWhere('kode', 'PGB.I.7.9');
+                                    $realisasiGrowth = $growthKpi ? $growthKpi['realisasi'] : 0;
+                                    $targetGrowth = $growthKpi ? $growthKpi['target'] : 10; // Default target 10%
+                                    $achievementGrowth =
+                                        $targetGrowth > 0 ? ($realisasiGrowth / $targetGrowth) * 100 : 0;
+                                @endphp
+                                <div class="h5 mb-2 font-weight-bold text-gray-800">
+                                    Realisasi:
+                                    <span class="{{ $realisasiGrowth >= 0 ? 'text-success' : 'text-danger' }}">
+                                        {{ $realisasiGrowth >= 0 ? '+' : '' }}{{ number_format($realisasiGrowth, 2) }}%
+                                    </span>
+                                    <small class="text-muted">(Target: ≥{{ $targetGrowth }}%)</small>
+                                    @if ($realisasiGrowth >= $targetGrowth)
+                                        <span class="badge badge-success ml-2">Tercapai</span>
+                                    @else
+                                        <span class="badge badge-danger ml-2">Belum Tercapai</span>
+                                    @endif
+                                </div>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar 
+                                        @if ($realisasiGrowth >= $targetGrowth) bg-success
+                                        @else bg-danger @endif
+                                    "
+                                        style="width: {{ $realisasiGrowth >= 0 ? min(($realisasiGrowth / max($targetGrowth, 1)) * 100, 100) : 0 }}%">
+                                    </div>
+                                </div>
+                                <div class="text-xs text-muted">
+                                    <strong>Metode:</strong> Pertumbuhan proposal diterima dari tahun N-3 ke tahun N
+                                    <br>
+                                    <strong>Rumus:</strong> ((Proposal Tahun N - Proposal Tahun N-3) / Proposal Tahun N-3) ×
+                                    100%
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- KPI Radar Chart Row -->
         <div class="row">
             <div class="col-12">
@@ -467,7 +527,7 @@
                                 </div>
                             </div>
                         </div>
-
+                        
                         <!-- Summary Statistics -->
                         <div class="row mt-4">
                             <div class="col-12">
