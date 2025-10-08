@@ -575,6 +575,12 @@ class InQaController extends Controller
             case 'IKT.I.5.h': // Persentase Pengabdian INFOKOM
                 return $this->calculateInfokomServicePercentage($filterYear);
 
+            case 'IKT.I.5.j': // Persentase PkM yang melibatkan mahasiswa
+                return $this->calculateStudentInvolvementPercentage($filterYear);
+
+            case 'PGB.I.7.4': // Persentase PkM dengan sumber dana eksternal
+                return $this->calculateExternalFundingPercentage($filterYear);
+
             default:
                 // Untuk KPI lain, gunakan data monitoring jika ada
                 $monitoring = MonitoringKpi::where('id_kpi', $kpi->id_kpi)
@@ -745,6 +751,78 @@ class InQaController extends Controller
 
         // Hitung persentase
         $percentage = ($infokomCount / $totalPengabdian) * 100;
+
+        return round($percentage, 2);
+    }
+
+    /**
+     * Hitung persentase PkM yang melibatkan minimal 1 mahasiswa
+     * 
+     * @param string|int $filterYear
+     * @return float
+     */
+    private function calculateStudentInvolvementPercentage($filterYear)
+    {
+        $baseQuery = Pengabdian::query();
+
+        // Filter by year if not 'all'
+        if ($filterYear !== 'all') {
+            $baseQuery->whereYear('tanggal_pengabdian', $filterYear);
+        }
+
+        // Hitung total pengabdian
+        $totalPengabdian = $baseQuery->count();
+
+        if ($totalPengabdian == 0) {
+            return 0;
+        }
+
+        // Hitung pengabdian yang melibatkan mahasiswa
+        // Menggunakan relationship 'mahasiswa' dari model Pengabdian
+        $studentInvolvementQuery = clone $baseQuery;
+        $studentInvolvementQuery->whereHas('mahasiswa');
+
+        $studentInvolvementCount = $studentInvolvementQuery->count();
+
+        // Hitung persentase
+        $percentage = ($studentInvolvementCount / $totalPengabdian) * 100;
+
+        return round($percentage, 2);
+    }
+
+    /**
+     * Hitung persentase PkM yang memiliki sumber dana eksternal
+     * 
+     * @param string|int $filterYear
+     * @return float
+     */
+    private function calculateExternalFundingPercentage($filterYear)
+    {
+        $baseQuery = Pengabdian::query();
+
+        // Filter by year if not 'all'
+        if ($filterYear !== 'all') {
+            $baseQuery->whereYear('tanggal_pengabdian', $filterYear);
+        }
+
+        // Hitung total pengabdian
+        $totalPengabdian = $baseQuery->count();
+
+        if ($totalPengabdian == 0) {
+            return 0;
+        }
+
+        // Hitung pengabdian yang memiliki sumber dana eksternal
+        // Menggunakan relationship dengan SumberDana where jenis = 'Eksternal'
+        $externalFundingQuery = clone $baseQuery;
+        $externalFundingQuery->whereHas('sumberDana', function ($query) {
+            $query->where('jenis', 'Eksternal');
+        });
+
+        $externalFundingCount = $externalFundingQuery->count();
+
+        // Hitung persentase
+        $percentage = ($externalFundingCount / $totalPengabdian) * 100;
 
         return round($percentage, 2);
     }

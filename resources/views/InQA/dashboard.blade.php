@@ -293,6 +293,109 @@
             </div>
         </div>
 
+        <!-- KPI IKT.I.5.j Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-left-warning shadow h-100 py-3">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    KPI IKT.I.5.j - Keterlibatan Mahasiswa dalam PkM
+                                    @if ($filterYear !== 'all')
+                                        <small class="text-lowercase">(Tahun {{ $filterYear }})</small>
+                                    @endif
+                                </div>
+                                @php
+                                    $studentKpi = collect($kpiRadarData)->firstWhere('kode', 'IKT.I.5.j');
+                                    $realisasiStudent = $studentKpi ? $studentKpi['realisasi'] : 0;
+                                    $targetStudent = $studentKpi ? $studentKpi['target'] : 70; // Default target 70%
+                                    $achievementStudent =
+                                        $targetStudent > 0 ? ($realisasiStudent / $targetStudent) * 100 : 0;
+                                @endphp
+                                <div class="h5 mb-2 font-weight-bold text-gray-800">
+                                    Realisasi: {{ number_format($realisasiStudent, 2) }}%
+                                    <small class="text-muted">(Target: {{ $targetStudent }}%)</small>
+                                    @if ($achievementStudent >= 100)
+                                        <span class="badge badge-success ml-2">Tercapai</span>
+                                    @else
+                                        <span class="badge badge-danger ml-2">Belum Tercapai</span>
+                                    @endif
+                                </div>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar 
+                                        @if ($achievementStudent >= 100) bg-success
+                                        @else bg-danger @endif
+                                    "
+                                        style="width: {{ min($achievementStudent, 100) }}%"></div>
+                                </div>
+                                <div class="text-xs text-muted">
+                                    <strong>Metode:</strong> Persentase PkM yang dalam tim pelaksananya melibatkan minimal 1
+                                    mahasiswa
+                                    <br>
+                                    <strong>Rumus:</strong> (Jumlah PkM yang melibatkan mahasiswa / Total PkM) × 100%
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI PGB.I.7.4 Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-left-secondary shadow h-100 py-3">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                                    KPI PGB.I.7.4 - PkM dengan Dana Eksternal
+                                    @if ($filterYear !== 'all')
+                                        <small class="text-lowercase">(Tahun {{ $filterYear }})</small>
+                                    @endif
+                                </div>
+                                @php
+                                    $externalKpi = collect($kpiRadarData)->firstWhere('kode', 'PGB.I.7.4');
+                                    $realisasiExternal = $externalKpi ? $externalKpi['realisasi'] : 0;
+                                    $targetExternal = $externalKpi ? $externalKpi['target'] : 30; // Default target 30%
+                                    $achievementExternal =
+                                        $targetExternal > 0 ? ($realisasiExternal / $targetExternal) * 100 : 0;
+                                @endphp
+                                <div class="h5 mb-2 font-weight-bold text-gray-800">
+                                    Realisasi: {{ number_format($realisasiExternal, 2) }}%
+                                    <small class="text-muted">(Target: ≥{{ $targetExternal }}%)</small>
+                                    @if ($achievementExternal >= 100)
+                                        <span class="badge badge-success ml-2">Tercapai</span>
+                                    @else
+                                        <span class="badge badge-danger ml-2">Belum Tercapai</span>
+                                    @endif
+                                </div>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar 
+                                        @if ($achievementExternal >= 100) bg-success
+                                        @else bg-danger @endif
+                                    "
+                                        style="width: {{ min($achievementExternal, 100) }}%"></div>
+                                </div>
+                                <div class="text-xs text-muted">
+                                    <strong>Metode:</strong> Persentase PkM yang jenis sumber dananya adalah "Eksternal"
+                                    <br>
+                                    <strong>Rumus:</strong> (Jumlah PkM dana eksternal / Total PkM) × 100%
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-hand-holding-usd fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- KPI Radar Chart Row -->
         <div class="row">
             <div class="col-12">
