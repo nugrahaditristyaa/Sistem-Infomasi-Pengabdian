@@ -531,6 +531,15 @@ class InQaController extends Controller
             ];
         }
 
+        // Urutkan berdasarkan nilai realisasi dari tertinggi ke terendah untuk tampilan radar chart yang lebih smooth
+        usort($radarData, function ($a, $b) {
+            // Jika realisasi sama, urutkan berdasarkan persentase capaian
+            if ($a['realisasi'] == $b['realisasi']) {
+                return $b['persentase'] <=> $a['persentase'];
+            }
+            return $b['realisasi'] <=> $a['realisasi'];
+        });
+
         return $radarData;
     }
 

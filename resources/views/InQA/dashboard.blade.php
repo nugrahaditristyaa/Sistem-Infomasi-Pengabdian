@@ -2,6 +2,75 @@
 
 @section('title', 'Dashboard InQA')
 
+@push('styles')
+    <style>
+        .chart-radar {
+            position: relative;
+            height: 350px;
+            overflow: hidden;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(78, 115, 223, 0.02) 0%, rgba(28, 200, 138, 0.02) 100%);
+        }
+
+        .kpi-legend {
+            padding: 10px;
+            background: rgba(248, 249, 252, 0.7);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .legend-item {
+            transition: all 0.3s ease;
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        .legend-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .kpi-legend-items::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .kpi-legend-items::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+
+        .kpi-legend-items::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 2px;
+        }
+
+        .kpi-legend-items::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .tooltip-icon:hover {
+            color: #4e73df !important;
+            transform: scale(1.1);
+            transition: all 0.2s ease;
+        }
+
+        .card-header .dropdown-toggle:hover {
+            color: #4e73df !important;
+        }
+
+        @media (max-width: 768px) {
+            .chart-radar {
+                height: 280px;
+            }
+
+            .col-lg-8,
+            .col-lg-4 {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+@endpush
+
 @section('content')
     <div class="container-fluid">
         <!-- Page Heading -->
@@ -858,11 +927,119 @@
         </div>
 
         <!-- KPI Radar Chart Row -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow h-100">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-chart-area mr-2"></i>KPI Radar Chart - Capaian Target
+                            @if ($filterYear !== 'all')
+                                <small class="text-muted">(Tahun {{ $filterYear }})</small>
+                            @else
+                                <small class="text-muted">(Semua Tahun)</small>
+                            @endif
+                        </h6>
+                        <div class="dropdown no-arrow">
+                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                                aria-labelledby="dropdownMenuLink">
+                                <div class="dropdown-header">Aksi Radar Chart:</div>
+                                <a class="dropdown-item" href="#" onclick="downloadRadarChart()">
+                                    <i class="fas fa-download fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Download Chart
+                                </a>
+                                <a class="dropdown-item" href="#" onclick="toggleRadarChartType()">
+                                    <i class="fas fa-exchange-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                                    Ubah Tampilan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="chart-radar">
+                                    <canvas id="kpiRadarChart" width="400" height="300"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="kpi-legend">
+                                    <h6 class="font-weight-bold text-gray-800 mb-3">
+                                        <i class="fas fa-list-alt mr-2"></i>Detail KPI
+                                    </h6>
+                                    <div class="kpi-legend-items" style="max-height: 350px; overflow-y: auto;">
+                                        @foreach ($kpiRadarData as $index => $kpi)
+                                            <div
+                                                class="legend-item mb-3 p-2 border-left-{{ $kpi['persentase'] >= 100 ? 'success' : 'warning' }} shadow-sm">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <div class="text-xs font-weight-bold text-primary text-uppercase">
+                                                            {{ $kpi['kode'] }}
+                                                        </div>
+                                                        <div class="text-sm text-gray-800" style="font-size: 0.75rem;">
+                                                            {{ Str::limit($kpi['indikator'], 50) }}
+                                                        </div>
+                                                        <div class="text-xs text-muted mt-1">
+                                                            Target: <span
+                                                                class="font-weight-bold">{{ number_format($kpi['target']) }}
+                                                                {{ $kpi['satuan'] }}</span>
+                                                            <br>
+                                                            Realisasi: <span
+                                                                class="font-weight-bold text-{{ $kpi['persentase'] >= 100 ? 'success' : 'warning' }}">
+                                                                {{ number_format($kpi['realisasi'], 2) }}
+                                                                {{ $kpi['satuan'] }}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <div
+                                                            class="h6 mb-0 font-weight-bold text-{{ $kpi['persentase'] >= 100 ? 'success' : 'warning' }}">
+                                                            {{ $kpi['persentase'] }}%
+                                                        </div>
+                                                        <span
+                                                            class="badge badge-{{ $kpi['persentase'] >= 100 ? 'success' : 'warning' }}">
+                                                            {{ $kpi['status'] }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Keterangan:</strong>
+                                    KPI diurutkan berdasarkan nilai realisasi dari tertinggi ke terendah untuk menciptakan
+                                    aliran visual yang lebih mulus.
+                                    Garis biru menunjukkan target KPI, sedangkan garis hijau menunjukkan realisasi
+                                    pencapaian.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 
     @push('scripts')
+        <!-- Chart.js CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
         <script>
+            // Set Chart.js defaults for better styling
+            Chart.defaults.font.family =
+                'Nunito, -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+            Chart.defaults.color = '#858796';
+
             // KPI Radar Chart
             document.addEventListener('DOMContentLoaded', function() {
                 const kpiData = @json($kpiRadarData);
@@ -895,6 +1072,9 @@
                             pointBorderColor: '#fff',
                             pointHoverBackgroundColor: '#fff',
                             pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            tension: 0.1,
                             fill: true
                         }, {
                             label: 'Realisasi',
@@ -906,12 +1086,29 @@
                             pointBorderColor: '#fff',
                             pointHoverBackgroundColor: '#fff',
                             pointHoverBorderColor: 'rgba(28, 200, 138, 1)',
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            tension: 0.1,
                             fill: true
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeInOutCubic'
+                        },
+                        elements: {
+                            line: {
+                                borderJoinStyle: 'round',
+                                borderCapStyle: 'round'
+                            },
+                            point: {
+                                borderWidth: 2,
+                                hoverBorderWidth: 3
+                            }
+                        },
                         scales: {
                             r: {
                                 min: 0,
@@ -1020,6 +1217,67 @@
                         location.reload(); // Reload to get fresh data
                     }
                 });
+
+                // Function to download radar chart as image
+                window.downloadRadarChart = function() {
+                    const link = document.createElement('a');
+                    link.download = `KPI_Radar_Chart_${new Date().toISOString().split('T')[0]}.png`;
+                    link.href = document.getElementById('kpiRadarChart').toDataURL();
+                    link.click();
+                };
+
+                // Function to toggle chart type between radar and polar area
+                window.toggleRadarChartType = function() {
+                    const currentType = radarChart.config.type;
+                    const newType = currentType === 'radar' ? 'polarArea' : 'radar';
+
+                    // Update chart type
+                    radarChart.config.type = newType;
+
+                    if (newType === 'polarArea') {
+                        // Configure for polar area chart
+                        radarChart.data.datasets = [{
+                            label: 'Capaian KPI (%)',
+                            data: kpiData.map(item => item.persentase),
+                            backgroundColor: kpiData.map(item =>
+                                item.persentase >= 100 ? 'rgba(28, 200, 138, 0.7)' :
+                                'rgba(255, 193, 7, 0.7)'
+                            ),
+                            borderColor: kpiData.map(item =>
+                                item.persentase >= 100 ? 'rgba(28, 200, 138, 1)' :
+                                'rgba(255, 193, 7, 1)'
+                            ),
+                            borderWidth: 2
+                        }];
+                    } else {
+                        // Configure for radar chart
+                        radarChart.data.datasets = [{
+                            label: 'Target KPI',
+                            data: targetData,
+                            backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                            borderColor: 'rgba(78, 115, 223, 0.8)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                            fill: true
+                        }, {
+                            label: 'Realisasi',
+                            data: realisasiData,
+                            backgroundColor: 'rgba(28, 200, 138, 0.2)',
+                            borderColor: 'rgba(28, 200, 138, 1)',
+                            borderWidth: 3,
+                            pointBackgroundColor: 'rgba(28, 200, 138, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(28, 200, 138, 1)',
+                            fill: true
+                        }];
+                    }
+
+                    radarChart.update();
+                };
             });
         </script>
     @endpush
