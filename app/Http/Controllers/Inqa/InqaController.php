@@ -18,9 +18,13 @@ class InQaController extends Controller
      */
     public function dashboard(Request $request)
     {
+        if (!$request->has('year')) {
+            // Redirect to current year if 'year' parameter is missing
+            return redirect()->route('inqa.dashboard', ['year' => date('2024')]);
+        }
+
         // Year filter logic (same as admin)
         $currentYear = date('Y');
-        $totalDosenTerlibat = DB::table('pengabdian_dosen')->distinct('nik')->count('nik');
         $filterYear = $request->get('year', $currentYear);
 
         // Basic KPI statistics
@@ -255,6 +259,23 @@ class InQaController extends Controller
         // Calculate percentage of pengabdian with mahasiswa
         $persentasePengabdianDenganMahasiswa = $totalPengabdian > 0 ?
             round(($pengabdianDenganMahasiswa / $totalPengabdian) * 100, 1) : 0;
+
+        // Calculate total dosen terlibat (IT + SI) berdasarkan filter tahun
+        if ($filterYear === 'all') {
+            $totalDosenTerlibat = DB::table('pengabdian_dosen')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereIn('dosen.prodi', ['Informatika', 'Sistem Informasi'])
+                ->distinct('pengabdian_dosen.nik')
+                ->count('pengabdian_dosen.nik');
+        } else {
+            $totalDosenTerlibat = DB::table('pengabdian_dosen')
+                ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereIn('dosen.prodi', ['Informatika', 'Sistem Informasi'])
+                ->whereYear('pengabdian.tanggal_pengabdian', $filterYear)
+                ->distinct('pengabdian_dosen.nik')
+                ->count('pengabdian_dosen.nik');
+        }
 
         // Calculate average achievement for KPI
         $avgAchievement = MonitoringKpi::whereNotNull('nilai_capai')
@@ -581,6 +602,9 @@ class InQaController extends Controller
             case 'PGB.I.7.4': // Persentase PkM dengan sumber dana eksternal
                 return $this->calculateExternalFundingPercentage($filterYear);
 
+            case 'PGB.I.7.9': // Pertumbuhan PkM (3 tahun) - N vs N-3
+                return $this->calculateThreeYearGrowthPercentage($filterYear);
+
             default:
                 // Untuk KPI lain, gunakan data monitoring jika ada
                 $monitoring = MonitoringKpi::where('id_kpi', $kpi->id_kpi)
@@ -825,5 +849,38 @@ class InQaController extends Controller
         $percentage = ($externalFundingCount / $totalPengabdian) * 100;
 
         return round($percentage, 2);
+    }
+
+    /**
+     * Hitung pertumbuhan PkM dalam 3 tahun (Tahun N vs Tahun N-3)
+     * 
+     * @param string|int $filterYear
+     * @return float
+     */
+    private function calculateThreeYearGrowthPercentage($filterYear)
+    {
+        // Tentukan tahun N (tahun terakhir untuk perhitungan)
+        $yearN = ($filterYear !== 'all') ? (int)$filterYear : (int)date('Y');
+
+        // Tahun N-3 (tiga tahun sebelumnya)
+        $yearN3 = $yearN - 3;
+
+        // Hitung jumlah PkM di tahun N
+        $pkmYearN = Pengabdian::whereYear('tanggal_pengabdian', $yearN)->count();
+
+        // Hitung jumlah PkM di tahun N-3
+        $pkmYearN3 = Pengabdian::whereYear('tanggal_pengabdian', $yearN3)->count();
+
+        // Jika tidak ada PkM di tahun N-3, tidak bisa menghitung pertumbuhan
+        if ($pkmYearN3 == 0) {
+            // Jika ada PkM di tahun N tapi tidak ada di tahun N-3, anggap pertumbuhan 100%
+            return $pkmYearN > 0 ? 100.00 : 0.00;
+        }
+
+        // Hitung persentase pertumbuhan
+        // ((Tahun N - Tahun N-3) / Tahun N-3) * 100%
+        $growthPercentage = (($pkmYearN - $pkmYearN3) / $pkmYearN3) * 100;
+
+        return round($growthPercentage, 2);
     }
 }

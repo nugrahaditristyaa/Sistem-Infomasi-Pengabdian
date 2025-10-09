@@ -187,6 +187,166 @@
 
         </div>
 
+        <!-- KPI PGB.I.7.9 Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-left-primary shadow h-100 py-3">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    KPI PGB.I.7.9 - Pertumbuhan PkM (3 Tahun)
+                                    @if ($filterYear !== 'all')
+                                        <small class="text-lowercase">(Tahun {{ $filterYear }} vs
+                                            {{ $filterYear - 3 }})</small>
+                                    @else
+                                        <small class="text-lowercase">({{ date('Y') }} vs
+                                            {{ date('Y') - 3 }})</small>
+                                    @endif
+                                </div>
+                                @php
+                                    $growthKpi = collect($kpiRadarData)->firstWhere('kode', 'PGB.I.7.9');
+                                    $realisasiGrowth = $growthKpi ? $growthKpi['realisasi'] : 0;
+                                    $targetGrowth = $growthKpi ? $growthKpi['target'] : 10; // Default target 10%
+                                    $achievementGrowth =
+                                        $realisasiGrowth >= $targetGrowth
+                                            ? 100
+                                            : ($realisasiGrowth / max($targetGrowth, 1)) * 100;
+                                @endphp
+                                <div class="h5 mb-2 font-weight-bold text-gray-800">
+                                    Realisasi:
+                                    <span class="{{ $realisasiGrowth >= 0 ? 'text-success' : 'text-danger' }}">
+                                        {{ $realisasiGrowth >= 0 ? '+' : '' }}{{ number_format($realisasiGrowth, 2) }}%
+                                    </span>
+                                    <small class="text-muted">(Target: ≥{{ $targetGrowth }}%)</small>
+                                    @if ($realisasiGrowth >= $targetGrowth)
+                                        <span class="badge badge-success ml-2">Tercapai</span>
+                                    @else
+                                        <span class="badge badge-danger ml-2">Belum Tercapai</span>
+                                    @endif
+                                </div>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar 
+                                        @if ($realisasiGrowth >= $targetGrowth) bg-success
+                                        @else bg-danger @endif
+                                    "
+                                        style="width: {{ $realisasiGrowth >= 0 ? min(max($achievementGrowth, 0), 100) : 0 }}%">
+                                    </div>
+                                </div>
+                                <div class="text-xs text-muted">
+                                    <strong>Metode:</strong> Pertumbuhan PkM dari tahun N-3 ke tahun N (3 tahun)
+                                    <br>
+                                    <strong>Rumus:</strong> ((PkM Tahun N - PkM Tahun N-3) / PkM Tahun N-3) × 100%
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-radar-chart mr-2"></i>Capaian KPI
+                            @if ($filterYear !== 'all')
+                                <small class="text-muted">(Tahun {{ $filterYear }})</small>
+                            @endif
+                        </h6>
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                <span class="badge badge-info mr-2">
+                                    <i class="fas fa-sync-alt mr-1"></i>Target Dinamis
+                                </span>
+                                <small class="text-muted">
+                                    Target dapat diubah secara real-time
+                                </small>
+                            </div>
+                            <a href="{{ route('inqa.kpi.index') }}" class="btn btn-sm btn-primary" data-toggle="tooltip"
+                                title="Klik untuk mengubah target KPI">
+                                <i class="fas fa-edit mr-1"></i>Edit Target KPI
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Radar Chart -->
+                            <div class="col-lg-8">
+                                <div class="chart-area">
+                                    <canvas id="kpiRadarChart" width="100%" height="50"></canvas>
+                                </div>
+                            </div>
+                            <!-- KPI Legend -->
+                            <div class="col-lg-4">
+                                <h6 class="font-weight-bold text-primary mb-3">Detail Realisasi KPI</h6>
+                                <div class="kpi-legend" style="max-height: 400px; overflow-y: auto;">
+                                    @foreach ($kpiRadarData as $index => $kpi)
+                                        <div class="kpi-item mb-3 p-3 border rounded"
+                                            style="background-color: {{ $kpi['persentase'] >= 100 ? '#d4edda' : '#f8d7da' }}">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="mb-1 font-weight-bold text-dark">{{ $kpi['kode'] }}</h6>
+                                                <span
+                                                    class="badge badge-{{ $kpi['persentase'] >= 100 ? 'success' : 'danger' }}">
+                                                    {{ $kpi['persentase'] }}%
+                                                </span>
+                                            </div>
+                                            <p class="mb-2 text-dark small">{{ $kpi['indikator'] }}</p>
+                                            <div class="row text-sm">
+                                                <div class="col-6">
+                                                    <strong>Target:</strong><br>
+                                                    <span class="text-primary">{{ number_format($kpi['target']) }}
+                                                        {{ $kpi['satuan'] }}</span>
+                                                </div>
+                                                <div class="col-6">
+                                                    <strong>Realisasi:</strong><br>
+                                                    <span class="text-success">{{ number_format($kpi['realisasi']) }}
+                                                        {{ $kpi['satuan'] }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="progress mt-2" style="height: 6px;">
+                                                <div class="progress-bar bg-{{ $kpi['persentase'] >= 100 ? 'success' : 'danger' }}"
+                                                    style="width: {{ min($kpi['persentase'], 100) }}%"></div>
+                                            </div>
+                                            <small class="text-muted">Status: {{ $kpi['status'] }}</small>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Statistics -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <div class="row text-center">
+                                        <div class="col-md-4">
+                                            <h5 class="mb-1">{{ count($kpiRadarData) }}</h5>
+                                            <small>Total KPI</small>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h5 class="mb-1 text-success">
+                                                {{ collect($kpiRadarData)->where('persentase', '>=', 100)->count() }}</h5>
+                                            <small>Tercapai (≥100%)</small>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h5 class="mb-1 text-danger">
+                                                {{ collect($kpiRadarData)->where('persentase', '<', 100)->count() }}</h5>
+                                            <small>Belum Tercapai (<100%)< /small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- KPI IKT.I.5.g Card -->
         <div class="row mb-4">
             <div class="col-12">
@@ -457,104 +617,6 @@
         </div>
 
         <!-- KPI Radar Chart Row -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">
-                            <i class="fas fa-radar-chart mr-2"></i>Realisasi KPI
-                            @if ($filterYear !== 'all')
-                                <small class="text-muted">(Tahun {{ $filterYear }})</small>
-                            @endif
-                        </h6>
-                        <div class="d-flex align-items-center">
-                            <div class="mr-3">
-                                <span class="badge badge-info mr-2">
-                                    <i class="fas fa-sync-alt mr-1"></i>Target Dinamis
-                                </span>
-                                <small class="text-muted">
-                                    Target dapat diubah secara real-time
-                                </small>
-                            </div>
-                            <a href="{{ route('inqa.kpi.index') }}" class="btn btn-sm btn-primary" data-toggle="tooltip"
-                                title="Klik untuk mengubah target KPI">
-                                <i class="fas fa-edit mr-1"></i>Edit Target KPI
-                            </a>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <!-- Radar Chart -->
-                            <div class="col-lg-8">
-                                <div class="chart-area">
-                                    <canvas id="kpiRadarChart" width="100%" height="50"></canvas>
-                                </div>
-                            </div>
-                            <!-- KPI Legend -->
-                            <div class="col-lg-4">
-                                <h6 class="font-weight-bold text-primary mb-3">Detail Realisasi KPI</h6>
-                                <div class="kpi-legend" style="max-height: 400px; overflow-y: auto;">
-                                    @foreach ($kpiRadarData as $index => $kpi)
-                                        <div class="kpi-item mb-3 p-3 border rounded"
-                                            style="background-color: {{ $kpi['persentase'] >= 100 ? '#d4edda' : '#f8d7da' }}">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <h6 class="mb-1 font-weight-bold text-dark">{{ $kpi['kode'] }}</h6>
-                                                <span
-                                                    class="badge badge-{{ $kpi['persentase'] >= 100 ? 'success' : 'danger' }}">
-                                                    {{ $kpi['persentase'] }}%
-                                                </span>
-                                            </div>
-                                            <p class="mb-2 text-dark small">{{ $kpi['indikator'] }}</p>
-                                            <div class="row text-sm">
-                                                <div class="col-6">
-                                                    <strong>Target:</strong><br>
-                                                    <span class="text-primary">{{ number_format($kpi['target']) }}
-                                                        {{ $kpi['satuan'] }}</span>
-                                                </div>
-                                                <div class="col-6">
-                                                    <strong>Realisasi:</strong><br>
-                                                    <span class="text-success">{{ number_format($kpi['realisasi']) }}
-                                                        {{ $kpi['satuan'] }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="progress mt-2" style="height: 6px;">
-                                                <div class="progress-bar bg-{{ $kpi['persentase'] >= 100 ? 'success' : 'danger' }}"
-                                                    style="width: {{ min($kpi['persentase'], 100) }}%"></div>
-                                            </div>
-                                            <small class="text-muted">Status: {{ $kpi['status'] }}</small>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Summary Statistics -->
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <div class="alert alert-info">
-                                    <div class="row text-center">
-                                        <div class="col-md-4">
-                                            <h5 class="mb-1">{{ count($kpiRadarData) }}</h5>
-                                            <small>Total KPI</small>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <h5 class="mb-1 text-success">
-                                                {{ collect($kpiRadarData)->where('persentase', '>=', 100)->count() }}</h5>
-                                            <small>Tercapai (≥100%)</small>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <h5 class="mb-1 text-danger">
-                                                {{ collect($kpiRadarData)->where('persentase', '<', 100)->count() }}</h5>
-                                            <small>Belum Tercapai (<100%)< /small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
     </div>
 
