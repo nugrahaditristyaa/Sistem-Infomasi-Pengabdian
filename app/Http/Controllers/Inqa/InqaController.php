@@ -608,6 +608,15 @@ class InQaController extends Controller
             case 'PGB.I.5.6': // Pertumbuhan PkM (tahunan) - N vs N-1
                 return $this->calculateAnnualGrowthPercentage($filterYear);
 
+            case 'PGB.I.1.1': // Persentase Realisasi Luaran Pengabdian
+                return $this->calculateOutputRealizationPercentage($filterYear);
+
+            case 'IKT.I.5.i': // Minimum Prodi memiliki 1 HKI PkM setiap tahun
+                $hkiData = $this->calculateHkiPerProdiCount($filterYear);
+                // Return total HKI atau bisa return berapa prodi yang sudah tercapai
+                return $hkiData['total']; // atau bisa return jumlah prodi yang tercapai
+
+
             default:
                 // Untuk KPI lain, gunakan data monitoring jika ada
                 $monitoring = MonitoringKpi::where('id_kpi', $kpi->id_kpi)
@@ -918,5 +927,123 @@ class InQaController extends Controller
         $growthPercentage = (($pkmYearN - $pkmYearN1) / $pkmYearN1) * 100;
 
         return round($growthPercentage, 2);
+    }
+
+    /**
+     * Calculate KPI PGB.I.1.1: Persentase Realisasi Luaran Pengabdian
+     * Target: ≥ 80%
+     * 
+     * Metode: Bandingkan jumlah luaran terealisasi dengan yang direncanakan
+     * 
+     * @param string $filterYear
+     * @return float
+     */
+    private function calculateOutputRealizationPercentage($filterYear)
+    {
+        // Query pengabdian berdasarkan tahun
+        $query = Pengabdian::query();
+
+        if ($filterYear !== 'all') {
+            $query->whereYear('tanggal_pengabdian', $filterYear);
+        }
+
+        $pengabdianData = $query->select('id_pengabdian', 'jumlah_luaran_direncanakan')->get();
+
+        if ($pengabdianData->isEmpty()) {
+            return 0.00;
+        }
+
+        $totalPkm = 0;
+        $pkmMemenuhi = 0;
+
+        foreach ($pengabdianData as $pengabdian) {
+            $totalPkm++;
+
+            // Hitung N_direncanakan: panjang array di jumlah_luaran_direncanakan
+            $luaranDirencanakan = $pengabdian->jumlah_luaran_direncanakan;
+
+            if (is_string($luaranDirencanakan)) {
+                $luaranArray = json_decode($luaranDirencanakan, true);
+            } else {
+                $luaranArray = $luaranDirencanakan;
+            }
+
+            $nDirencanakan = is_array($luaranArray) ? count($luaranArray) : 0;
+
+            // Hitung N_terealisasi: jumlah baris di tabel luaran untuk pengabdian ini
+            $nTerealisasi = DB::table('luaran')
+                ->where('id_pengabdian', $pengabdian->id_pengabdian)
+                ->count();
+
+            // Klasifikasi: Memenuhi jika N_terealisasi >= N_direncanakan
+            if ($nTerealisasi >= $nDirencanakan) {
+                $pkmMemenuhi++;
+            }
+        }
+
+        // Rumus: (Jumlah PkM yang Memenuhi Luaran / Total Seluruh PkM) × 100%
+        $percentage = $totalPkm > 0 ? ($pkmMemenuhi / $totalPkm) * 100 : 0;
+
+        return round($percentage, 2);
+    }
+
+    /**
+     * Calculate KPI IKT.I.5.i: Minimum Prodi memiliki 1 HKI PkM setiap tahun
+     * Target: 1 buah (untuk masing-masing prodi)
+     * 
+     * Metode: Hitung jumlah HKI dari PkM per prodi (Informatika dan Sistem Informasi)
+     * 
+     * @param string $filterYear
+     * @return array
+     */
+    private function calculateHkiPerProdiCount($filterYear)
+    {
+        // Query untuk mendapatkan HKI berdasarkan prodi
+        $baseQuery = DB::table('luaran')
+            ->join('pengabdian', 'luaran.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+            ->join('jenis_luaran', 'luaran.id_jenis_luaran', '=', 'jenis_luaran.id_jenis_luaran')
+            ->where('jenis_luaran.nama_jenis_luaran', 'HKI');
+
+        // Filter by year if not 'all'
+        if ($filterYear !== 'all') {
+            $baseQuery->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
+        }
+
+        // Hitung HKI untuk Informatika
+        $hkiInformatika = (clone $baseQuery)
+            ->join('pengabdian_dosen', 'pengabdian.id_pengabdian', '=', 'pengabdian_dosen.id_pengabdian')
+            ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+            ->where('dosen.prodi', 'Informatika')
+            ->distinct('luaran.id_luaran')
+            ->count('luaran.id_luaran');
+
+        // Hitung HKI untuk Sistem Informasi
+        $hkiSistemInformasi = (clone $baseQuery)
+            ->join('pengabdian_dosen', 'pengabdian.id_pengabdian', '=', 'pengabdian_dosen.id_pengabdian')
+            ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+            ->where('dosen.prodi', 'Sistem Informasi')
+            ->distinct('luaran.id_luaran')
+            ->count('luaran.id_luaran');
+
+        return [
+            'informatika' => $hkiInformatika,
+            'sistem_informasi' => $hkiSistemInformasi,
+            'total' => $hkiInformatika + $hkiSistemInformasi,
+            // Status: minimal 1 HKI per prodi
+            'informatika_tercapai' => $hkiInformatika >= 1,
+            'sistem_informasi_tercapai' => $hkiSistemInformasi >= 1,
+            'kedua_prodi_tercapai' => ($hkiInformatika >= 1) && ($hkiSistemInformasi >= 1)
+        ];
+    }
+
+    /**
+     * Public method to get HKI per Prodi data for dashboard view
+     * 
+     * @param string $filterYear
+     * @return array
+     */
+    public function getHkiPerProdiData($filterYear)
+    {
+        return $this->calculateHkiPerProdiCount($filterYear);
     }
 }

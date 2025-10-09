@@ -86,8 +86,16 @@
                     <h5 class="detail-section-title">Luaran Kegiatan</h5>
 
                     <div class="mb-3">
-                        <small class="text-muted d-block">Total Luaran Direncanakan</small>
-                        <span class="font-weight-bold text-primary">{{ $pengabdian->jumlah_luaran_direncanakan }}</span>
+                        <small class="text-muted d-block">Jenis Luaran yang Direncanakan</small>
+                        @if (is_array($pengabdian->jumlah_luaran_direncanakan) && count($pengabdian->jumlah_luaran_direncanakan) > 0)
+                            @foreach ($pengabdian->jumlah_luaran_direncanakan as $jenis)
+                                <span class="badge badge-info mr-1">{{ $jenis }}</span>
+                            @endforeach
+                            <small class="text-muted d-block mt-1">Total:
+                                {{ count($pengabdian->jumlah_luaran_direncanakan) }} jenis</small>
+                        @else
+                            <span class="text-muted">Belum ditentukan</span>
+                        @endif
                     </div>
                     <div class="mb-3">
                         <small class="text-muted d-block">Luaran Wajib</small>

@@ -187,6 +187,59 @@
 
         </div>
 
+        <!-- KPI PGB.I.1.1 Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-left-info shadow h-100 py-3">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    KPI PGB.I.1.1 - Realisasi Luaran Pengabdian
+                                    @if ($filterYear !== 'all')
+                                        <small class="text-lowercase">(Tahun {{ $filterYear }})</small>
+                                    @endif
+                                </div>
+                                @php
+                                    $outputKpi = collect($kpiRadarData)->firstWhere('kode', 'PGB.I.1.1');
+                                    $realisasiPercentage = $outputKpi ? $outputKpi['realisasi'] : 0;
+                                    $targetPercentage = $outputKpi ? $outputKpi['target'] : 80; // Default target 80%
+                                    $achievement =
+                                        $targetPercentage > 0 ? ($realisasiPercentage / $targetPercentage) * 100 : 0;
+                                @endphp
+                                <div class="h5 mb-2 font-weight-bold text-gray-800">
+                                    Realisasi: {{ number_format($realisasiPercentage, 2) }}%
+                                    <small class="text-muted">(Target: ≥ {{ $targetPercentage }}%)</small>
+                                    @if ($realisasiPercentage >= $targetPercentage)
+                                        <span class="badge badge-success ml-2">Tercapai</span>
+                                    @else
+                                        <span class="badge badge-danger ml-2">Belum Tercapai</span>
+                                    @endif
+                                </div>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar 
+                                        @if ($realisasiPercentage >= $targetPercentage) bg-success
+                                        @else bg-warning @endif
+                                    "
+                                        style="width: {{ min($achievement, 100) }}%"></div>
+                                </div>
+                                <div class="text-xs text-muted">
+                                    <strong>Metode:</strong> Persentase PkM yang memenuhi luaran sesuai target proposal
+                                    <br>
+                                    <strong>Rumus:</strong> (Jumlah PkM yang Memenuhi Luaran / Total PkM) × 100%
+                                    <br>
+                                    <strong>Kriteria:</strong> Jumlah luaran terealisasi ≥ jumlah luaran yang direncanakan
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- KPI PGB.I.7.9 Card -->
         <div class="row mb-4">
             <div class="col-12">
@@ -446,6 +499,133 @@
                             </div>
                             <div class="col-auto">
                                 <i class="fas fa-microchip fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI IKT.I.5.i Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-left-warning shadow h-100 py-3">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    KPI IKT.I.5.i - Minimum Prodi memiliki 1 HKI PkM
+                                    @if ($filterYear !== 'all')
+                                        <small class="text-lowercase">(Tahun {{ $filterYear }})</small>
+                                    @endif
+                                </div>
+                                @php
+                                    // Mencari data HKI dari kpiRadarData atau hitung manual
+                                    $hkiKpi = collect($kpiRadarData)->firstWhere('kode', 'IKT.I.5.i');
+
+                                    // Simulasi data HKI per prodi (nanti bisa diganti dengan data real dari controller)
+                                    use Illuminate\Support\Facades\DB;
+
+                                    // Hitung HKI Informatika
+                                    $hkiInformatika = DB::table('luaran')
+                                        ->join('pengabdian', 'luaran.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                                        ->join(
+                                            'jenis_luaran',
+                                            'luaran.id_jenis_luaran',
+                                            '=',
+                                            'jenis_luaran.id_jenis_luaran',
+                                        )
+                                        ->join(
+                                            'pengabdian_dosen',
+                                            'pengabdian.id_pengabdian',
+                                            '=',
+                                            'pengabdian_dosen.id_pengabdian',
+                                        )
+                                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                                        ->where('jenis_luaran.nama_jenis_luaran', 'HKI')
+                                        ->where('dosen.prodi', 'Informatika')
+                                        ->when($filterYear !== 'all', function ($q) use ($filterYear) {
+                                            return $q->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
+                                        })
+                                        ->distinct('luaran.id_luaran')
+                                        ->count('luaran.id_luaran');
+
+                                    // Hitung HKI Sistem Informasi
+                                    $hkiSistemInformasi = DB::table('luaran')
+                                        ->join('pengabdian', 'luaran.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                                        ->join(
+                                            'jenis_luaran',
+                                            'luaran.id_jenis_luaran',
+                                            '=',
+                                            'jenis_luaran.id_jenis_luaran',
+                                        )
+                                        ->join(
+                                            'pengabdian_dosen',
+                                            'pengabdian.id_pengabdian',
+                                            '=',
+                                            'pengabdian_dosen.id_pengabdian',
+                                        )
+                                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                                        ->where('jenis_luaran.nama_jenis_luaran', 'HKI')
+                                        ->where('dosen.prodi', 'Sistem Informasi')
+                                        ->when($filterYear !== 'all', function ($q) use ($filterYear) {
+                                            return $q->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
+                                        })
+                                        ->distinct('luaran.id_luaran')
+                                        ->count('luaran.id_luaran');
+
+                                    $hkiPerProdi = [
+                                        'informatika' => $hkiInformatika,
+                                        'sistem_informasi' => $hkiSistemInformasi,
+                                        'total' => $hkiInformatika + $hkiSistemInformasi,
+                                        'informatika_tercapai' => $hkiInformatika >= 1,
+                                        'sistem_informasi_tercapai' => $hkiSistemInformasi >= 1,
+                                        'kedua_prodi_tercapai' => $hkiInformatika >= 1 && $hkiSistemInformasi >= 1,
+                                    ];
+                                @endphp
+                                <div class="h5 mb-2 font-weight-bold text-gray-800">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <small class="text-muted d-block">Informatika:</small>
+                                            <span class="h6">{{ $hkiPerProdi['informatika'] }} HKI</span>
+                                            @if ($hkiPerProdi['informatika_tercapai'])
+                                                <span class="badge badge-success ml-1">Tercapai</span>
+                                            @else
+                                                <span class="badge badge-danger ml-1">Belum Tercapai</span>
+                                            @endif
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted d-block">Sistem Informasi:</small>
+                                            <span class="h6">{{ $hkiPerProdi['sistem_informasi'] }} HKI</span>
+                                            @if ($hkiPerProdi['sistem_informasi_tercapai'])
+                                                <span class="badge badge-success ml-1">Tercapai</span>
+                                            @else
+                                                <span class="badge badge-danger ml-1">Belum Tercapai</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar bg-info"
+                                        style="width: {{ $hkiPerProdi['informatika_tercapai'] ? 50 : 0 }}%"></div>
+                                    <div class="progress-bar bg-primary"
+                                        style="width: {{ $hkiPerProdi['sistem_informasi_tercapai'] ? 50 : 0 }}%"></div>
+                                </div>
+                                <div class="text-xs text-muted">
+                                    <strong>Target:</strong> Minimal 1 HKI per prodi per tahun
+                                    <br>
+                                    <strong>Status Keseluruhan:</strong>
+                                    @if ($hkiPerProdi['kedua_prodi_tercapai'])
+                                        <span class="text-success font-weight-bold">Tercapai (Kedua prodi ≥ 1 HKI)</span>
+                                    @else
+                                        <span class="text-danger font-weight-bold">Belum Tercapai</span>
+                                    @endif
+                                    <br>
+                                    <strong>Total HKI:</strong> {{ $hkiPerProdi['total'] }} HKI
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-certificate fa-2x text-gray-300"></i>
                             </div>
                         </div>
                     </div>

@@ -113,11 +113,44 @@
                 </div>
                 <div class="form-group">
                     <label for="tanggal_pengabdian">Tanggal Pengabdian <span class="text-danger">*</span></label>
-                    {{-- PERBAIKAN 1: Menggunakan class 'datepicker' untuk Flatpickr --}}
-                    <input type="text" class="form-control datepicker @error('tanggal_pengabdian') is-invalid @enderror"
+                    {{-- MENGUBAH TYPE DARI TEXT KE DATE, MEMASTIKAN FORMAT TANGGAL YYYY-MM-DD --}}
+                    <input type="date" class="form-control @error('tanggal_pengabdian') is-invalid @enderror"
                         id="tanggal_pengabdian" name="tanggal_pengabdian"
-                        value="{{ old('tanggal_pengabdian', $pengabdian->tanggal_pengabdian) }}" required>
+                        value="{{ old('tanggal_pengabdian', isset($pengabdian) ? Carbon\Carbon::parse($pengabdian->tanggal_pengabdian)->format('Y-m-d') : '') }}"
+                        required>
                     @error('tanggal_pengabdian')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="form-group">
+                    <label>Jenis Luaran yang Direncanakan <span class="text-danger">*</span></label>
+                    <small class="form-text text-muted mb-2">
+                        Pilih jenis-jenis luaran yang akan dicapai sesuai proposal (termasuk luaran wajib yang sudah dipilih
+                        di atas).
+                    </small>
+                    @php
+                        $selectedDirencanakan = old(
+                            'jumlah_luaran_direncanakan',
+                            is_string($pengabdian->jumlah_luaran_direncanakan)
+                                ? json_decode($pengabdian->jumlah_luaran_direncanakan, true) ?? []
+                                : (is_array($pengabdian->jumlah_luaran_direncanakan)
+                                    ? $pengabdian->jumlah_luaran_direncanakan
+                                    : []),
+                        );
+                    @endphp
+                    <div class="checkbox-group @error('jumlah_luaran_direncanakan') is-invalid @enderror">
+                        @foreach ($jenisLuaran as $jl)
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input"
+                                    id="edit_direncanakan_{{ $jl->id_jenis_luaran }}" name="jumlah_luaran_direncanakan[]"
+                                    value="{{ $jl->nama_jenis_luaran }}"
+                                    {{ in_array($jl->nama_jenis_luaran, $selectedDirencanakan) ? 'checked' : '' }}>
+                                <label class="custom-control-label"
+                                    for="edit_direncanakan_{{ $jl->id_jenis_luaran }}">{{ $jl->nama_jenis_luaran }}</label>
+                            </div>
+                        @endforeach
+                    </div>
+                    @error('jumlah_luaran_direncanakan')
                         <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
@@ -329,6 +362,11 @@
                     @enderror
                 </div>
                 <hr>
+
+                {{-- FIELD JENIS LUARAN YANG DIRENCANAKAN --}}
+
+                <hr>
+
                 <div class="form-group">
                     <label>Luaran Tambahan (Opsional)</label>
                     @php
@@ -368,11 +406,15 @@
                                 required></div>
                         <div class="col-md-6 form-group">
                             <label>Tanggal Permohonan <span class="text-danger">*</span></label>
-                            {{-- PERBAIKAN 2: Menggunakan class 'datepicker' dan Carbon untuk format --}}
-                            <input type="text" class="form-control datepicker"
+                            {{-- MENGUBAH TYPE DARI TEXT KE DATE, MEMASTIKAN FORMAT TANGGAL YYYY-MM-DD --}}
+                            <input type="date"
+                                class="form-control @error('luaran_data.HKI.tanggal_permohonan') is-invalid @enderror"
                                 name="luaran_data[HKI][tanggal_permohonan]"
                                 value="{{ old('luaran_data.HKI.tanggal_permohonan', optional($detailHki)->tgl_permohonan ? \Carbon\Carbon::parse($detailHki->tgl_permohonan)->format('Y-m-d') : '') }}"
                                 required>
+                            @error('luaran_data.HKI.tanggal_permohonan')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                     <div class="form-group"><label>Judul Ciptaan <span class="text-danger">*</span></label><input

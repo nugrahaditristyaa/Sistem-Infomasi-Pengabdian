@@ -21,7 +21,8 @@ class Pengabdian extends Model
     ];
 
     protected $casts = [
-        'tanggal_pengabdian' => 'date'
+        'tanggal_pengabdian' => 'date',
+        'jumlah_luaran_direncanakan' => 'array'
     ];
 
     // Relationships
@@ -88,5 +89,4 @@ class Pengabdian extends Model
     {
         return $this->belongsTo(LuaranWajib::class, 'id_luaran_wajib', 'id_luaran_wajib');
     }
-    
 }

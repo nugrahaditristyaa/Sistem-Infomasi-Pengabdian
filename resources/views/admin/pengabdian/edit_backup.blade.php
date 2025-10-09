@@ -222,7 +222,16 @@
                         <div class="alert alert-danger">{{ $message }}</div>
                     @enderror
                     <div id="mahasiswa-baru-container">
-                        @forelse (old('mahasiswa_baru', []) as $index => $mhs)
+                        @php
+                            $mahasiswaBaru = old('mahasiswa_baru', []);
+                            // Jika tidak ada data old, ambil dari database untuk edit
+                            if (empty($mahasiswaBaru) && isset($pengabdian)) {
+                                // Untuk saat ini, mahasiswa_baru kosong karena belum ada implementasi di database
+                                // Nanti bisa ditambahkan jika perlu
+                                $mahasiswaBaru = [];
+                            }
+                        @endphp
+                        @forelse ($mahasiswaBaru as $index => $mhs)
                             <div class="row mahasiswa-baru-item mb-3">
                                 <div class="col-md-4">
                                     <div class="form-group mb-md-0"><label>NIM</label><input type="text"
@@ -343,6 +352,41 @@
                     @enderror
                 </div>
                 <hr>
+
+                <div class="form-group">
+                    <label>Jenis Luaran yang Direncanakan <span class="text-danger">*</span></label>
+                    <small class="form-text text-muted mb-2">
+                        Pilih jenis-jenis luaran yang akan dicapai sesuai proposal (termasuk luaran wajib yang sudah dipilih
+                        di atas).
+                    </small>
+                    @php
+                        $selectedDirencanakan = old(
+                            'jumlah_luaran_direncanakan',
+                            is_string($pengabdian->jumlah_luaran_direncanakan)
+                                ? json_decode($pengabdian->jumlah_luaran_direncanakan, true) ?? []
+                                : (is_array($pengabdian->jumlah_luaran_direncanakan)
+                                    ? $pengabdian->jumlah_luaran_direncanakan
+                                    : []),
+                        );
+                    @endphp
+                    <div class="checkbox-group @error('jumlah_luaran_direncanakan') is-invalid @enderror">
+                        @foreach ($jenisLuaran as $jl)
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input"
+                                    id="edit_direncanakan_{{ $jl->id_jenis_luaran }}" name="jumlah_luaran_direncanakan[]"
+                                    value="{{ $jl->nama_jenis_luaran }}"
+                                    {{ in_array($jl->nama_jenis_luaran, $selectedDirencanakan) ? 'checked' : '' }}>
+                                <label class="custom-control-label"
+                                    for="edit_direncanakan_{{ $jl->id_jenis_luaran }}">{{ $jl->nama_jenis_luaran }}</label>
+                            </div>
+                        @endforeach
+                    </div>
+                    @error('jumlah_luaran_direncanakan')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+                <hr>
+
                 <div class="form-group">
                     <label>Luaran Tambahan (Opsional)</label>
                     @php

@@ -155,18 +155,25 @@
 
                 {{-- KODE TAMBAHAN DIMULAI DI SINI --}}
                 <div class="form-group">
-                    <label for="jumlah_luaran_direncanakan">
-                        Total Luaran Direncanakan (Sesuai Proposal) <span class="text-danger">*</span>
-                    </label>
-                    <input type="number" id="jumlah_luaran_direncanakan" name="jumlah_luaran_direncanakan"
-                        class="form-control @error('jumlah_luaran_direncanakan') is-invalid @enderror"
-                        value="{{ old('jumlah_luaran_direncanakan') }}"
-                        placeholder="Masukkan Jumlah Luaran Yang Direncanakan Contoh: 5" required>
-                    <small class="form-text text-muted">
-                        Masukkan total jumlah luaran (wajib + tambahan) yang dijanjikan di proposal awal.
+                    <label>Jenis Luaran yang Direncanakan <span class="text-danger">*</span></label>
+                    <small class="form-text text-muted mb-2">
+                        Pilih jenis-jenis luaran yang akan dicapai sesuai proposal (termasuk luaran wajib yang sudah dipilih
+                        di atas).
                     </small>
+                    <div class="checkbox-group @error('jumlah_luaran_direncanakan') is-invalid @enderror">
+                        @foreach ($jenisLuaran as $jl)
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input"
+                                    id="direncanakan_{{ $jl->id_jenis_luaran }}" name="jumlah_luaran_direncanakan[]"
+                                    value="{{ $jl->nama_jenis_luaran }}"
+                                    {{ in_array($jl->nama_jenis_luaran, old('jumlah_luaran_direncanakan', [])) ? 'checked' : '' }}>
+                                <label class="custom-control-label"
+                                    for="direncanakan_{{ $jl->id_jenis_luaran }}">{{ $jl->nama_jenis_luaran }}</label>
+                            </div>
+                        @endforeach
+                    </div>
                     @error('jumlah_luaran_direncanakan')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
                 {{-- KODE TAMBAHAN SELESAI --}}

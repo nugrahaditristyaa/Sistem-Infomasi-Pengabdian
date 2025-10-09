@@ -151,7 +151,7 @@
                                     <th>Anggota Pengabdian</th>
                                     <th>Mahasiswa Yang Terlibat</th>
                                     <th>Mitra</th>
-                                    <th>Jumlah Luaran Yang Direncanakan</th>
+                                    <th>Jenis Luaran Yang Direncanakan</th>
                                     <th>Hasil Luaran Kegiatan PkM</th>
                                     <th class="text-right-numeric">Total Dana</th>
                                     <th class="aksi-column">Aksi</th>
@@ -276,7 +276,17 @@
                                         </td>
 
                                         <td style="text-align: center; font-weight: bold;">
-                                            {{ $item->jumlah_luaran_direncanakan }}
+                                            @if (is_array($item->jumlah_luaran_direncanakan) && count($item->jumlah_luaran_direncanakan) > 0)
+                                                {{-- Lakukan perulangan di dalam array untuk menampilkan setiap nama luaran --}}
+                                                <div class="d-flex flex-column align-items-start">
+                                                    @foreach ($item->jumlah_luaran_direncanakan as $jenis)
+                                                        {{-- Menggunakan badge untuk tampilan yang rapi --}}
+                                                        <span class="badge badge-info mb-1">{{ $jenis }}</span>
+                                                    @endforeach
+                                                </div>
+                                            @else
+                                                <span class="text-muted">Tidak Ada</span>
+                                            @endif
                                         </td>
 
                                         {{-- =============================================== --}}
