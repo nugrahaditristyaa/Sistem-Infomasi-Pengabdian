@@ -605,6 +605,9 @@ class InQaController extends Controller
             case 'PGB.I.7.9': // Pertumbuhan PkM (3 tahun) - N vs N-3
                 return $this->calculateThreeYearGrowthPercentage($filterYear);
 
+            case 'PGB.I.5.6': // Pertumbuhan PkM (tahunan) - N vs N-1
+                return $this->calculateAnnualGrowthPercentage($filterYear);
+
             default:
                 // Untuk KPI lain, gunakan data monitoring jika ada
                 $monitoring = MonitoringKpi::where('id_kpi', $kpi->id_kpi)
@@ -880,6 +883,39 @@ class InQaController extends Controller
         // Hitung persentase pertumbuhan
         // ((Tahun N - Tahun N-3) / Tahun N-3) * 100%
         $growthPercentage = (($pkmYearN - $pkmYearN3) / $pkmYearN3) * 100;
+
+        return round($growthPercentage, 2);
+    }
+
+    /**
+     * Hitung pertumbuhan PkM tahunan (Tahun N vs Tahun N-1)
+     * 
+     * @param string|int $filterYear
+     * @return float
+     */
+    private function calculateAnnualGrowthPercentage($filterYear)
+    {
+        // Tentukan tahun N (tahun terakhir untuk perhitungan)
+        $yearN = ($filterYear !== 'all') ? (int)$filterYear : (int)date('Y');
+
+        // Tahun N-1 (satu tahun sebelumnya)
+        $yearN1 = $yearN - 1;
+
+        // Hitung jumlah PkM di tahun N
+        $pkmYearN = Pengabdian::whereYear('tanggal_pengabdian', $yearN)->count();
+
+        // Hitung jumlah PkM di tahun N-1
+        $pkmYearN1 = Pengabdian::whereYear('tanggal_pengabdian', $yearN1)->count();
+
+        // Jika tidak ada PkM di tahun N-1, tidak bisa menghitung pertumbuhan
+        if ($pkmYearN1 == 0) {
+            // Jika ada PkM di tahun N tapi tidak ada di tahun N-1, anggap pertumbuhan 100%
+            return $pkmYearN > 0 ? 100.00 : 0.00;
+        }
+
+        // Hitung persentase pertumbuhan
+        // ((Tahun N - Tahun N-1) / Tahun N-1) * 100%
+        $growthPercentage = (($pkmYearN - $pkmYearN1) / $pkmYearN1) * 100;
 
         return round($growthPercentage, 2);
     }

@@ -616,6 +616,67 @@
             </div>
         </div>
 
+        <!-- KPI PGB.I.5.6 Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-left-warning shadow h-100 py-3">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    KPI PGB.I.5.6 - Pertumbuhan PkM Tahunan
+                                    @if ($filterYear !== 'all')
+                                        <small class="text-lowercase">(Tahun {{ $filterYear }} vs
+                                            {{ $filterYear - 1 }})</small>
+                                    @else
+                                        <small class="text-lowercase">({{ date('Y') }} vs
+                                            {{ date('Y') - 1 }})</small>
+                                    @endif
+                                </div>
+                                @php
+                                    $annualGrowthKpi = collect($kpiRadarData)->firstWhere('kode', 'PGB.I.5.6');
+                                    $realisasiAnnualGrowth = $annualGrowthKpi ? $annualGrowthKpi['realisasi'] : 0;
+                                    $targetAnnualGrowth = $annualGrowthKpi ? $annualGrowthKpi['target'] : 10; // Default target 10%
+                                    $achievementAnnualGrowth =
+                                        $targetAnnualGrowth > 0
+                                            ? ($realisasiAnnualGrowth / $targetAnnualGrowth) * 100
+                                            : 0;
+                                @endphp
+                                <div class="h5 mb-2 font-weight-bold text-gray-800">
+                                    Realisasi:
+                                    <span class="{{ $realisasiAnnualGrowth >= 0 ? 'text-success' : 'text-danger' }}">
+                                        {{ $realisasiAnnualGrowth >= 0 ? '+' : '' }}{{ number_format($realisasiAnnualGrowth, 2) }}%
+                                    </span>
+                                    <small class="text-muted">(Target: ≥{{ $targetAnnualGrowth }}%)</small>
+                                    @if ($realisasiAnnualGrowth >= $targetAnnualGrowth)
+                                        <span class="badge badge-success ml-2">Tercapai</span>
+                                    @else
+                                        <span class="badge badge-danger ml-2">Belum Tercapai</span>
+                                    @endif
+                                </div>
+                                <div class="progress mb-2" style="height: 8px;">
+                                    <div class="progress-bar 
+                                        @if ($realisasiAnnualGrowth >= $targetAnnualGrowth) bg-success
+                                        @else bg-warning @endif
+                                    "
+                                        style="width: {{ $realisasiAnnualGrowth >= 0 ? min(($realisasiAnnualGrowth / max($targetAnnualGrowth, 1)) * 100, 100) : 0 }}%">
+                                    </div>
+                                </div>
+                                <div class="text-xs text-muted">
+                                    <strong>Metode:</strong> Pertumbuhan PkM dari tahun N-1 ke tahun N
+                                    <br>
+                                    <strong>Rumus:</strong> ((PkM Tahun N - PkM Tahun N-1) / PkM Tahun N-1) × 100%
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="fas fa-seedling fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- KPI Radar Chart Row -->
 
     </div>
