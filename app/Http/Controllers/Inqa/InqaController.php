@@ -531,16 +531,98 @@ class InQaController extends Controller
             ];
         }
 
-        // Urutkan berdasarkan nilai realisasi dari tertinggi ke terendah untuk tampilan radar chart yang lebih smooth
-        usort($radarData, function ($a, $b) {
-            // Jika realisasi sama, urutkan berdasarkan persentase capaian
-            if ($a['realisasi'] == $b['realisasi']) {
-                return $b['persentase'] <=> $a['persentase'];
-            }
-            return $b['realisasi'] <=> $a['realisasi'];
+        // OPTIMIZED RADAR CHART ORDERING: Minimize visual jumps and enhance readability
+        // Step 1: Separate positive and negative values for better grouping
+        $positiveKpis = array_filter($radarData, function ($kpi) {
+            return $kpi['realisasi'] >= 0;
         });
 
-        return $radarData;
+        $negativeKpis = array_filter($radarData, function ($kpi) {
+            return $kpi['realisasi'] < 0;
+        });
+
+        // Step 2: Sort each group optimally
+        // Positive values: High to low
+        usort($positiveKpis, function ($a, $b) {
+            if ($a['realisasi'] != $b['realisasi']) {
+                return $b['realisasi'] <=> $a['realisasi'];
+            }
+            if ($a['persentase'] != $b['persentase']) {
+                return $b['persentase'] <=> $a['persentase'];
+            }
+            return $a['kode'] <=> $b['kode'];
+        });
+
+        // Negative values: Less negative to more negative (closer to zero first)
+        usort($negativeKpis, function ($a, $b) {
+            if ($a['realisasi'] != $b['realisasi']) {
+                return $b['realisasi'] <=> $a['realisasi']; // -10 comes before -50
+            }
+            if ($a['persentase'] != $b['persentase']) {
+                return $b['persentase'] <=> $a['persentase'];
+            }
+            return $a['kode'] <=> $b['kode'];
+        });
+
+        // Step 3: Smart arrangement to minimize circular jumps
+        $finalOrder = [];
+
+        if (!empty($positiveKpis) && !empty($negativeKpis)) {
+            // Mixed scenario: positive -> negative transition with buffer
+
+            // Add positive KPIs
+            $finalOrder = array_merge($finalOrder, $positiveKpis);
+
+            // Add negative KPIs
+            $finalOrder = array_merge($finalOrder, $negativeKpis);
+        } elseif (!empty($positiveKpis)) {
+            // Only positive values
+            $finalOrder = $positiveKpis;
+        } elseif (!empty($negativeKpis)) {
+            // Only negative values
+            $finalOrder = $negativeKpis;
+        } else {
+            // Fallback to original data
+            $finalOrder = $radarData;
+        }
+
+        // Step 4: Final optimization for large datasets
+        if (count($finalOrder) > 8) {
+            // For very large datasets, apply tier grouping
+            $tiers = [
+                'excellent' => [], // >80
+                'good' => [],      // 50-80
+                'fair' => [],      // 20-50
+                'poor' => [],      // 0-20
+                'negative' => []   // <0
+            ];
+
+            foreach ($finalOrder as $kpi) {
+                $value = $kpi['realisasi'];
+                if ($value >= 80) {
+                    $tiers['excellent'][] = $kpi;
+                } elseif ($value >= 50) {
+                    $tiers['good'][] = $kpi;
+                } elseif ($value >= 20) {
+                    $tiers['fair'][] = $kpi;
+                } elseif ($value >= 0) {
+                    $tiers['poor'][] = $kpi;
+                } else {
+                    $tiers['negative'][] = $kpi;
+                }
+            }
+
+            // Rebuild array with tier ordering
+            $finalOrder = array_merge(
+                $tiers['excellent'],
+                $tiers['good'],
+                $tiers['fair'],
+                $tiers['poor'],
+                $tiers['negative']
+            );
+        }
+
+        return $finalOrder;
     }
 
     /**

@@ -515,6 +515,11 @@
                     </div>
                     <div class="form-group">
                         <label for="hki_anggota_dosen">Anggota Pencipta (Dosen)</label>
+                        <small class="form-text text-info mb-2">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Info:</strong> Field ini dapat memilih ketua dan anggota yang sudah dipilih sebelumnya
+                            (tidak ada pembatasan duplikasi)
+                        </small>
                         <select id="hki_anggota_dosen" name="luaran_data[HKI][anggota_dosen][]"
                             class="form-control @error('luaran_data.HKI.anggota_dosen.*') is-invalid @enderror" multiple
                             data-placeholder="Pilih satu atau lebih dosen...">
@@ -728,12 +733,12 @@
                     const selectedPengabdian = anggotaPengabdianSelect.val() || [];
                     const selectedHki = anggotaHkiSelect.val() || [];
 
-                    // Fungsi terpisah untuk memperbarui satu dropdown
-                    const updateSelectOptions = (currentSelect, otherSelectedNiks) => {
-                        // Dosen yang dinonaktifkan adalah KETUA dan yang sudah dipilih di dropdown LAINNYA
-                        const niksToDisable = [ketuaNik, ...otherSelectedNiks].filter(Boolean);
+                    // Fungsi untuk memperbarui dropdown Anggota Pengabdian (tetap seperti sebelumnya)
+                    const updateAnggotaPengabdianOptions = () => {
+                        // Untuk Anggota Pengabdian: disable ketua dan yang sudah dipilih di HKI
+                        const niksToDisable = [ketuaNik, ...selectedHki].filter(Boolean);
 
-                        currentSelect.find('option').each(function() {
+                        anggotaPengabdianSelect.find('option').each(function() {
                             const option = $(this);
                             const optionNik = option.val();
 
@@ -747,22 +752,34 @@
                             }
                         });
 
-                        // Validasi akhir: pastikan NIK Ketua tidak ada di nilai yang terpilih
-                        let currentValues = currentSelect.val() || [];
+                        // Validasi: pastikan NIK Ketua tidak ada di nilai yang terpilih
+                        let currentValues = anggotaPengabdianSelect.val() || [];
                         if (Array.isArray(currentValues) && currentValues.includes(ketuaNik)) {
                             currentValues = currentValues.filter(nik => nik !== ketuaNik);
-                            currentSelect.val(currentValues);
+                            anggotaPengabdianSelect.val(currentValues);
                         }
 
-                        // Refresh Select2 untuk menerapkan perubahan
-                        currentSelect.trigger('change.select2');
+                        anggotaPengabdianSelect.trigger('change.select2');
                     };
 
-                    // Perbarui dropdown Anggota Pengabdian berdasarkan pilihan di Anggota HKI
-                    updateSelectOptions(anggotaPengabdianSelect, selectedHki);
+                    // Fungsi untuk memperbarui dropdown Anggota Pencipta HKI (MODIFIED)
+                    const updateAnggotaHkiOptions = () => {
+                        // PERUBAHAN BERDASARKAN PERMINTAAN USER:
+                        // Anggota Pencipta (Dosen) BISA memilih ketua dan anggota yang sudah dipilih sebelumnya
+                        // Tidak ada pembatasan duplikasi, semua dosen tersedia untuk dipilih
+                        // Reasoning: Dalam HKI, ketua dan anggota pengabdian dapat menjadi anggota pencipta
+                        anggotaHkiSelect.find('option').each(function() {
+                            const option = $(this);
+                            option.prop('disabled',
+                            false); // Semua option tersedia tanpa pembatasan
+                        });
 
-                    // Perbarui dropdown Anggota HKI berdasarkan pilihan di Anggota Pengabdian
-                    updateSelectOptions(anggotaHkiSelect, selectedPengabdian);
+                        anggotaHkiSelect.trigger('change.select2');
+                    };
+
+                    // Perbarui kedua dropdown
+                    updateAnggotaPengabdianOptions();
+                    updateAnggotaHkiOptions();
                 },
 
 

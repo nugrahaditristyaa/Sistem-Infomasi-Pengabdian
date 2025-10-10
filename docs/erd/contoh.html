@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Progress KPI Pengabdian</title>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background: #f8fafc;
+        color: #1e293b;
+        padding: 40px;
+      }
+
+      h2 {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .kpi-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+        margin-bottom: 18px;
+      }
+
+      .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .kpi-header strong {
+        color: #0f172a;
+      }
+
+      .progress-container {
+        position: relative;
+        background: #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        height: 18px;
+      }
+
+      .progress-bar {
+        height: 18px;
+        border-radius: 8px;
+        transition: width 0.6s ease;
+      }
+
+      .target-marker {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #1e293b;
+        opacity: 0.7;
+      }
+
+      .progress-label {
+        font-size: 14px;
+        margin-top: 6px;
+        color: #475569;
+      }
+
+      .target-info {
+        font-size: 13px;
+        margin-top: 4px;
+        color: #64748b;
+      }
+
+      .green {
+        background-color: #10b981;
+      }
+
+      .yellow {
+        background-color: #fbbf24;
+      }
+
+      .red {
+        background-color: #ef4444;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>📊 Progress Capaian KPI Pengabdian</h2>
+
+    <div id="kpiList"></div>
+
+    <script>
+      const dataKPI = [
+        { kode: "PGB.I.1.1", indikator: "80% dosen terlibat pengabdian", target: 80, realisasi: 75 },
+        { kode: "PGB.I.5.6", indikator: "Peningkatan jumlah pengabdian", target: 10, realisasi: 12 },
+        { kode: "PGB.I.7.4", indikator: "30% proposal disetujui", target: 30, realisasi: 28 },
+        { kode: "PGB.I.7.9", indikator: "Peningkatan jumlah mitra", target: 10, realisasi: 8 },
+        { kode: "IKT.I.5.g", indikator: "5% dosen eksternal", target: 5, realisasi: 7 },
+        { kode: "IKT.I.5.h", indikator: "70% abdimas selesai", target: 70, realisasi: 65 },
+        { kode: "IKT.I.5.i", indikator: "1 HKI per prodi", target: 1, realisasi: 2 },
+        { kode: "IKT.I.5.j", indikator: "70% abdimas melibatkan mahasiswa", target: 70, realisasi: 72 },
+      ];
+
+      const container = document.getElementById("kpiList");
+
+      dataKPI.forEach((d) => {
+        const capaian = ((d.realisasi / d.target) * 100).toFixed(1);
+        let warna = "red";
+        if (capaian >= 100) warna = "green";
+        else if (capaian >= 70) warna = "yellow";
+
+        const card = document.createElement("div");
+        card.className = "kpi-card";
+
+        const progressWidth = Math.min(capaian, 100);
+        const targetPos = 100; // posisi target = 100% sebagai benchmark
+
+        card.innerHTML = `
+          <div class="kpi-header">
+            <strong>${d.kode}</strong>
+            <span>${capaian}%</span>
+          </div>
+
+          <div class="progress-container">
+            <div class="progress-bar ${warna}" style="width:${progressWidth}%;"></div>
+            <div class="target-marker" style="left:${targetPos}%;"></div>
+          </div>
+
+          <div class="progress-label">${d.indikator}</div>
+          <div class="target-info">🎯 Target: ${d.target} | 📈 Realisasi: ${d.realisasi}</div>
+        `;
+
+        container.appendChild(card);
+      });
+    </script>
+  </body>
+</html>
