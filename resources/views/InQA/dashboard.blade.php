@@ -120,7 +120,7 @@
                     <select name="year" class="form-control form-control-sm" onchange="this.form.submit()">
                         <option value="all" {{ $filterYear == 'all' ? 'selected' : '' }}>Semua Tahun</option>
                         @foreach ($availableYears as $year)
-                            <option value="{{ $year }}" {{ $filterYear == $year ? 'selected' : '2024' }}>
+                            <option value="{{ $year }}" {{ $filterYear == $year ? 'selected' : '' }}>
                                 {{ $year }}
                             </option>
                         @endforeach
@@ -294,7 +294,7 @@
 
         <!-- KPI Progress Bar Row -->
         <div class="row mb-4">
-            <div class="col-12">
+            <div class="col-6">
                 <div class="card shadow h-100">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary">
@@ -327,84 +327,74 @@
                                     $skorNormalisasi = $kpi['skor_normalisasi'] ?? $kpi['persentase'];
                                     $isNegative = $skorNormalisasi < 0;
 
-                                    // Determine KPI type and benchmark strategy
                                     $kpiCode = $kpi['kode'];
                                     $targetValue = $kpi['target'];
                                     $satuan = $kpi['satuan'];
 
-                                    // Determine benchmark type based on KPI characteristics
-                                    // Dynamic benchmark: direct percentage targets (target represents the actual percentage needed)
                                     $isDynamicBenchmark =
                                         $satuan === '%' &&
                                         $targetValue < 100 &&
                                         in_array($kpiCode, [
-                                            'PGB.I.1.1',
-                                            'IKT.I.5.g',
-                                            'IKT.I.5.h',
-                                            'IKT.I.5.j',
-                                            'PGB.I.7.4',
+                                            'PGB.I.1.1', 'IKT.I.5.g', 'IKT.I.5.h', 'IKT.I.5.j', 'PGB.I.7.4',
                                         ]);
 
-                                    // Static benchmark: growth rates, absolute numbers, or normalized achievements
-                                    $isStaticBenchmark =
-                                        // Growth KPIs (target is growth percentage, but 100% represents achieving that growth)
-                                        in_array($kpiCode, ['PGB.I.5.6', 'PGB.I.7.9']) ||
-                                        // Absolute number KPIs (1 HKI, etc.)
-                                        ($satuan !== '%' && $targetValue <= 10) ||
-                                        // Any other KPI not explicitly identified as dynamic
-                                        (!$isDynamicBenchmark && $satuan === '%');
+                                    // --- CORRECTED LOGIC BLOCK ---
+                                    $benchmarkPositionPercent = 0;
+                                    $progressPercentage = 0;
+                                    $isTercapai = false;
+                                    $targetLabelText = '';
 
-                                    if ($isDynamicBenchmark) {
-                                        // For dynamic benchmark:
-                                        // - Benchmark line position = target value percentage on 0-100% scale
-                                        // - Progress bar always proportional to 0-100% scale
-                                        $benchmarkPositionPercent = $targetValue; // Position benchmark at target value
-                                        $progressPercentage = max(0, min(100, $kpi['realisasi'])); // Always 0-100% scale
+                                    if ($isDynamicBenchmark && !$isNegative) {
+                                        // Case 1: Dynamic Benchmark (Positive Score)
+                                        $benchmarkPositionPercent = $targetValue;
+                                        $progressPercentage = max(0, min(100, $kpi['realisasi']));
                                         $isTercapai = $kpi['realisasi'] >= $targetValue;
+                                        $targetLabelText = 'Target: ' . $targetValue . '%';
                                     } else {
-                                        // For static benchmark: benchmark always at 100%, use normalized score
-                                        $benchmarkPositionPercent = 100;
+                                        // Case 2: Static Benchmark (Positive Score) OR ANY Negative Score
+                                        $benchmarkPositionPercent = 100; // Default/Static target is 100%
                                         $progressPercentage = max(0, min(100, $skorNormalisasi));
                                         $isTercapai = $skorNormalisasi >= 100;
+                                        $targetLabelText = 'Target: 100%';
                                     }
                                 @endphp
 
-                                <div class="kpi-progress-item mb-4 border-left-{{ $isTercapai ? 'success' : 'warning' }} pl-3"
+                                <div class="kpi-progress-item mb-4 border-left-{{ $isTercapai ? 'success' : ($isNegative ? 'danger' : 'warning') }} pl-3"
                                     data-toggle="tooltip" data-html="true" data-placement="top"
                                     title="<strong>{{ $kpi['kode'] }}:</strong> {{ $kpi['indikator'] }}<br>
-                                            <strong>Target:</strong> {{ number_format($kpi['target']) }} {{ $kpi['satuan'] }}<br>
-                                            <strong>Realisasi:</strong> {{ number_format($kpi['realisasi'], 2) }} {{ $kpi['satuan'] }}<br>
-                                            <strong>Capaian:</strong> {{ number_format($skorNormalisasi, 1) }}%">
+                                           <strong>Target:</strong> {{ number_format($kpi['target']) }} {{ $kpi['satuan'] }}<br>
+                                           <strong>Realisasi:</strong> {{ number_format($kpi['realisasi'], 2) }} {{ $kpi['satuan'] }}<br>
+                                           <strong>Capaian:</strong> {{ number_format($skorNormalisasi, 1) }}%">
 
                                     <!-- KPI Header -->
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <div class="d-flex align-items-center">
                                             <h6 class="mb-0 font-weight-bold text-gray-800">{{ $kpi['kode'] }}</h6>
                                             <span
-                                                class="ml-2 badge badge-{{ $isTercapai ? 'success' : 'warning' }} badge-sm">
-                                                {{ $isTercapai ? 'Tercapai' : 'Belum Tercapai' }}
+                                                class="ml-2 badge badge-{{ $isTercapai ? 'success' : ($isNegative ? 'danger' : 'warning') }} badge-sm">
+                                                @if($isNegative)
+                                                    Menurun
+                                                @else
+                                                    {{ $isTercapai ? 'Tercapai' : 'Belum Tercapai' }}
+                                                @endif
                                             </span>
                                             @if ($isDynamicBenchmark)
                                                 <small class="ml-1 text-info"
-                                                    title="Benchmark dinamis: skala 0-{{ $targetValue }}%">
+                                                    title="Benchmark dinamis: target pencapaian adalah {{ $targetValue }}%">
                                                     <i class="fas fa-chart-line"></i>
                                                 </small>
                                             @else
-                                                <small class="ml-1 text-muted" title="Benchmark statis: skala 0-100%">
+                                                <small class="ml-1 text-muted"
+                                                    title="Benchmark statis: target pencapaian penuh adalah 100%">
                                                     <i class="fas fa-percentage"></i>
                                                 </small>
                                             @endif
                                         </div>
                                         <div class="text-right">
-                                            @if ($isNegative)
-                                                <span class="text-danger font-weight-bold">Menurun
-                                                    {{ number_format(abs($skorNormalisasi), 1) }}%</span>
-                                            @else
-                                                <span
-                                                    class="font-weight-bold text-{{ $isTercapai ? 'success' : 'warning' }}">
-                                                    {{ number_format($skorNormalisasi, 1) }}%
-                                                </span>
-                                            @endif
+                                            <span
+                                                class="font-weight-bold text-{{ $isTercapai ? 'success' : ($isNegative ? 'danger' : 'warning') }}">
+                                                {{ number_format($skorNormalisasi, 1) }}%
+                                            </span>
                                         </div>
                                     </div>
 
@@ -433,48 +423,28 @@
                                                     aria-valuemax="100">
                                                     @if ($progressPercentage > 15)
                                                         <span class="font-weight-bold">
-                                                            @if ($isDynamicBenchmark)
-                                                                {{ number_format($kpi['realisasi'], 1) }}%
-                                                            @else
-                                                                {{ number_format($skorNormalisasi, 1) }}%
-                                                            @endif
+                                                            {{ number_format($skorNormalisasi, 1) }}%
                                                         </span>
                                                     @endif
                                                 </div>
                                             @endif
                                         </div>
 
-                                        <!-- Target Benchmark Line -->
-                                        @if (!$isNegative)
-                                            <div class="position-absolute"
-                                                style="top: 0; left: {{ $benchmarkPositionPercent }}%; transform: translateX(-50%); height: 25px; width: 2px; background-color: #dc3545; z-index: 10; box-shadow: 0 0 3px rgba(220, 53, 69, 0.5);">
-                                            </div>
-                                            <div class="position-absolute text-danger"
-                                                style="top: -18px; left: {{ $benchmarkPositionPercent }}%; transform: translateX(-50%); font-size: 0.65rem; font-weight: bold; white-space: nowrap;">
-                                                @if ($isDynamicBenchmark)
-                                                    {{ $targetValue }}%
-                                                @else
-                                                    Target
-                                                @endif
-                                            </div>
-                                        @endif
+                                        <!-- Target Benchmark Line - ALWAYS SHOWS -->
+                                        <div class="position-absolute"
+                                            style="top: 0; left: {{ $benchmarkPositionPercent }}%; transform: translateX(-50%); height: 25px; width: 2px; background-color: #dc3545; z-index: 10; box-shadow: 0 0 3px rgba(220, 53, 69, 0.5);">
+                                        </div>
+                                    
                                     </div>
 
                                     <!-- Progress Labels -->
                                     <div class="d-flex justify-content-between mb-2"
-                                        style="font-size: 0.75rem; position: relative;">
+                                        style="font-size: 0.75rem; position: relative; margin-top: 20px;">
                                         <span class="text-muted">0%</span>
                                         <span class="text-muted">50%</span>
                                         <span class="text-muted">100%</span>
-                                        @if ($isDynamicBenchmark)
-                                            <!-- Target marker at exact position -->
-                                            <span class="text-danger font-weight-bold position-absolute"
-                                                style="left: {{ $benchmarkPositionPercent }}%; transform: translateX(-50%); top: -3px;">
-                                                ↑{{ $targetValue }}%
-                                            </span>
-                                        @endif
                                     </div>
-
+                                    
                                     <!-- Detail Info -->
                                     <div class="row" style="font-size: 0.8rem;">
                                         <div class="col-6">
@@ -501,29 +471,13 @@
                         <div class="row mt-4">
                             <div class="col-12">
                                 <div class="alert alert-info">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <h6 class="alert-heading"><i class="fas fa-info-circle mr-2"></i>Cara Membaca
-                                                Progress</h6>
-                                            <ul class="mb-0" style="font-size: 0.9rem;">
-                                                <li><strong>Skala Batang:</strong> Selalu 0-100% proporsional</li>
-                                                <li><strong>Garis Merah:</strong> Posisi target dinamis</li>
-                                                <li><strong>KPI Persentase:</strong> Target di posisi sesuai %</li>
-                                                <li><strong>KPI Pertumbuhan:</strong> Target di posisi 100%</li>
-                                            </ul>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <h6 class="alert-heading"><i class="fas fa-chart-line mr-2"></i>Interpretasi
-                                                Hasil</h6>
-                                            <ul class="mb-0" style="font-size: 0.9rem;">
-                                                <li><strong>Hijau:</strong> Target tercapai/terlampaui</li>
-                                                <li><strong>Kuning:</strong> Belum mencapai target</li>
-                                                <li><strong>Batang vs Garis:</strong> Proporsi vs target</li>
-                                                <li><strong>Icon:</strong> <i class="fas fa-chart-line text-info"></i> =
-                                                    dinamis, <i class="fas fa-percentage text-muted"></i> = statis</li>
-                                            </ul>
-                                        </div>
-                                    </div>
+                                    <h6 class="alert-heading"><i class="fas fa-info-circle mr-2"></i>Cara Membaca Progress</h6>
+                                    <ul class="mb-0" style="font-size: 0.9rem;">
+                                       <li><strong>Garis Merah:</strong> Posisi target yang harus dicapai.</li>
+                                       <li><strong>Skor Negatif (Menurun):</strong> Progres bar kosong, namun garis target tetap ditampilkan di <strong>100%</strong>.</li>
+                                       <li><strong>Benchmark Statis (<i class="fas fa-percentage text-muted"></i>):</strong> Target selalu di <strong>100%</strong>.</li>
+                                       <li><strong>Benchmark Dinamis (<i class="fas fa-chart-line text-info"></i>):</strong> Target sesuai nilai persentase spesifik.</li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -531,7 +485,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     @push('scripts')
