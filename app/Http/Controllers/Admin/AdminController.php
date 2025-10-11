@@ -20,8 +20,6 @@ class AdminController extends Controller
             return redirect()->route('admin.dashboard', ['year' => '2024']); // <-- UBAH DI SINI
         }
 
-
-
         // Get year filter parameter - default to current year
         $currentYear = date('Y');
         $filterYear = $request->get('year', $currentYear);

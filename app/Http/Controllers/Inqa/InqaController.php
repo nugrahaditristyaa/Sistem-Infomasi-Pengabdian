@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Kpi;
 use App\Models\MonitoringKpi;
 use App\Models\Pengabdian;
+use App\Models\Dosen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -326,6 +327,21 @@ class InQaController extends Controller
             'mahasiswa_sistem_informasi' => $mahasiswaSistemInformasi,
         ];
 
+        // Hitung total pengabdian (sebagai ketua + anggota) untuk setiap dosen dengan filter tahun
+        $dosenQuery = Dosen::withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
+            if ($filterYear !== 'all') {
+                $query->whereYear('tanggal_pengabdian', $filterYear);
+            }
+        }]);
+
+        $dosenCounts = $dosenQuery->orderBy('jumlah_pengabdian', 'desc')
+            ->get();
+
+        // Pisahkan data nama dosen dan jumlahnya untuk digunakan di chart
+        $namaDosen = $dosenCounts->pluck('nama');
+        $jumlahPengabdianDosen = $dosenCounts->pluck('jumlah_pengabdian');
+
+
         // KPI Radar Chart Data
         $kpiRadarData = $this->getKpiRadarData($filterYear);
 
@@ -338,7 +354,9 @@ class InQaController extends Controller
             'stats',
             'filterYear',
             'availableYears',
-            'kpiRadarData'
+            'kpiRadarData',
+            'namaDosen',
+            'jumlahPengabdianDosen'
         ));
     }
 

@@ -19,6 +19,7 @@
     <!-- Custom styles for this template-->
     <link href="{{ asset('assets/css/sb-admin-2.css') }}" rel="stylesheet">
 
+
     <!-- Chart.js v3 CSS (if needed) -->
 
     <style>
@@ -151,7 +152,10 @@
     <script src="{{ asset('assets/js/sb-admin-2.js') }}"></script>
 
     <!-- Chart.js v3 (Compatible with treemap plugin) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
 
     @stack('scripts')
 
