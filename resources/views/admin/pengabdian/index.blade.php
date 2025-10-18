@@ -13,6 +13,10 @@
             vertical-align: middle;
         }
 
+        .table-responsive thead {
+            background-color: #f8f9fc;
+        }
+
         .table-hover tbody tr:hover {
             background-color: #f8f9fc;
         }
@@ -134,14 +138,15 @@
         <div class="col-12">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Tabel Pengabdian</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-file-alt mr-2"></i>Data Rekap Pengabdian
+                    </h6>
                 </div>
                 <div class="card-body">
                     {{-- Controls row: Buttons, length selector and built-in search will be placed by DataTables --}}
 
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover table-striped" id="dataTable" width="100%"
-                            cellspacing="0">
+                        <table class="table table-hover table-striped" id="dataTable" width="100%" cellspacing="0">
                             <thead>
                                 <tr>
                                     <th class="no-column">No</th>
@@ -149,10 +154,10 @@
                                     <th>Tanggal Pengabdian</th>
                                     <th>Ketua Pengabdian</th>
                                     <th>Anggota Pengabdian</th>
-                                    <th>Mahasiswa Yang Terlibat</th>
+                                    <th>Mahasiswa Terlibat</th>
                                     <th>Mitra</th>
-                                    <th>Jenis Luaran Yang Direncanakan</th>
-                                    <th>Hasil Luaran Kegiatan PkM</th>
+                                    <th>Luaran Yang Direncanakan</th>
+                                    <th>Luaran Kegiatan</th>
                                     <th class="text-right-numeric">Total Dana</th>
                                     <th class="aksi-column">Aksi</th>
                                 </tr>

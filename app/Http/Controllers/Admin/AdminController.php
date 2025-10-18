@@ -292,9 +292,13 @@ class AdminController extends Controller
                 ->count('pengabdian_mahasiswa.nim');
         }
 
+        // Get total number of all lecturers in FTI
+        $totalDosenKeseluruhan = Dosen::count();
+
         $stats = [
             'total_pengabdian' => $totalPengabdian,
             'total_dosen' => $totalDosenTerlibat,
+            'total_dosen_keseluruhan' => $totalDosenKeseluruhan,
             'total_mahasiswa' => $pengabdianDenganMahasiswa,
             'current_year' => $filterYear === 'all' ? $currentYear : $filterYear,
             'previous_year' => $filterYear === 'all' ? $currentYear - 1 : $filterYear - 1,

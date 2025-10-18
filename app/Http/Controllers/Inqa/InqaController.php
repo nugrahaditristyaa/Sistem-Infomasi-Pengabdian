@@ -7,6 +7,7 @@ use App\Models\Kpi;
 use App\Models\MonitoringKpi;
 use App\Models\Pengabdian;
 use App\Models\Dosen;
+use App\Models\SumberDana;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -250,6 +251,8 @@ class InQaController extends Controller
             $yearLabel = "vs $previousFilterYear";
         }
 
+        $totalDosenKeseluruhan = Dosen::count();
+
         // Calculate percentage change
         $percentageChangePengabdian = $totalPengabdianPrevious > 0 ?
             round((($totalPengabdianComparison - $totalPengabdianPrevious) / $totalPengabdianPrevious) * 100, 1) : ($totalPengabdianComparison > 0 ? 100 : 0);
@@ -260,6 +263,35 @@ class InQaController extends Controller
         // Calculate percentage of pengabdian with mahasiswa
         $persentasePengabdianDenganMahasiswa = $totalPengabdian > 0 ?
             round(($pengabdianDenganMahasiswa / $totalPengabdian) * 100, 1) : 0;
+
+        // Calculate previous year percentage of pengabdian with mahasiswa for comparison
+        $pengabdianDenganMahasiswaPrevious = 0;
+        $totalPengabdianPreviousForMahasiswa = 0;
+        $persentasePengabdianDenganMahasiswaPrevious = 0;
+        $percentageChangeMahasiswa = 0;
+
+        if ($filterYear !== 'all') {
+            // Count pengabdian with mahasiswa in previous year
+            $pengabdianDenganMahasiswaPrevious = Pengabdian::whereYear('tanggal_pengabdian', $previousFilterYear)
+                ->whereExists(function ($query) use ($previousFilterYear) {
+                    $query->select(DB::raw(1))
+                        ->from('pengabdian_mahasiswa')
+                        ->whereColumn('pengabdian_mahasiswa.id_pengabdian', 'pengabdian.id_pengabdian');
+                })
+                ->count();
+
+            $totalPengabdianPreviousForMahasiswa = Pengabdian::whereYear('tanggal_pengabdian', $previousFilterYear)->count();
+
+            $persentasePengabdianDenganMahasiswaPrevious = $totalPengabdianPreviousForMahasiswa > 0 ?
+                round(($pengabdianDenganMahasiswaPrevious / $totalPengabdianPreviousForMahasiswa) * 100, 1) : 0;
+
+            // Calculate percentage change for mahasiswa involvement
+            if ($persentasePengabdianDenganMahasiswaPrevious > 0) {
+                $percentageChangeMahasiswa = round((($persentasePengabdianDenganMahasiswa - $persentasePengabdianDenganMahasiswaPrevious) / $persentasePengabdianDenganMahasiswaPrevious) * 100, 1);
+            } else {
+                $percentageChangeMahasiswa = $persentasePengabdianDenganMahasiswa > 0 ? 100 : 0;
+            }
+        }
 
         // Calculate total dosen terlibat (IT + SI) berdasarkan filter tahun
         if ($filterYear === 'all') {
@@ -311,10 +343,12 @@ class InQaController extends Controller
         $stats = [
             'total_pengabdian' => $totalPengabdian,
             'total_dosen' => $totalDosenTerlibat,
+            'total_dosen_keseluruhan' => $totalDosenKeseluruhan,
             'total_mahasiswa' => $pengabdianDenganMahasiswa,
             'percentage_change_pengabdian' => $percentageChangePengabdian,
             'persentase_pengabdian_dengan_mahasiswa' => $persentasePengabdianDenganMahasiswa,
             'percentage_change_dosen' => $percentageChangeDosen,
+            'percentage_change_mahasiswa' => $percentageChangeMahasiswa,
             'year_label' => $yearLabel,
             'filter_year' => $filterYear,
             'previous_year' => $filterYear === 'all' ? $currentYear - 1 : $filterYear - 1,
@@ -345,6 +379,9 @@ class InQaController extends Controller
         // KPI Radar Chart Data
         $kpiRadarData = $this->getKpiRadarData($filterYear);
 
+        // Get data for treemap chart (jenis luaran)
+        $jenisLuaranData = $this->getJenisLuaranTreemapData($filterYear);
+
         return view('inqa.dashboard', compact(
             'totalKpi',
             'totalMonitoring',
@@ -356,7 +393,8 @@ class InQaController extends Controller
             'availableYears',
             'kpiRadarData',
             'namaDosen',
-            'jumlahPengabdianDosen'
+            'jumlahPengabdianDosen',
+            'jenisLuaranData'
         ));
     }
 
@@ -1154,5 +1192,534 @@ class InQaController extends Controller
     public function getHkiPerProdiData($filterYear)
     {
         return $this->calculateHkiPerProdiCount($filterYear);
+    }
+
+    /**
+     * Get funding sources data for stacked bar chart
+     * Compares current year vs previous year with breakdown by source
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getFundingSourcesData(Request $request)
+    {
+        $filterYear = $request->get('year', date('Y'));
+
+        // Handle 'all' filter - show overall comparison between two most recent years
+        if ($filterYear === 'all') {
+            $currentYear = date('Y');
+            $previousYear = $currentYear - 1;
+        } else {
+            $currentYear = $filterYear;
+            $previousYear = $filterYear - 1;
+        }
+
+        // Get funding data for current year
+        $currentYearData = DB::table('sumber_dana')
+            ->join('pengabdian', 'sumber_dana.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+            ->whereYear('pengabdian.tanggal_pengabdian', $currentYear)
+            ->select('sumber_dana.nama_sumber', DB::raw('SUM(sumber_dana.jumlah_dana) as total_dana'))
+            ->groupBy('sumber_dana.nama_sumber')
+            ->get()
+            ->keyBy('nama_sumber');
+
+        // Get funding data for previous year
+        $previousYearData = DB::table('sumber_dana')
+            ->join('pengabdian', 'sumber_dana.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+            ->whereYear('pengabdian.tanggal_pengabdian', $previousYear)
+            ->select('sumber_dana.nama_sumber', DB::raw('SUM(sumber_dana.jumlah_dana) as total_dana'))
+            ->groupBy('sumber_dana.nama_sumber')
+            ->get()
+            ->keyBy('nama_sumber');
+
+        // Get all unique funding sources from both years
+        $allSources = $currentYearData->keys()->merge($previousYearData->keys())->unique()->values();
+
+        // Prepare data for Chart.js stacked bar chart
+        $datasets = [];
+        $colors = [
+            '#4e73df', // Blue for LPPM
+            '#1cc88a', // Green for Fakultas
+            '#36b9cc', // Cyan for Universitas
+            '#f6c23e', // Yellow for Eksternal
+            '#e74a3b', // Red for additional sources
+            '#6f42c1', // Purple for additional sources
+            '#fd7e14', // Orange for additional sources
+            '#20c997'  // Teal for additional sources
+        ];
+
+        foreach ($allSources as $index => $source) {
+            $currentAmount = $currentYearData->get($source)->total_dana ?? 0;
+            $previousAmount = $previousYearData->get($source)->total_dana ?? 0;
+
+            $datasets[] = [
+                'label' => $source,
+                'data' => [$previousAmount, $currentAmount], // [Previous Year, Current Year]
+                'backgroundColor' => $colors[$index % count($colors)],
+                'borderColor' => $colors[$index % count($colors)],
+                'borderWidth' => 1
+            ];
+        }
+
+        // Calculate totals for each year
+        $currentYearTotal = $currentYearData->sum('total_dana');
+        $previousYearTotal = $previousYearData->sum('total_dana');
+
+        // Check if there's no data for both years
+        if ($allSources->isEmpty()) {
+            return response()->json([
+                'labels' => [$previousYear, $currentYear],
+                'datasets' => [
+                    [
+                        'label' => 'Tidak Ada Data',
+                        'data' => [0, 0],
+                        'backgroundColor' => '#e3e6f0',
+                        'borderColor' => '#d1d3e2',
+                        'borderWidth' => 1
+                    ]
+                ],
+                'totals' => [
+                    'previous_year' => 0,
+                    'current_year' => 0
+                ],
+                'years' => [
+                    'previous' => $previousYear,
+                    'current' => $currentYear
+                ],
+                'no_data' => true,
+                'message' => 'Tidak ada data sumber dana untuk periode ini'
+            ]);
+        }
+
+        return response()->json([
+            'labels' => [$previousYear, $currentYear],
+            'datasets' => $datasets,
+            'totals' => [
+                'previous_year' => $previousYearTotal,
+                'current_year' => $currentYearTotal
+            ],
+            'years' => [
+                'previous' => $previousYear,
+                'current' => $currentYear
+            ],
+            'no_data' => false
+        ]);
+    }
+
+    /**
+     * Get data for Jenis Luaran Treemap Chart
+     * 
+     * @param string|int $filterYear
+     * @return array
+     */
+    private function getJenisLuaranTreemapData($filterYear)
+    {
+        $query = DB::table('luaran')
+            ->join('jenis_luaran', 'luaran.id_jenis_luaran', '=', 'jenis_luaran.id_jenis_luaran')
+            ->join('pengabdian', 'luaran.id_pengabdian', '=', 'pengabdian.id_pengabdian');
+
+        // Filter by year if not 'all'
+        if ($filterYear !== 'all') {
+            $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
+        }
+
+        $jenisLuaranData = $query
+            ->select(
+                'jenis_luaran.nama_jenis_luaran',
+                DB::raw('COUNT(*) as jumlah')
+            )
+            ->groupBy('jenis_luaran.id_jenis_luaran', 'jenis_luaran.nama_jenis_luaran')
+            ->orderBy('jumlah', 'desc')
+            ->get();
+
+        // Prepare data for treemap
+        $treemapData = [];
+        $colors = [
+            '#4e73df', // Blue
+            '#1cc88a', // Green  
+            '#36b9cc', // Cyan
+            '#f6c23e', // Yellow
+            '#e74a3b', // Red
+            '#6f42c1', // Purple
+            '#fd7e14', // Orange
+            '#20c997', // Teal
+            '#6610f2', // Indigo
+            '#e83e8c', // Pink
+            '#17a2b8', // Info
+            '#28a745'  // Success
+        ];
+
+        foreach ($jenisLuaranData as $index => $item) {
+            $treemapData[] = [
+                'label' => $item->nama_jenis_luaran,
+                'value' => $item->jumlah,
+                'backgroundColor' => $colors[$index % count($colors)],
+                'borderColor' => $colors[$index % count($colors)]
+            ];
+        }
+
+        return $treemapData;
+    }
+
+    /**
+     * Display dosen recap page with pengabdian activities
+     */
+    public function dosenRekap(Request $request)
+    {
+        // Year filter logic
+        $currentYear = date('Y');
+        $filterYear = $request->get('year', $currentYear);
+
+        // Get available years from pengabdian data
+        $availableYears = Pengabdian::selectRaw('YEAR(tanggal_pengabdian) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year');
+
+        // Get dosen data with pengabdian count and details
+        $dosenQuery = Dosen::with(['pengabdian' => function ($query) use ($filterYear) {
+            if ($filterYear !== 'all') {
+                $query->whereYear('tanggal_pengabdian', $filterYear);
+            }
+            $query->orderBy('tanggal_pengabdian', 'desc');
+        }])
+            ->withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
+                if ($filterYear !== 'all') {
+                    $query->whereYear('tanggal_pengabdian', $filterYear);
+                }
+            }]);
+
+        // Apply filters if needed
+        if ($request->has('prodi') && $request->prodi !== 'all') {
+            $dosenQuery->where('prodi', $request->prodi);
+        }
+
+        $dosenData = $dosenQuery->orderBy('jumlah_pengabdian', 'desc')
+            ->paginate(20);
+
+        // Get prodi options for filter
+        $prodiOptions = Dosen::select('prodi')
+            ->distinct()
+            ->orderBy('prodi')
+            ->pluck('prodi');
+
+        return view('inqa.dosen.rekap', compact(
+            'dosenData',
+            'filterYear',
+            'availableYears',
+            'prodiOptions'
+        ));
+    }
+
+    /**
+     * Get detailed pengabdian data for a specific dosen (for modal/detail view)
+     */
+    public function dosenDetail(Request $request, $nik)
+    {
+        $filterYear = $request->get('year', date('Y'));
+
+        $dosen = Dosen::with(['pengabdian' => function ($query) use ($filterYear) {
+            if ($filterYear !== 'all') {
+                $query->whereYear('tanggal_pengabdian', $filterYear);
+            }
+            $query->orderBy('tanggal_pengabdian', 'desc');
+        }])->findOrFail($nik);
+
+        // If it's an AJAX request, return JSON
+        if ($request->ajax()) {
+            return response()->json([
+                'dosen' => $dosen,
+                'pengabdian' => $dosen->pengabdian->map(function ($pengabdian) {
+                    return [
+                        'id_pengabdian' => $pengabdian->id_pengabdian,
+                        'judul' => $pengabdian->judul,
+                        'tanggal_pengabdian' => $pengabdian->tanggal_pengabdian,
+                        'status_anggota' => $pengabdian->pivot->status_anggota ?? 'Anggota',
+                        'sumber_dana' => $pengabdian->sumberDana->nama_sumber ?? 'N/A'
+                    ];
+                })
+            ]);
+        }
+
+        return response()->json(['error' => 'Invalid request'], 400);
+    }
+
+    /**
+     * Get detailed statistics data for modal (API endpoint)
+     */
+    public function getStatisticsDetail(Request $request)
+    {
+        $type = $request->get('type');
+        $filterYear = $request->get('year', date('Y'));
+
+        switch ($type) {
+            case 'pengabdian':
+                return $this->getPengabdianDetail($filterYear);
+            case 'dosen':
+                return $this->getDosenDetail($filterYear);
+            case 'mahasiswa':
+                return $this->getMahasiswaDetail($filterYear);
+            default:
+                return response()->json(['error' => 'Invalid type'], 400);
+        }
+    }
+
+    /**
+     * Get detailed pengabdian data
+     */
+    private function getPengabdianDetail($filterYear)
+    {
+        $query = Pengabdian::with(['sumberDana', 'pengabdianDosen.dosen']);
+
+        if ($filterYear !== 'all') {
+            $query->whereYear('tanggal_pengabdian', $filterYear);
+        }
+
+        $pengabdianList = $query->orderBy('tanggal_pengabdian', 'desc')->get();
+
+        $details = $pengabdianList->map(function ($pengabdian) {
+            // Get ketua (first dosen with status_anggota = 'Ketua' or first dosen)
+            $ketua = $pengabdian->pengabdianDosen->where('status_anggota', 'Ketua')->first();
+            if (!$ketua) {
+                $ketua = $pengabdian->pengabdianDosen->first();
+            }
+
+            // Determine category based on prodi of involved dosen
+            $prodiList = $pengabdian->pengabdianDosen->pluck('dosen.prodi')->unique();
+            $hasInformatika = $prodiList->contains('Informatika');
+            $hasSistemInformasi = $prodiList->contains('Sistem Informasi');
+
+            if ($hasInformatika && $hasSistemInformasi) {
+                $kategoriProdi = 'Kolaborasi TI & SI';
+            } elseif ($hasInformatika) {
+                $kategoriProdi = 'Informatika';
+            } elseif ($hasSistemInformasi) {
+                $kategoriProdi = 'Sistem Informasi';
+            } else {
+                $kategoriProdi = 'Lainnya';
+            }
+
+            return [
+                'id_pengabdian' => $pengabdian->id_pengabdian,
+                'judul' => $pengabdian->judul,
+                'tanggal_pengabdian' => $pengabdian->tanggal_pengabdian,
+                'ketua' => $ketua ? $ketua->dosen->nama : 'N/A',
+                'sumber_dana' => $pengabdian->sumberDana->nama_sumber ?? 'N/A',
+                'kategori_prodi' => $kategoriProdi,
+                'dengan_mahasiswa' => $pengabdian->mahasiswa()->exists()
+            ];
+        });
+
+        // Calculate summary statistics
+        $total = $details->count();
+        $kolaborasi = $details->where('kategori_prodi', 'Kolaborasi TI & SI')->count();
+        $informatika = $details->where('kategori_prodi', 'Informatika')->count();
+        $sistemInformasi = $details->where('kategori_prodi', 'Sistem Informasi')->count();
+
+        return response()->json([
+            'total' => $total,
+            'kolaborasi' => $kolaborasi,
+            'informatika' => $informatika,
+            'sistem_informasi' => $sistemInformasi,
+            'details' => $details->values()
+        ]);
+    }
+
+    /**
+     * Get detailed dosen data
+     */
+    private function getDosenDetail($filterYear)
+    {
+        $query = Dosen::withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
+            if ($filterYear !== 'all') {
+                $query->whereYear('tanggal_pengabdian', $filterYear);
+            }
+        }]);
+
+        // Only include dosen who have pengabdian activities in the specified year
+        $query->whereHas('pengabdian', function ($q) use ($filterYear) {
+            if ($filterYear !== 'all') {
+                $q->whereYear('tanggal_pengabdian', $filterYear);
+            }
+        });
+
+        $dosenList = $query->orderBy('jumlah_pengabdian', 'desc')->get();
+
+        $details = $dosenList->map(function ($dosen) {
+            return [
+                'nik' => $dosen->nik,
+                'nama' => $dosen->nama,
+                'nidn' => $dosen->nidn,
+                'prodi' => $dosen->prodi,
+                'jabatan' => $dosen->jabatan,
+                'email' => $dosen->email,
+                'jumlah_pengabdian' => $dosen->jumlah_pengabdian
+            ];
+        });
+
+        // Calculate summary statistics
+        $total = $details->count();
+        $informatika = $details->where('prodi', 'Informatika')->count();
+        $sistemInformasi = $details->where('prodi', 'Sistem Informasi')->count();
+
+        return response()->json([
+            'total' => $total,
+            'informatika' => $informatika,
+            'sistem_informasi' => $sistemInformasi,
+            'details' => $details->values()
+        ]);
+    }
+
+    /**
+     * Get detailed mahasiswa pengabdian data
+     */
+    private function getMahasiswaDetail($filterYear)
+    {
+        $query = Pengabdian::with(['sumberDana', 'pengabdianDosen.dosen', 'mahasiswa'])
+            ->whereHas('mahasiswa');
+
+        if ($filterYear !== 'all') {
+            $query->whereYear('tanggal_pengabdian', $filterYear);
+        }
+
+        $pengabdianList = $query->orderBy('tanggal_pengabdian', 'desc')->get();
+
+        $details = $pengabdianList->map(function ($pengabdian) {
+            // Get ketua
+            $ketua = $pengabdian->pengabdianDosen->where('status_anggota', 'Ketua')->first();
+            if (!$ketua) {
+                $ketua = $pengabdian->pengabdianDosen->first();
+            }
+
+            // Count mahasiswa by prodi
+            $mahasiswaInformatika = $pengabdian->mahasiswa->where('prodi', 'Informatika')->count();
+            $mahasiswaSistemInformasi = $pengabdian->mahasiswa->where('prodi', 'Sistem Informasi')->count();
+
+            return [
+                'id_pengabdian' => $pengabdian->id_pengabdian,
+                'judul' => $pengabdian->judul,
+                'tanggal_pengabdian' => $pengabdian->tanggal_pengabdian,
+                'ketua' => $ketua ? $ketua->dosen->nama : 'N/A',
+                'sumber_dana' => $pengabdian->sumberDana->nama_sumber ?? 'N/A',
+                'jumlah_mahasiswa' => $pengabdian->mahasiswa->count(),
+                'mahasiswa_informatika' => $mahasiswaInformatika,
+                'mahasiswa_sistem_informasi' => $mahasiswaSistemInformasi
+            ];
+        });
+
+        // Calculate summary statistics
+        $total = $details->count();
+        $totalMahasiswaInformatika = $details->sum('mahasiswa_informatika');
+        $totalMahasiswaSistemInformasi = $details->sum('mahasiswa_sistem_informasi');
+
+        return response()->json([
+            'total' => $total,
+            'informatika' => $totalMahasiswaInformatika,
+            'sistem_informasi' => $totalMahasiswaSistemInformasi,
+            'details' => $details->values()
+        ]);
+    }
+
+    /**
+     * Get sparkline data showing yearly trends from earliest to current year
+     */
+    public function getSparklineData(Request $request)
+    {
+        try {
+            // Get all available years from pengabdian data
+            $availableYears = Pengabdian::selectRaw('YEAR(tanggal_pengabdian) as year')
+                ->distinct()
+                ->orderBy('year', 'asc')
+                ->pluck('year')
+                ->toArray();
+
+            // If no data, create a range from current year - 6 to current year
+            if (empty($availableYears)) {
+                $currentYear = date('Y');
+                $availableYears = range($currentYear - 6, $currentYear);
+            } else {
+                // Ensure we have at least 7 years of data for better trend visualization
+                $currentYear = date('Y');
+                $minYear = min($availableYears);
+                $maxYear = max($availableYears);
+
+                // Extend range if needed to show trends better
+                if ($maxYear - $minYear < 6) {
+                    $startYear = max($minYear, $currentYear - 6); // Show at least last 7 years
+                    $endYear = $currentYear;
+                    $yearRange = range($startYear, $endYear);
+                } else {
+                    $yearRange = $availableYears;
+                }
+            }
+
+            $sparklineData = [];
+
+            foreach ($availableYears as $year) {
+                // Total pengabdian per year
+                $pengabdianCount = Pengabdian::whereYear('tanggal_pengabdian', $year)
+                    ->count();
+
+                // Unique dosen per year
+                $dosenCount = DB::table('pengabdian_dosen')
+                    ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                    ->whereYear('pengabdian.tanggal_pengabdian', $year)
+                    ->distinct('pengabdian_dosen.nik')
+                    ->count('pengabdian_dosen.nik');
+
+                // Percentage of pengabdian with mahasiswa per year
+                $totalPengabdianYear = Pengabdian::whereYear('tanggal_pengabdian', $year)
+                    ->count();
+
+                $pengabdianWithMahasiswaYear = Pengabdian::whereYear('tanggal_pengabdian', $year)
+                    ->whereHas('mahasiswa')
+                    ->count();
+
+                $mahasiswaPercentage = $totalPengabdianYear > 0
+                    ? round(($pengabdianWithMahasiswaYear / $totalPengabdianYear) * 100, 1)
+                    : 0;
+
+                $sparklineData[] = [
+                    'year' => $year,
+                    'pengabdian' => $pengabdianCount,
+                    'dosen' => $dosenCount,
+                    'mahasiswa' => $mahasiswaPercentage
+                ];
+            }
+
+            // Extract only the values for each metric
+            $pengabdianData = array_column($sparklineData, 'pengabdian');
+            $dosenData = array_column($sparklineData, 'dosen');
+            $mahasiswaData = array_column($sparklineData, 'mahasiswa');
+            $years = array_column($sparklineData, 'year');
+
+            return response()->json([
+                'success' => true,
+                'pengabdian' => $pengabdianData,
+                'dosen' => $dosenData,
+                'mahasiswa' => $mahasiswaData,
+                'years' => $years,
+                'period' => 'yearly',
+                'count' => count($sparklineData)
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in getSparklineData: ' . $e->getMessage());
+
+            // Return dummy data if there's an error (show last 5 years)
+            $currentYear = date('Y');
+            $dummyYears = range($currentYear - 4, $currentYear);
+            $dummyData = array_fill(0, 5, 0);
+
+            return response()->json([
+                'success' => false,
+                'pengabdian' => $dummyData,
+                'dosen' => $dummyData,
+                'mahasiswa' => $dummyData,
+                'years' => $dummyYears,
+                'period' => 'yearly',
+                'count' => 5,
+                'message' => 'Error loading sparkline data'
+            ]);
+        }
     }
 }

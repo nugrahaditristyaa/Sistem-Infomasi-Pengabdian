@@ -26,10 +26,12 @@ class JenisLuaranSeeder extends Seeder
             ['nama_jenis_luaran' => 'Jurnal Nasional', 'created_at' => $now, 'updated_at' => $now],
             ['nama_jenis_luaran' => 'Buku', 'created_at' => $now, 'updated_at' => $now],
             ['nama_jenis_luaran' => 'Lainnya', 'created_at' => $now, 'updated_at' => $now],
+            // TAMBAHAN BARU: Prosiding
+            ['nama_jenis_luaran' => 'Prosiding', 'created_at' => $now, 'updated_at' => $now],
         ];
 
         // Memasukkan data ke dalam tabel 'jenis_luaran'
-        // Disarankan untuk menjalankan ini pada database yang bersih untuk menghindari duplikasi
-        DB::table('jenis_luaran')->insert($jenisLuaran);
+        // Menggunakan insertOrIgnore untuk mencegah duplikasi jika seeder dijalankan lebih dari sekali
+        DB::table('jenis_luaran')->insertOrIgnore($jenisLuaran);
     }
 }

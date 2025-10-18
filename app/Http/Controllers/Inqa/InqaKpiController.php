@@ -95,7 +95,7 @@ class InqaKpiController extends Controller
                 'target.required' => 'Target wajib diisi.',
                 'target.numeric' => 'Target harus berupa angka.',
                 'target.min' => 'Target tidak boleh kurang dari 0.',
-                'satuan.required' => 'Satuan wajib diisi.',
+                'satuan' => 'Satuan wajib diisi.',
                 'satuan.max' => 'Satuan maksimal 50 karakter.',
             ]);
 

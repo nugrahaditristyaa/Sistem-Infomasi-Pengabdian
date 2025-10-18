@@ -1,12 +1,12 @@
 <!-- Sidebar -->
-<ul class="navbar-nav bg-gradient-info sidebar sidebar-dark accordion" id="accordionSidebar">
+<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar"">
 
     <!-- Sidebar - Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('inqa.dashboard') }}">
-        <div class="sidebar-brand-icon rotate-n-15">
-            <i class="fas fa-chart-line"></i>
+        <div class="sidebar-brand-icon ">
+            <img src="{{ asset('assets/img/fti-ukdw.png') }}" alt="Logo FTI" style="width: 60px; height: 50px;">
         </div>
-        <div class="sidebar-brand-text mx-3">InQA Dashboard</div>
+        <div class="sidebar-brand-text mx-3">Dashboard Dekan</div>
     </a>
 
     <!-- Divider -->
@@ -32,6 +32,22 @@
         <a class="nav-link" href="{{ route('inqa.kpi.index') }}">
             <i class="fas fa-fw fa-chart-bar"></i>
             <span>Data KPI</span>
+        </a>
+    </li>
+
+    <!-- Divider -->
+    <hr class="sidebar-divider">
+
+    <!-- Heading -->
+    <div class="sidebar-heading">
+        Data Akademik
+    </div>
+
+    <!-- Nav Item - Rekap Dosen -->
+    <li class="nav-item {{ request()->routeIs('inqa.dosen.*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('inqa.dosen.rekap') }}">
+            <i class="fas fa-fw fa-users"></i>
+            <span>Rekap Pengabdian Dosen</span>
         </a>
     </li>
 

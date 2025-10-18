@@ -11,6 +11,10 @@
             vertical-align: middle;
         }
 
+        .table-responsive thead {
+            background-color: #f8f9fc; 
+        }
+
         .table-hover tbody tr:hover {
             background-color: #f8f9fc;
         }
@@ -172,7 +176,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover table-striped" id="dataTable" width="100%"
+                        <table class="table table-hover table-striped" id="dataTable" width="100%"
                             cellspacing="0">
                             <thead>
                                 <tr>

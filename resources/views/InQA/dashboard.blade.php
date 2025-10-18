@@ -3,13 +3,37 @@
 @section('title', 'Dashboard InQA')
 
 @push('styles')
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+
     <style>
+        /* Force CSS application with higher specificity */
+        .container-fluid .card.modern-card,
+        .container-fluid .card.statistics-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08) !important;
+        }
+
+        .container-fluid .card.modern-card:hover,
+        .container-fluid .card.statistics-card:hover {
+            transform: translateY(-4px) !important;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12) !important;
+        }
+
         .chart-radar {
             position: relative;
             height: 350px;
             overflow: hidden;
             border-radius: 8px;
             background: linear-gradient(135deg, rgba(78, 115, 223, 0.02) 0%, rgba(28, 200, 138, 0.02) 100%);
+        }
+
+        #statTotalPengabdian,
+        #statDosenTerlibat,
+        #statDenganMahasiswa {
+            font-size: 20px !important;
+            /* Ganti ukuran sesuai keinginan */
         }
 
         .kpi-legend {
@@ -58,26 +82,28 @@
             color: #4e73df !important;
         }
 
-        /* Progress Bar Styling */
-        .kpi-progress-item {
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .kpi-progress-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            background: rgba(255, 255, 255, 0.95);
-        }
-
         .progress {
-            border-radius: 10px;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-            background-color: #e9ecef;
+            height: 15px;
         }
+
+        .kpi-progress-item .d-flex {
+            margin-bottom: 0.25rem !important;
+        }
+
+        /* Progress Bar Styling */
+        /* .kpi-progress-item {
+                                                                transition: all 0.3s ease;
+                                                                border-radius: 8px;
+                                                                padding: 15px;
+                                                                background: rgba(255, 255, 255, 0.7);
+                                                                border: 1px solid rgba(0, 0, 0, 0.05);
+                                                            } */
+
+        /* .progress {
+                                                            border-radius: 10px;
+                                                            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+                                                            background-color: #e9ecef;
+                                                        } */
 
         .progress-bar {
             border-radius: 10px;
@@ -91,6 +117,7 @@
             padding: 3px 8px;
         }
 
+        /* Responsive adjustments */
         @media (max-width: 768px) {
             .chart-radar {
                 height: 280px;
@@ -104,6 +131,78 @@
             .kpi-progress-item {
                 padding: 10px;
                 margin-bottom: 15px;
+            }
+
+            .statistics-card,
+            .modern-card {
+                margin-bottom: 0.75rem;
+            }
+
+            .statistics-card .card-body,
+            .modern-card .card-body {
+                padding: 0.75rem 1rem !important;
+            }
+
+            .statistics-card .text-xs,
+            .modern-card .text-xs {
+                font-size: 0.7rem !important;
+            }
+
+            .statistics-card .h5,
+            .modern-card .h5 {
+                font-size: 1.3rem !important;
+            }
+
+            .statistics-card .text-muted,
+            .modern-card .text-muted {
+                font-size: 0.65rem !important;
+            }
+
+            .statistics-card .font-weight-bold,
+            .modern-card .font-weight-bold {
+                font-size: 0.7rem !important;
+            }
+
+            .statistics-card .fa-2x,
+            .modern-card .fa-2x {
+                font-size: 1.8em !important;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 576px) {
+
+            .statistics-card .card-body,
+            .modern-card .card-body {
+                padding: 0.5rem 0.75rem !important;
+            }
+
+            .statistics-card .text-xs,
+            .modern-card .text-xs {
+                font-size: 0.65rem !important;
+            }
+
+            .statistics-card .h5,
+            .modern-card .h5 {
+                font-size: 1.1rem !important;
+            }
+
+            .statistics-card .text-muted,
+            .modern-card .text-muted,
+            .statistics-card .font-weight-bold,
+            .modern-card .font-weight-bold {
+                font-size: 0.65rem !important;
+            }
+
+            .statistics-card .fa-2x,
+            .modern-card .fa-2x {
+                font-size: 1.5em !important;
+            }
+
+            .statistics-card .badge,
+            .modern-card .badge {
+                font-size: 0.6rem !important;
+                padding: 0.2rem 0.4rem !important;
             }
         }
 
@@ -142,64 +241,152 @@
             background-color: #36b9cc !important;
         }
 
-        .statistics-card {
-            transition: all 0.2s ease-in-out;
+        /* Modern Card Styling - Applies to both statistics-card and modern-card */
+        .statistics-card,
+        .modern-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border-left-width: 0.25rem !important;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
         }
 
-        .statistics-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        .statistics-card:hover,
+        .modern-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12) !important;
         }
 
-        .statistics-card .card-body {
+        /* Ensure consistent card heights across all layouts */
+        .row .col-xl-4 .card.h-100,
+        .row .col-lg-6 .card.h-100,
+        .row .col-md-6 .card.h-100,
+        .row .col-md-12 .card.h-100 {
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        .row .col-xl-4 .card.h-100 .card-body,
+        .row .col-lg-6 .card.h-100 .card-body,
+        .row .col-md-6 .card.h-100 .card-body,
+        .row .col-md-12 .card.h-100 .card-body {
+            flex: 1 !important;
+        }
+
+        /* Statistics row specific height consistency */
+        .statistics-row .card.h-100 {
+            min-height: 140px !important;
+        }
+
+        /* Main content cards height consistency */
+        .main-content-row .card.h-100 {
+            min-height: 450px !important;
+        }
+
+        .statistics-card .card-body,
+        .modern-card .card-body {
             padding: 1.2rem 1.5rem !important;
         }
 
-        .statistics-card .text-xs {
+        /* Enhanced Font Sizes for Statistics Cards */
+        .statistics-card .text-xs,
+        .modern-card .text-xs {
             font-size: 0.8rem !important;
             line-height: 1.4 !important;
             font-weight: 600 !important;
         }
 
-        .statistics-card .h5 {
+        .statistics-card .h5,
+        .modern-card .h5 {
             font-size: 1.6rem !important;
             margin-bottom: 0.5rem !important;
             font-weight: 700 !important;
             line-height: 1.3 !important;
         }
 
-        .statistics-card .text-muted {
+        .statistics-card .text-muted,
+        .modern-card .text-muted {
             font-size: 0.75rem !important;
             line-height: 1.5 !important;
         }
 
-        .statistics-card .badge {
+        .statistics-card .badge,
+        .modern-card .badge {
             font-size: 0.75rem !important;
             padding: 0.3rem 0.6rem !important;
             font-weight: 600 !important;
         }
 
-        .statistics-card .font-weight-bold {
+        .statistics-card .font-weight-bold,
+        .modern-card .font-weight-bold {
             font-size: 0.8rem !important;
             font-weight: 700 !important;
         }
 
-        .statistics-card .fa-2x {
+        .statistics-card .fa-2x,
+        .modern-card .fa-2x {
             font-size: 2.2em !important;
         }
 
         .tooltip-icon {
             opacity: 0.7;
-            transition: opacity 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .tooltip-icon:hover {
             opacity: 1;
+            color: #4e73df !important;
+            transform: scale(1.15);
+            filter: drop-shadow(0 2px 4px rgba(78, 115, 223, 0.3));
+        }
+
+        .clickable-stat {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .clickable-stat:hover {
             color: #4e73df !important;
+            text-shadow: 0 2px 8px rgba(78, 115, 223, 0.2);
+        }
+
+        .clickable-stat-number {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .clickable-stat-number:hover {
+            color: #4e73df !important;
+            text-shadow: 0 2px 8px rgba(78, 115, 223, 0.2);
+        }
+
+        /* Modal Fix - Prevent interference with card animations */
+        .modal {
+            pointer-events: auto !important;
+        }
+
+        .modal-backdrop {
+            pointer-events: auto !important;
+        }
+
+        .modal-dialog {
+            pointer-events: auto !important;
+            transition: transform 0.3s ease-out !important;
+        }
+
+        .modal.fade .modal-dialog {
+            transition: transform 0.3s ease-out !important;
+            transform: translate(0, -50px) !important;
+        }
+
+        .modal.show .modal-dialog {
+            transform: none !important;
+        }
+
+        /* Prevent card hover effects when modal is open */
+        body.modal-open .modern-card:hover,
+        body.modal-open .statistics-card:hover {
+            transform: none !important;
+            box-shadow: none !important;
         }
 
         .list-group-item-action {
@@ -272,8 +459,183 @@
         }
 
         .btn-group .btn.active {
+            transform: scale(1.05) translateY(-1px);
+            box-shadow: 0 4px 15px rgba(78, 115, 223, 0.25);
+        }
+
+        .btn-group .btn:hover:not(.active) {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Card Enhancement - Force application */
+        .card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            border-radius: 12px !important;
+            border: none !important;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06) !important;
+        }
+
+        .card:hover:not(.no-hover) {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12) !important;
+        }
+
+        /* Interactive Statistics Cards */
+        .clickable-stat {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: inline-block;
+            margin: -8px -12px;
+        }
+
+        .clickable-stat:hover {
+            background: rgba(78, 115, 223, 0.1);
+            color: #4e73df !important;
+            text-shadow: 0 2px 8px rgba(78, 115, 223, 0.2);
             transform: scale(1.05);
-            box-shadow: 0 2px 8px rgba(78, 115, 223, 0.3);
+        }
+
+        .clickable-stat:active {
+            transform: scale(0.98);
+        }
+
+        /* Modal enhancements */
+        .modal-xl {
+            max-width: 95%;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #4e73df 0%, #36b9cc 100%);
+            border-bottom: none;
+        }
+
+        .table th {
+            font-weight: 600;
+            color: #4e73df;
+            border-bottom-width: 2px;
+            background-color: #f8f9fc;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fc;
+        }
+
+        /* DataTables custom styling */
+        .dataTables_wrapper .dataTables_filter input {
+            border-radius: 6px;
+            border: 1px solid #d1d3e2;
+            padding: 0.375rem 0.75rem;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            border-radius: 6px;
+            border: 1px solid #d1d3e2;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .page-link {
+            border-radius: 6px;
+            margin: 0 2px;
+            border: none;
+            color: #4e73df;
+        }
+
+        .page-item.active .page-link {
+            background: linear-gradient(135deg, #4e73df 0%, #36b9cc 100%);
+            border: none;
+        }
+
+        /* Pulse animation for clickable stats */
+        .clickable-stat::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(78, 115, 223, 0.3);
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+        }
+
+        .clickable-stat:hover::before {
+            width: 100%;
+            height: 100%;
+        }
+
+        .statistics-card .clickable-stat {
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Treemap Styles */
+        #jenisLuaranTreemap {
+            border-radius: 8px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f8f9fc 0%, #ffffff 100%);
+        }
+
+        .treemap-tooltip {
+            font-family: 'Nunito', sans-serif !important;
+            font-size: 12px !important;
+            line-height: 1.4 !important;
+        }
+
+        #jenisLuaranTreemap svg {
+            display: block;
+            margin: 0 auto;
+        }
+
+        #jenisLuaranTreemap rect {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #jenisLuaranTreemap text {
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Sparkline Chart Styles */
+        .sparkline-container {
+            height: 40px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        .sparkline-container:hover {
+            opacity: 1;
+        }
+
+        .sparkline-chart {
+            height: 100%;
+            width: 100%;
+        }
+
+        .sparkline-chart canvas {
+            display: block !important;
+        }
+
+        .statistics-card .sparkline-container {
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px;
+        }
+
+        .border-left-primary .sparkline-container {
+            background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
+        }
+
+        .border-left-warning .sparkline-container {
+            background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
+        }
+
+        .border-left-info .sparkline-container {
+            background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
         }
     </style>
 @endpush
@@ -282,7 +644,7 @@
     <div class="container-fluid">
         <!-- Page Heading -->
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">Dashboard Pengabdian InQA</h1>
+            <h1 class="h3 mb-0 text-gray-800">Dashboard Pengabdian</h1>
             <div class="d-flex align-items-center">
                 <!-- Year Filter -->
                 <form method="GET" action="{{ route('inqa.dashboard') }}" class="mr-3">
@@ -309,59 +671,57 @@
         @endif
 
         <!-- Pengabdian Statistics Row -->
-        <div class="row mb-4">
+        <div class="row mb-4 statistics-row">
             <!-- Total Pengabdian Card -->
             <div class="col-xl-4 col-md-6 mb-4">
                 <div class="card border-left-primary shadow h-100 py-2 modern-card">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
+                                {{-- JUDUL KARTU --}}
                                 <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                     Total Pengabdian
                                     @if ($filterYear !== 'all')
-                                        <small class="text-lowercase">(Tahun {{ $filterYear }})</small>
+                                        <span class="fs-3">({{ $filterYear }})</span>
                                     @endif
-                                    <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
-                                        title="Total pengabdian {{ $filterYear !== 'all' ? 'pada tahun ' . $filterYear : 'keseluruhan' }}"
-                                        style="cursor: pointer;"></i>
                                 </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat" style="cursor: pointer;">
+
+                                {{-- ANGKA UTAMA --}}
+                                <div id="statTotalPengabdian" class="h5 mb-2 font-weight-bold text-gray-800 clickable-stat"
+                                    style="cursor: pointer;">
                                     {{ $stats['total_pengabdian'] }}
                                 </div>
-                                <div class="text-xs text-muted mt-1">
+
+                                {{-- SPARKLINE CHART --}}
+                                <div class="sparkline-container">
+                                    <canvas id="sparklinePengabdian" class="sparkline-chart"></canvas>
+                                </div>
+
+                                {{-- INFORMASI TREN (PERBANDINGAN TAHUN) --}}
+                                <div class="d-flex align-items-center mb-2">
                                     @if ($stats['percentage_change_pengabdian'] != 0)
                                         <span
-                                            class="badge badge-{{ $stats['percentage_change_pengabdian'] > 0 ? 'success' : 'danger' }} mr-1"
-                                            data-toggle="tooltip"
-                                            title="Perubahan dari {{ $stats['previous_year'] }}: {{ $stats['percentage_change_pengabdian'] > 0 ? 'Peningkatan' : 'Penurunan' }} {{ abs($stats['percentage_change_pengabdian']) }}% pengabdian">
+                                            class="badge badge-{{ $stats['percentage_change_pengabdian'] > 0 ? 'success' : 'danger' }} mr-2">
+                                            <i
+                                                class="fas {{ $stats['percentage_change_pengabdian'] > 0 ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
                                             {{ $stats['percentage_change_pengabdian'] > 0 ? '+' : '' }}{{ $stats['percentage_change_pengabdian'] }}%
                                         </span>
                                     @endif
-                                    {{ $stats['year_label'] }}
-                                    <div class="mt-2">
-                                        <span class="text-success font-weight-bold" data-toggle="tooltip"
-                                            title="Pengabdian kolaborasi antara kedua prodi">
-                                            <i class="fas fa-handshake mr-1"></i>Kolaborasi TI & SI:
-                                            {{ $stats['pengabdian_kolaborasi'] }}
-                                        </span>
-                                        <br>
-                                        <span class="text-primary font-weight-bold" data-toggle="tooltip"
-                                            title="Pengabdian khusus Informatika">
-                                            <i class="fas fa-laptop-code mr-1"></i>Informatika:
-                                            {{ $stats['pengabdian_khusus_informatika'] }}
-                                        </span>
-                                        •
+                                    <small class="text-muted">{{ $stats['year_label'] }}</small>
+                                </div>
 
-                                        <span class="text-info font-weight-bold" data-toggle="tooltip"
-                                            title="Pengabdian khusus Sistem Informasi">
-                                            <i class="fas fa-database mr-1"></i>Sistem Informasi:
-                                            {{ $stats['pengabdian_khusus_sistem_informasi'] }}
-                                        </span>
-                                    </div>
+                                {{-- RINCIAN SEKUNDER (PER PRODI) --}}
+                                <div class="text-xs text-muted">
+                                    <span><i class="fas fa-handshake mr-1"></i> Kolaborasi:
+                                        <strong>{{ $stats['pengabdian_kolaborasi'] }}</strong></span>
+                                    <span class="mx-2">•</span>
+                                    <span>IT: <strong>{{ $stats['pengabdian_khusus_informatika'] }}</strong></span>
+                                    <span class="mx-2">•</span>
+                                    <span>SI: <strong>{{ $stats['pengabdian_khusus_sistem_informasi'] }}</strong></span>
                                 </div>
                             </div>
                             <div class="col-auto">
-                                <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                                <i class="fas fa-clipboard-list fa-3x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
@@ -373,43 +733,72 @@
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                {{-- 1. JUDUL KARTU --}}
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                     Dosen Terlibat
                                     @if ($filterYear !== 'all')
-                                        <small class="text-lowercase">(Tahun {{ $filterYear }})</small>
+                                        <span class="fs-3">({{ $filterYear }})</span>
                                     @endif
                                     <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
-                                        title="Total dosen yang terlibat dalam pengabdian {{ $filterYear !== 'all' ? 'pada tahun ' . $filterYear : 'keseluruhan' }}"
-                                        style="cursor: pointer;"></i>
+                                        title="Jumlah dosen yang terlibat dalam pengabdian {{ $filterYear !== 'all' ? 'pada tahun ' . $filterYear : 'keseluruhan' }}"></i>
                                 </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat" style="cursor: pointer;">
+
+                                {{-- 2. ANGKA UTAMA (HERO) --}}
+                                <div id="statDosenTerlibat" class="h5 mb-2 font-weight-bold text-gray-800 clickable-stat"
+                                    style="cursor: pointer;">
                                     {{ $stats['total_dosen'] }}
                                 </div>
-                                <div class="text-xs text-muted mt-1">
+
+                                {{-- SPARKLINE CHART --}}
+                                <div class="sparkline-container">
+                                    <canvas id="sparklineDosen" class="sparkline-chart"></canvas>
+                                </div>
+
+                                {{-- 3. INFORMASI TREN (SUB-JUDUL UTAMA) --}}
+                                <div class="d-flex align-items-center mb-3">
                                     @if ($stats['percentage_change_dosen'] != 0)
                                         <span
-                                            class="badge badge-{{ $stats['percentage_change_dosen'] > 0 ? 'success' : 'danger' }} mr-1"
-                                            data-toggle="tooltip"
-                                            title="Perubahan dari {{ $stats['previous_year'] }}: {{ $stats['percentage_change_dosen'] > 0 ? 'Peningkatan' : 'Penurunan' }} {{ abs($stats['percentage_change_dosen']) }}% dosen terlibat">
+                                            class="badge badge-{{ $stats['percentage_change_dosen'] > 0 ? 'success' : 'danger' }} mr-2">
+                                            <i
+                                                class="fas {{ $stats['percentage_change_dosen'] > 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} mr-1"></i>
                                             {{ $stats['percentage_change_dosen'] > 0 ? '+' : '' }}{{ $stats['percentage_change_dosen'] }}%
                                         </span>
                                     @endif
-                                    {{ $stats['year_label'] }}
-                                    <div class="mt-2">
-                                        <span class="text-primary font-weight-bold">
-                                            <i class="fas fa-laptop-code mr-1"></i>Informatika:
-                                            {{ $stats['dosen_informatika'] }}
-                                        </span>
-                                        •
-                                        <span class="text-info font-weight-bold">
-                                            <i class="fas fa-database mr-1"></i>Sistem Informasi:
-                                            {{ $stats['dosen_sistem_informasi'] }}
-                                        </span>
+                                    <small class="text-muted">{{ $stats['year_label'] }}</small>
+                                </div>
+
+                                {{-- 4. DETAIL SEKUNDER (Rincian) --}}
+                                <div class="text-xs text-muted">
+                                    {{-- Rincian dari Total Dosen FTI --}}
+                                    @if (isset($stats['total_dosen_keseluruhan']) && $stats['total_dosen_keseluruhan'] > 0)
+                                        @php
+                                            $participationRate = round(
+                                                ($stats['total_dosen'] / $stats['total_dosen_keseluruhan']) * 100,
+                                                1,
+                                            );
+                                            $colorClass = $participationRate >= 75 ? 'text-success' : 'text-warning';
+                                        @endphp
+                                        <div class="{{ $colorClass }} mb-2">
+                                            <i class="fas fa-users mr-1"></i>
+                                            <span class="font-weight-bold">{{ $stats['total_dosen'] }}</span> dari
+                                            {{ $stats['total_dosen_keseluruhan'] }} Dosen FTI ({{ $participationRate }}%)
+                                        </div>
+                                    @endif
+
+                                    {{-- Rincian Per Prodi --}}
+                                    <div>
+                                        <span> IT:
+                                            <strong>{{ $stats['dosen_informatika'] }}</strong></span>
+                                        <span class="mx-2">•</span>
+                                        <span> SI:
+                                            <strong>{{ $stats['dosen_sistem_informasi'] }}</strong></span>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="col-auto">
-                                <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                                {{-- DIUBAH: Ikon diperbesar agar seimbang --}}
+                                <i class="fas fa-chalkboard-teacher fa-3x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
@@ -422,39 +811,85 @@
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                    Pengabdian dengan Mahasiswa
+                                {{-- 1. JUDUL KARTU (Warna disesuaikan menjadi text-info) --}}
+                                <div class="text-xs font-weight-bold text-primary mb-1">
+                                    PkM DENGAN MAHASISWA
                                     @if ($filterYear !== 'all')
-                                        <small class="text-lowercase">(Tahun {{ $filterYear }})</small>
+                                        <span class="fs-3">({{ $filterYear }})</span>
                                     @endif
                                     <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
-                                        title="Persentase pengabdian yang melibatkan mahasiswa {{ $filterYear !== 'all' ? 'pada tahun ' . $filterYear : 'keseluruhan' }}"
-                                        style="cursor: pointer;"></i>
+                                        title="Persentase pengabdian yang melibatkan mahasiswa {{ $filterYear !== 'all' ? 'pada tahun ' . $filterYear : 'keseluruhan' }}"></i>
                                 </div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat" style="cursor: pointer;">
+
+                                {{-- 2. ANGKA UTAMA (HERO) --}}
+                                <div id="statDenganMahasiswa" class="h5 mb-2 font-weight-bold text-gray-800 clickable-stat"
+                                    style="cursor: pointer;">
                                     {{ $stats['persentase_pengabdian_dengan_mahasiswa'] }}%
                                 </div>
-                                <div class="text-xs text-muted mt-1">
-                                    <span data-toggle="tooltip"
+
+                                {{-- SPARKLINE CHART --}}
+                                <div class="sparkline-container">
+                                    <canvas id="sparklineMahasiswa" class="sparkline-chart"></canvas>
+                                </div>
+
+                                {{-- 3. INFORMASI TREN (SUB-JUDUL UTAMA) --}}
+                                <div class="d-flex align-items-center mb-3">
+                                    @if (isset($stats['percentage_change_mahasiswa']) && $stats['percentage_change_mahasiswa'] != 0)
+                                        <span
+                                            class="badge badge-{{ $stats['percentage_change_mahasiswa'] > 0 ? 'success' : 'danger' }} mr-2"
+                                            data-toggle="tooltip"
+                                            title="Perubahan persentase keterlibatan mahasiswa dari {{ $stats['previous_year'] }}: {{ $stats['percentage_change_mahasiswa'] > 0 ? 'Peningkatan' : 'Penurunan' }} {{ abs($stats['percentage_change_mahasiswa']) }}%">
+                                            <i
+                                                class="fas {{ $stats['percentage_change_mahasiswa'] > 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} mr-1"></i>
+                                            {{ $stats['percentage_change_mahasiswa'] > 0 ? '+' : '' }}{{ $stats['percentage_change_mahasiswa'] }}%
+                                        </span>
+                                    @elseif (isset($stats['percentage_change_mahasiswa']) && $stats['percentage_change_mahasiswa'] == 0)
+                                        <span class="badge badge-secondary mr-2" data-toggle="tooltip"
+                                            title="Tidak ada perubahan persentase keterlibatan mahasiswa dari tahun sebelumnya">
+                                            <i class="fas fa-minus mr-1"></i>
+                                            0%
+                                        </span>
+                                    @elseif ($filterYear == 'all')
+                                        <span class="badge badge-info mr-2" data-toggle="tooltip"
+                                            title="Menampilkan data keseluruhan tahun">
+                                            <i class="fas fa-calendar mr-1"></i>
+                                            Semua Tahun
+                                        </span>
+                                    @else
+                                        <span class="badge badge-warning mr-2" data-toggle="tooltip"
+                                            title="Data tahun sebelumnya tidak tersedia untuk perbandingan">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Data Baru
+                                        </span>
+                                    @endif
+                                    <small class="text-muted">{{ $stats['year_label'] ?? 'vs tahun sebelumnya' }}</small>
+                                </div>
+
+                                {{-- 4. DETAIL SEKUNDER (Rincian) --}}
+                                <div class="text-xs text-muted">
+                                    {{-- Rincian Jumlah Pengabdian --}}
+                                    <div class="mb-2" data-toggle="tooltip"
                                         title="{{ $stats['total_mahasiswa'] }} dari {{ $stats['total_pengabdian'] }} pengabdian melibatkan mahasiswa">
-                                        {{ $stats['total_mahasiswa'] }}/{{ $stats['total_pengabdian'] }}
-                                    </span>
-                                    • {{ $stats['year_label'] }}
-                                    <div class="mt-2">
-                                        <span class="text-primary font-weight-bold">
-                                            <i class="fas fa-laptop-code mr-1"></i>Informatika:
-                                            {{ $stats['mahasiswa_informatika'] }}
-                                        </span>
-                                        •
-                                        <span class="text-info font-weight-bold">
-                                            <i class="fas fa-database mr-1"></i>Sistem Informasi:
-                                            {{ $stats['mahasiswa_sistem_informasi'] }}
-                                        </span>
+                                        <i class="fas fa-check-circle mr-1"></i>
+                                        <span class="font-weight-bold">{{ $stats['total_mahasiswa'] }} /
+                                            {{ $stats['total_pengabdian'] }}</span>
+                                        pengabdian
+                                    </div>
+
+                                    {{-- Rincian Per Prodi --}}
+                                    <div>
+                                        <span> IT:
+                                            <strong>{{ $stats['mahasiswa_informatika'] }}</strong></span>
+                                        <span class="mx-2">•</span>
+                                        <span> SI:
+                                            <strong>{{ $stats['mahasiswa_sistem_informasi'] }}</strong></span>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="col-auto">
-                                <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
+                                {{-- DIUBAH: Ikon diperbesar agar seimbang --}}
+                                <i class="fas fa-user-graduate fa-3x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
@@ -462,16 +897,18 @@
             </div>
         </div>
 
-        <!-- KPI Progress Bar Row -->
-        <div class="row mb-4">
-            <div class="col-6">
-                <div class="card shadow modern-card">
+        <!-- Jenis Luaran Treemap & KPI Progress Bar Row -->
+        <div class="row mb-4 main-content-row">
+
+            <!-- KPI Progress Bar -->
+            <div class="col-lg-6 col-md-12 mb-4">
+                <div class="card shadow modern-card h-100">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         {{-- ... (Header card tidak berubah) ... --}}
                         <h6 class="m-0 font-weight-bold text-primary">
                             <i class="fas fa-tasks mr-2"></i>Progress Capaian KPI
                             @if ($filterYear !== 'all')
-                                <small class="text-muted">(Tahun {{ $filterYear }})</small>
+                                <span class="fs-3">({{ $filterYear }})</span>
                             @else
                                 <small class="text-muted">(Semua Tahun)</small>
                             @endif
@@ -535,155 +972,284 @@
                                     $progressPercentage = 0;
                                     $isTercapai = false;
 
-                                    // --- [PERUBAHAN 1] Tambahkan variabel untuk teks label benchmark ---
-                                    $benchmarkLabelText = '';
-
                                     if ($isDynamicBenchmark && !$isNegative) {
                                         $benchmarkPositionPercent = $targetValue;
                                         $progressPercentage = max(0, min(100, $kpi['realisasi']));
                                         $isTercapai = $kpi['realisasi'] >= $targetValue;
-                                        $benchmarkLabelText = $targetValue . '%'; // Teks untuk target dinamis
                                     } else {
                                         $benchmarkPositionPercent = 100;
                                         $progressPercentage = max(0, min(100, $skorNormalisasi));
                                         $isTercapai = $skorNormalisasi >= 100;
-                                        $benchmarkLabelText = '100%'; // Teks untuk target statis (100%)
                                     }
                                 @endphp
 
-                                <div class="-{{ $isTercapai ? 'success' : ($isNegative ? 'danger' : 'warning') }} pl-3"
+                                {{-- DIUBAH: Menggunakan kpi-progress-item dan mengurangi margin bawah (mb-3) --}}
+                                <div class="kpi-progress-item mb-3 border-left-{{ $isTercapai ? 'success' : ($isNegative ? 'warning' : 'warning') }} pl-3"
                                     data-toggle="tooltip" data-html="true" data-placement="top"
-                                    title="<strong>{{ $kpi['indikator'] }}</strong><br> ...">
+                                    title="<strong>{{ $kpi['indikator'] }}</strong><br>
+                                        <strong>Target:</strong> {{ number_format($kpi['target']) }} {{ $kpi['satuan'] }}<br>
+                                        <strong>Realisasi:</strong> {{ number_format($kpi['realisasi'], 2) }} {{ $kpi['satuan'] }}<br>
+                                        <strong>Capaian:</strong> {{ number_format($skorNormalisasi, 1) }}%">
 
-                                    {{-- ... (Bagian header dan deskripsi tidak berubah) ... --}}
-                                    <div class="d-flex align-items-center mb-2">
-                                        <h6 class="mb-0 font-weight-bold text-gray-800">{{ $displayText }}</h6>
+                                    {{-- DIUBAH: Margin bawah dikurangi (mb-1), badge & ikon dihilangkan untuk simplisitas --}}
+                                    <div class="d-flex align-items-center mb-1">
+                                        <h6 class="mb-0 font-weight-bold text-gray-800" style="font-size: 0.9rem;">
+                                            {{ $displayText }}</h6>
                                         <span
-                                            class="ml-2 badge badge-{{ $isTercapai ? 'success' : ($isNegative ? 'danger' : 'warning') }} badge-sm">
+                                            class="ml-auto font-weight-bold text-{{ $isTercapai ? 'success' : 'warning' }}">
                                             @if ($isNegative)
-                                                Menurun
+                                                0.0%
                                             @else
-                                                {{ $isTercapai ? 'Tercapai' : 'Belum Tercapai' }}
+                                                {{ number_format($skorNormalisasi, 1) }}%
                                             @endif
-                                        </span>
-                                        @if ($isDynamicBenchmark)
-                                            <small class="ml-1 text-info"
-                                                title="Benchmark dinamis: target {{ $targetValue }}%"><i
-                                                    class="fas fa-chart-line"></i></small>
-                                        @else
-                                            <small class="ml-1 text-muted" title="Benchmark statis: target 100%"><i
-                                                    class="fas fa-percentage"></i></small>
-                                        @endif
-                                        <span
-                                            class="ml-auto font-weight-bold text-{{ $isTercapai ? 'success' : ($isNegative ? 'danger' : 'warning') }}">
-                                            {{ number_format($skorNormalisasi, 1) }}%
                                         </span>
                                     </div>
 
-                                    <div class="position-relative" style="margin-bottom: 2rem; margin-top: 1.5rem;">
-                                        <div class="progress" style="height: 25px;">
+                                    {{-- DIUBAH: Dibuat lebih ringkas, tanpa margin atas/bawah yang besar --}}
+                                    <div class="position-relative">
+                                        {{-- DIUBAH: Progress bar dibuat lebih ramping (height: 12px) --}}
+                                        <div class="progress" style="height: 12px;">
                                             @if ($isNegative)
-                                                <div class="progress-bar bg-light border" role="progressbar"
-                                                    style="width: 100%;"></div>
+                                                {{-- Untuk nilai negatif, tampilkan progress bar kosong berwarna kuning/warning --}}
+                                                <div class="progress-bar bg-warning" role="progressbar"
+                                                    style="width: 0%;"></div>
                                             @else
                                                 <div class="progress-bar bg-{{ $isTercapai ? 'success' : 'warning' }}"
                                                     role="progressbar" style="width: {{ $progressPercentage }}%;"></div>
                                             @endif
                                         </div>
 
+                                        {{-- DIUBAH: Garis benchmark disesuaikan (height: 12px, width: 3px) dan label angka dihilangkan --}}
                                         <div class="position-absolute"
-                                            style="top: 0; left: {{ $benchmarkPositionPercent }}%; transform: translateX(-50%); height: 25px; width: 3px; background-color: #dc3545; z-index: 10;">
+                                            style="top: 0; left: {{ $benchmarkPositionPercent }}%; transform: translateX(-50%); height: 12px; width: 3px; background-color: #e74a3b; z-index: 10;">
                                         </div>
-
-                                        <span class="position-absolute"
-                                            style="bottom: 28px; left: {{ $benchmarkPositionPercent }}%; transform: translateX(-50%);
-                                             padding: 2px 5px; color: red;
-                                             font-size: 0.7rem; font-weight: bold; border-radius: 4px; z-index: 11; white-space: nowrap;">
-                                            {{ $benchmarkLabelText }}
-                                        </span>
                                     </div>
                                 </div>
+
+                                {{-- Menambahkan garis pemisah antar item untuk kejelasan visual --}}
+                                @if (!$loop->last)
+                                    <hr class="my-3">
+                                @endif
                             @endforeach
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
+            <!-- Sumber Dana Chart -->
+            <div class="col-lg-6 col-md-12 mb-4">
+                <div class="card shadow modern-card h-100">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary">
-                            <i class="fas fa-chart-bar mr-2"></i>Rekap Pengabdian per Dosen
-                            <span id="currentViewBadge" class="badge badge-info ml-2">Top 5</span>
+                            <i class="fas fa-money-bill-wave mr-2"></i>Sumber Dana Pengabdian - Perbandingan Tahunan
+                            @if ($filterYear != 'all')
+                                <span class="badge badge-info ml-2">{{ $filterYear - 1 }} vs {{ $filterYear }}</span>
+                            @else
+                                <span class="badge badge-secondary ml-2">{{ date('Y') - 1 }} vs
+                                    {{ date('Y') }}</span>
+                            @endif
                         </h6>
-                        @if ($filterYear !== 'all')
-                            <small class="text-muted">
-                                <i class="fas fa-filter mr-1"></i>Tahun: {{ $filterYear }}
-                            </small>
-                        @endif
-                    </div>
-                    <div class="col-md-6 text-right">
-                        <div class="btn-group mr-2" role="group" aria-label="View Toggle">
-                            <button id="viewTop5Btn" type="button" class="btn btn-sm btn-primary active"
-                                title="Tampilkan 5 dosen teratas">
-                                <i class="fas fa-trophy mr-1"></i>Top 5
-                            </button>
-                            <button id="viewAllBtn" type="button" class="btn btn-sm btn-outline-primary"
-                                title="Tampilkan semua dosen">
-                                <i class="fas fa-list mr-1"></i>Semua
-                            </button>
+                        <div class="dropdown no-arrow">
+                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                                aria-labelledby="dropdownMenuLink">
+                                <div class="dropdown-header">Opsi Chart:</div>
+                                <a class="dropdown-item" href="#" onclick="refreshFundingChart()">
+                                    <i class="fas fa-sync fa-sm fa-fw mr-2 text-gray-400"></i>Refresh Data
+                                </a>
+                            </div>
                         </div>
-                        <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-secondary"
-                            data-order="desc" title="Urutkan jumlah (tertinggi)">
-                            <i class="fas fa-sort-amount-down"></i>
-                        </button>
                     </div>
-                </div>
-                <div class="row mt-2">
-                    <div class="col-12">
-                        <small id="chartInfoText" class="text-muted">
-                            <i class="fas fa-info-circle mr-1"></i>Menampilkan 5 dosen dengan pengabdian terbanyak
-                        </small>
+                    <div class="card-body">
+                        <div class="chart-bar" style="height: 400px;">
+                            <canvas id="fundingSourcesChart" width="100%" height="400"></canvas>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <strong>Keterangan:</strong> Grafik menampilkan total dana per sumber
+                                @if ($filterYear != 'all')
+                                    untuk {{ $filterYear - 1 }} vs {{ $filterYear }}
+                                @else
+                                    untuk {{ date('Y') - 1 }} vs {{ date('Y') }}
+                                @endif
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="card-body">
-                @php
-                    $allDosenCount = count($namaDosen ?? []);
-                    $top5DosenCount = min($allDosenCount, 5);
-                    $maxCanvasHeight = max(600, $allDosenCount * 60);
-                @endphp
 
-                <!-- Top 5 Chart Container -->
-                <div id="top5ChartContainer" class="chart-container">
-                    <div class="chart-bar" style="height: {{ max(400, $top5DosenCount * 80) }}px;">
-                        <canvas id="dosenChart" width="100%" height="{{ max(400, $top5DosenCount * 80) }}"></canvas>
+
+            <!-- Treemap Jenis Luaran -->
+
+        </div>
+
+        <!-- Funding Sources Chart Section -->
+        <div class="row mb-4 main-content-row">
+
+            <div class="col-lg-6 col-md-12 mb-4">
+                <div class="card shadow mb-4 modern-card h-100">
+                    <div class="card-header py-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-chart-bar mr-2"></i>Rekap Pengabdian per Dosen
+                                    <span id="currentViewBadge" class="badge badge-info ml-2">Top 5</span>
+                                </h6>
+
+                                <small class="text-muted">
+                                    @if ($filterYear !== 'all')
+                                        Menampilkan data untuk tahun {{ $filterYear }}
+                                    @else
+                                        Menampilkan data untuk semua tahun
+                                    @endif
+                                </small>
+                                {{-- @if ($filterYear !== 'all')
+                            <small class="text-muted">
+                                <i class="fas fa-filter mr-1"></i>Tahun: {{ $filterYear }}
+                            </small>
+                        @endif --}}
+                            </div>
+                            <div class="col-md-6 text-right">
+                                <div class="btn-group mr-2" role="group" aria-label="View Toggle">
+                                    <button id="viewTop5Btn" type="button" class="btn btn-sm btn-primary active"
+                                        title="Tampilkan 5 dosen teratas">
+                                        <i class="fas fa-trophy mr-1"></i>Top 5
+                                    </button>
+                                    <button id="viewAllBtn" type="button" class="btn btn-sm btn-outline-primary"
+                                        title="Tampilkan semua dosen">
+                                        <i class="fas fa-list mr-1"></i>Semua
+                                    </button>
+                                </div>
+                                <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-order="desc" title="Urutkan jumlah (tertinggi)">
+                                    <i class="fas fa-sort-amount-down"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <small id="chartInfoText" class="text-muted">
+                                    <i class="fas fa-info-circle mr-1"></i>Menampilkan 5 dosen dengan pengabdian terbanyak
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @php
+                            $allDosenCount = count($namaDosen ?? []);
+                            $top5DosenCount = min($allDosenCount, 5);
+                            $maxCanvasHeight = max(600, $allDosenCount * 60);
+                        @endphp
+
+                        <!-- Top 5 Chart Container -->
+                        <div id="top5ChartContainer" class="chart-container">
+                            <div class="chart-bar" style="height: {{ max(400, $top5DosenCount * 80) }}px;">
+                                <canvas id="dosenChart" width="100%"
+                                    height="{{ max(400, $top5DosenCount * 80) }}"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- All Data Chart Container -->
+                        <div id="allChartContainer" class="chart-container d-none">
+                            <div class="chart-bar-scrollable"
+                                style="max-height: 600px; overflow-y: auto; overflow-x: hidden; border: 1px solid #e3e6f0; border-radius: 8px; padding: 20px; background-color: #f8f9fc;">
+                                <div style="height: {{ $maxCanvasHeight }}px; min-width: 900px;">
+                                    <canvas id="dosenAllChart" width="100%" height="{{ $maxCanvasHeight }}"></canvas>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-scroll mr-1"></i>
+                                    <strong>Tips:</strong> Gunakan scroll untuk navigasi. Total: <span
+                                        class="font-weight-bold text-primary">{{ $allDosenCount }}</span> dosen
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- All Data Chart Container -->
-                <div id="allChartContainer" class="chart-container d-none">
-                    <div class="chart-bar-scrollable"
-                        style="max-height: 600px; overflow-y: auto; overflow-x: hidden; border: 1px solid #e3e6f0; border-radius: 8px; padding: 20px; background-color: #f8f9fc;">
-                        <div style="height: {{ $maxCanvasHeight }}px; min-width: 900px;">
-                            <canvas id="dosenAllChart" width="100%" height="{{ $maxCanvasHeight }}"></canvas>
+            </div>
+
+            <div class="col-lg-6 col-md-12 mb-4">
+                <div class="card shadow modern-card h-100">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-chart-area mr-2"></i>Distribusi Jenis Luaran
+                            @if ($filterYear !== 'all')
+                                <span class="badge badge-info ml-2">{{ $filterYear }}</span>
+                            @else
+                                <small class="text-muted">(Semua Tahun)</small>
+                            @endif
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        @if (count($jenisLuaranData) > 0)
+                            <div id="jenisLuaranTreemap" style="height: 350px; width: 100%;"></div>
+                            <div class="mt-3 text-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <strong>Total:</strong> {{ array_sum(array_column($jenisLuaranData, 'value')) }} luaran
+                                </small>
+                            </div>
+                        @else
+                            <div class="d-flex align-items-center justify-content-center" style="height: 350px;">
+                                <div class="text-center text-gray-500">
+                                    <i class="fas fa-chart-area fa-3x mb-3"></i>
+                                    <div class="h6">Belum ada data luaran</div>
+                                    <p class="text-muted small">Data jenis luaran akan muncul di sini</p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <!-- Statistics Detail Modal -->
+    <div class="modal fade" id="statisticsModal" tabindex="-1" role="dialog" aria-labelledby="statisticsModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-ligt">
+                    <h5 class="modal-title text-white" id="statisticsModalLabel">
+                        <i class="fas fa-chart-line mr-2"></i>Detail Statistik
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
                         </div>
+                        <p class="mt-2">Memuat data...</p>
                     </div>
-                    <div class="mt-3 text-center">
-                        <small class="text-muted">
-                            <i class="fas fa-scroll mr-1"></i>
-                            <strong>Tips:</strong> Gunakan scroll untuk navigasi. Total: <span
-                                class="font-weight-bold text-primary">{{ $allDosenCount }}</span> dosen
-                        </small>
-                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i>Tutup
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     @push('scripts')
+        <!-- D3.js for Treemap -->
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+
+        <!-- DataTables JS -->
+        <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
+
         <script>
             // Initialize tooltips (Biarkan kode ini)
             $(document).ready(function() {
@@ -694,9 +1260,115 @@
                         "hide": 100
                     }
                 });
+
+                // Load sparkline charts
+                loadSparklineCharts();
+
+                // Add click handlers for statistics cards
+                $('#statTotalPengabdian').click(function() {
+                    showStatisticsModal('pengabdian', 'Total Pengabdian');
+                });
+
+                $('#statDosenTerlibat').click(function() {
+                    showStatisticsModal('dosen', 'Dosen Terlibat');
+                });
+
+                $('#statDenganMahasiswa').click(function() {
+                    showStatisticsModal('mahasiswa', 'Pengabdian dengan Mahasiswa');
+                });
             });
 
             // --- GANTI SEMUA KODE JAVASCRIPT LAMA ANDA DENGAN KODE INI ---
+
+            // === SPARKLINE CHARTS ===
+            function loadSparklineCharts() {
+                // Load sparkline data from API
+                fetch('{{ route('inqa.api.sparkline-data') }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Sparkline data received:', data); // Debug log
+                        createSparkline('sparklinePengabdian', data.pengabdian, '#4e73df', data.years);
+                        createSparkline('sparklineDosen', data.dosen, '#4e73df', data.years);
+                        createSparkline('sparklineMahasiswa', data.mahasiswa, '#4e73df', data.years);
+                    })
+                    .catch(error => {
+                        console.error('Error loading sparkline data:', error);
+                        // Create dummy data if API fails (use yearly data instead of monthly)
+                        const currentYear = new Date().getFullYear();
+                        const dummyYears = Array.from({
+                            length: 5
+                        }, (_, i) => currentYear - 4 + i);
+                        const dummyData = Array.from({
+                            length: 5
+                        }, () => Math.floor(Math.random() * 20) + 5);
+                        createSparkline('sparklinePengabdian', dummyData, '#4e73df', dummyYears);
+                        createSparkline('sparklineDosen', dummyData, '#4e73df', dummyYears);
+                        createSparkline('sparklineMahasiswa', dummyData, '#4e73df', dummyYears);
+                    });
+            }
+
+            function createSparkline(canvasId, data, color, years) {
+                const ctx = document.getElementById(canvasId);
+                if (!ctx) return;
+
+                // Destroy existing chart if it exists
+                const existingChart = Chart.getChart(canvasId);
+                if (existingChart) {
+                    existingChart.destroy();
+                }
+
+                const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 40);
+                gradient.addColorStop(0, color + '40');
+                gradient.addColorStop(1, color + '10');
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map((_, i) => ''),
+                        datasets: [{
+                            data: data,
+                            borderColor: color,
+                            backgroundColor: gradient,
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            pointBackgroundColor: 'transparent',
+                            pointBorderColor: 'transparent',
+                            pointBorderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'none'
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: false
+                            },
+                            datalabels: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: false
+                            },
+                            y: {
+                                display: false,
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
 
             // Daftarkan plugin datalabels secara global
             Chart.register(ChartDataLabels);
@@ -739,7 +1411,6 @@
 
                     return `rgba(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, ${opacity.toFixed(2)})`;
                 });
-                // --- AKHIR BAGIAN UTAMA ---
 
                 new Chart(ctx, {
                     type: 'bar',
@@ -881,11 +1552,863 @@
                     this.innerHTML = newOrder === 'asc' ? '<i class="fas fa-sort-amount-up"></i>' :
                         '<i class="fas fa-sort-amount-down"></i>';
                     this.title = newOrder === 'asc' ? 'Urutkan jumlah (terendah)' :
-                    'Urutkan jumlah (tertinggi)';
+                        'Urutkan jumlah (tertinggi)';
 
                     updateCharts(originalData);
                 });
             });
+
+            // === FUNDING SOURCES STACKED BAR CHART ===
+            let fundingChart = null;
+
+            function loadFundingSourcesChart() {
+                // Get current year from the filter
+                const currentYear = '{{ $filterYear }}';
+                const url = '{{ route('inqa.api.funding-sources') }}' + '?year=' + currentYear;
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        createFundingChart(data);
+                    })
+                    .catch(error => {
+                        console.error('Error loading funding sources data:', error);
+
+                        // Show error message on chart
+                        const ctx = document.getElementById('fundingSourcesChart').getContext('2d');
+                        if (fundingChart) {
+                            fundingChart.destroy();
+                        }
+                        // Create empty chart with error message
+                        fundingChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: ['No Data'],
+                                datasets: [{
+                                    label: 'Error Loading Data',
+                                    data: [0],
+                                    backgroundColor: '#e74a3b'
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    title: {
+                                        display: true,
+                                        text: 'Error Loading Funding Data - Silakan refresh halaman',
+                                        color: '#e74a3b'
+                                    }
+                                }
+                            }
+                        });
+                    });
+            }
+
+            function createFundingChart(data) {
+                const ctx = document.getElementById('fundingSourcesChart').getContext('2d');
+
+                // Check if there's no data
+                if (data.no_data) {
+                    // Destroy existing chart if it exists
+                    if (fundingChart) {
+                        fundingChart.destroy();
+                    }
+
+                    // Create chart showing no data message
+                    fundingChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: data,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: data.message || 'Tidak ada data sumber dana untuk periode ini',
+                                    font: {
+                                        size: 16,
+                                        weight: 'bold'
+                                    },
+                                    color: '#858796'
+                                },
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(234, 236, 244, 0.5)'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    return;
+                }
+
+                // Destroy existing chart if it exists
+                if (fundingChart) {
+                    fundingChart.destroy();
+                }
+
+                // Format currency for labels
+                function formatCurrency(value) {
+                    if (value >= 1000000) {
+                        return 'Rp ' + (value / 1000000).toFixed(1) + ' Juta';
+                    } else if (value >= 1000) {
+                        return 'Rp ' + (value / 1000).toFixed(0) + ' Ribu';
+                    } else {
+                        return 'Rp ' + value.toLocaleString('id-ID');
+                    }
+                }
+
+                // Sort datasets by total contribution (sum of both years) for consistent ordering
+                const sortedDatasets = data.datasets.sort((a, b) => {
+                    const totalA = a.data.reduce((sum, val) => sum + (val || 0), 0);
+                    const totalB = b.data.reduce((sum, val) => sum + (val || 0), 0);
+                    return totalB - totalA; // Largest contributors first (at bottom of stack)
+                });
+
+                // Enhanced color palette with distinct colors for better differentiation
+                const enhancedColors = [
+                    '#1f77b4', // Strong Blue - Primary funding source
+                    '#ff7f0e', // Orange - Secondary source
+                    '#2ca02c', // Green - Third source  
+                    '#d62728', // Red - Fourth source
+                    '#9467bd', // Purple - Fifth source
+                    '#8c564b', // Brown - Sixth source
+                    '#e377c2', // Pink - Seventh source
+                    '#7f7f7f', // Gray - Eighth source
+                    '#bcbd22', // Olive - Ninth source
+                    '#17becf' // Cyan - Tenth source
+                ];
+
+                // Apply consistent colors based on source priority
+                sortedDatasets.forEach((dataset, index) => {
+                    dataset.backgroundColor = enhancedColors[index % enhancedColors.length];
+                    dataset.borderColor = enhancedColors[index % enhancedColors.length];
+                    dataset.borderWidth = 1;
+
+                    if (index === dataset.length - 1) {
+
+                        dataset.borderRadius = {
+                            topLeft: 10,
+                            topRight: 10,
+                            bottomLeft: 0,
+                            bottomRight: 0
+                        };
+                    } else {
+
+                        dataset.borderRadius = 0;
+                    }
+                });
+
+                fundingChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels, // [Previous Year, Current Year]
+                        datasets: sortedDatasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'point',
+                            intersect: true,
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 13,
+                                        weight: 'bold'
+                                    },
+                                    color: '#5a5c69'
+                                }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(234, 236, 244, 0.3)',
+                                    lineWidth: 1
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return formatCurrency(value);
+                                    },
+                                    font: {
+                                        size: 11
+                                    },
+                                    color: '#858796'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Perbandingan Sumber Dana: ' + data.years.previous + ' vs ' + data.years.current,
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                },
+                                color: '#2d3e50',
+                                padding: {
+                                    top: 15,
+                                    bottom: 25
+                                }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 15,
+                                    padding: 15,
+                                    font: {
+                                        size: 11,
+                                        weight: '500'
+                                    },
+                                    color: '#5a5c69',
+                                    usePointStyle: false,
+                                    generateLabels: function(chart) {
+                                        const datasets = chart.data.datasets;
+                                        return datasets.map((dataset, index) => {
+                                            return {
+                                                text: dataset.label,
+                                                fillStyle: dataset.backgroundColor,
+                                                strokeStyle: dataset.borderColor,
+                                                lineWidth: dataset.borderWidth,
+                                                hidden: false,
+                                                index: index
+                                            };
+                                        });
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                                titleColor: '#2d3e50',
+                                bodyColor: '#5a5c69',
+                                footerColor: '#2d3e50',
+                                borderColor: 'rgba(0, 0, 0, 0.1)',
+                                borderWidth: 2,
+                                cornerRadius: 12,
+                                displayColors: true,
+                                titleFont: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                bodyFont: {
+                                    size: 12,
+                                    weight: 'normal'
+                                },
+                                footerFont: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                padding: 12,
+                                callbacks: {
+                                    title: function(context) {
+                                        return '📊 Tahun ' + context[0].label;
+                                    },
+                                    label: function(context) {
+                                        const label = context.dataset.label || '';
+                                        const value = formatCurrency(context.raw);
+                                        const total = context.chart.data.datasets.reduce((sum, dataset) => {
+                                            return sum + (dataset.data[context.dataIndex] || 0);
+                                        }, 0);
+                                        const percentage = ((context.raw / total) * 100).toFixed(1);
+                                        return `💰 ${label}: ${value} (${percentage}%)`;
+                                    },
+                                    footer: function(tooltipItems) {
+                                        let total = 0;
+                                        tooltipItems.forEach(function(tooltipItem) {
+                                            total += tooltipItem.raw;
+                                        });
+                                        return `📈 Total Dana: ${formatCurrency(total)}`;
+                                    }
+                                }
+                            },
+                            // Disable data labels on bars for clean "at a glance" view
+                            datalabels: {
+                                display: false
+                            }
+                        },
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeInOutQuart'
+                        }
+                    }
+                });
+            }
+
+            function refreshFundingChart() {
+                console.log('Refreshing funding chart...');
+                loadFundingSourcesChart();
+            }
+
+            // === JENIS LUARAN TREEMAP ===
+            function createJenisLuaranChart() {
+                const jenisLuaranData = @json($jenisLuaranData);
+
+                if (!jenisLuaranData || jenisLuaranData.length === 0) {
+                    return;
+                }
+
+                // Clear previous content
+                d3.select("#jenisLuaranTreemap").selectAll("*").remove();
+
+                // Set dimensions and margins
+                const container = document.getElementById('jenisLuaranTreemap');
+                const margin = {
+                    top: 10,
+                    right: 10,
+                    bottom: 10,
+                    left: 10
+                };
+                const width = container.clientWidth - margin.left - margin.right;
+                const height = 350 - margin.top - margin.bottom;
+
+                // Modern color palette with subtle tones
+                const colorScale = d3.scaleOrdinal([
+                    '#6366f1', // Indigo
+                    '#8b5cf6', // Purple
+                    '#06b6d4', // Cyan
+                    '#10b981', // Emerald
+                    '#f59e0b', // Amber
+                    '#ef4444', // Red
+                    '#ec4899', // Pink
+                    '#84cc16', // Lime
+                    '#f97316', // Orange
+                    '#3b82f6', // Blue
+                    '#14b8a6', // Teal
+                    '#a855f7' // Violet
+                ]);
+
+                // Prepare data for D3 treemap
+                const data = {
+                    name: "Jenis Luaran",
+                    children: jenisLuaranData.map(item => ({
+                        name: item.label,
+                        value: item.value
+                    }))
+                };
+
+                // Create SVG
+                const svg = d3.select("#jenisLuaranTreemap")
+                    .append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .style("font-family", "Nunito, sans-serif");
+
+                const g = svg.append("g")
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                // Create treemap layout
+                const root = d3.hierarchy(data)
+                    .sum(d => d.value)
+                    .sort((a, b) => b.value - a.value);
+
+                const treemap = d3.treemap()
+                    .size([width, height])
+                    .padding(2)
+                    .round(true);
+
+                treemap(root);
+
+                // Calculate total for percentages
+                const total = d3.sum(jenisLuaranData, d => d.value);
+
+                // Create tooltip div
+                const tooltip = d3.select("body").append("div")
+                    .attr("class", "treemap-tooltip")
+                    .style("opacity", 0)
+                    .style("position", "absolute")
+                    .style("text-align", "center")
+                    .style("padding", "12px")
+                    .style("font", "12px Nunito, sans-serif")
+                    .style("background", "rgba(255, 255, 255, 0.95)")
+                    .style("border", "1px solid #e5e7eb")
+                    .style("border-radius", "8px")
+                    .style("box-shadow", "0 4px 12px rgba(0, 0, 0, 0.15)")
+                    .style("pointer-events", "none")
+                    .style("z-index", "1000");
+
+                // Create cells
+                const leaf = g.selectAll("g")
+                    .data(root.leaves())
+                    .enter().append("g")
+                    .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+                // Add rectangles
+                leaf.append("rect")
+                    .attr("width", d => Math.max(0, d.x1 - d.x0))
+                    .attr("height", d => Math.max(0, d.y1 - d.y0))
+                    .attr("fill", (d, i) => colorScale(i))
+                    .attr("stroke", "#ffffff")
+                    .attr("stroke-width", 2)
+                    .attr("rx", 6)
+                    .style("cursor", "pointer")
+                    .style("transition", "all 0.3s ease")
+                    .on("mouseover", function(event, d) {
+                        // Highlight effect
+                        d3.select(this)
+                            .attr("stroke-width", 3)
+                            .style("filter", "brightness(1.1)");
+
+                        const percentage = ((d.value / total) * 100).toFixed(1);
+
+                        tooltip.transition()
+                            .duration(200)
+                            .style("opacity", .95);
+
+                        tooltip.html(`
+                            <div style="font-weight: bold; color: #1f2937; margin-bottom: 4px;">${d.data.name}</div>
+                            <div style="color: #374151;">Jumlah: ${d.value} luaran</div>
+                            <div style="color: #6b7280;">Persentase: ${percentage}%</div>
+                        `)
+                            .style("left", (event.pageX + 10) + "px")
+                            .style("top", (event.pageY - 28) + "px");
+                    })
+                    .on("mouseout", function(d) {
+                        // Remove highlight effect
+                        d3.select(this)
+                            .attr("stroke-width", 2)
+                            .style("filter", "brightness(1)");
+
+                        tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                    });
+
+                // Add text labels
+                leaf.append("text")
+                    .selectAll("tspan")
+                    .data(d => {
+                        const words = d.data.name.split(/\s+/);
+                        const percentage = ((d.value / total) * 100).toFixed(1);
+                        return words.concat([`${d.value}`, `(${percentage}%)`]);
+                    })
+                    .enter().append("tspan")
+                    .attr("x", 4)
+                    .attr("y", (d, i, nodes) => {
+                        const parentRect = d3.select(nodes[0].parentNode.previousSibling);
+                        const rectHeight = +parentRect.attr("height");
+                        const lineHeight = 14;
+                        const totalLines = nodes.length;
+                        const startY = (rectHeight - totalLines * lineHeight) / 2 + lineHeight;
+                        return startY + i * lineHeight;
+                    })
+                    .style("font-size", (d, i, nodes) => {
+                        const parentRect = d3.select(nodes[0].parentNode.previousSibling);
+                        const rectWidth = +parentRect.attr("width");
+                        const rectHeight = +parentRect.attr("height");
+
+                        // Dynamic font size based on rectangle size
+                        if (rectWidth < 80 || rectHeight < 60) return "10px";
+                        if (rectWidth < 120 || rectHeight < 80) return "11px";
+                        return "12px";
+                    })
+                    .style("font-weight", (d, i, nodes) => {
+                        // First lines are category name (bold), last two lines are value and percentage
+                        const totalLines = nodes.length;
+                        return i >= totalLines - 2 ? "bold" : "600";
+                    })
+                    .style("fill", "white")
+                    .style("text-shadow", "0 1px 2px rgba(0,0,0,0.3)")
+                    .text(d => d)
+                    .each(function(d, i, nodes) {
+                        // Hide text if rectangle is too small
+                        const parentRect = d3.select(nodes[0].parentNode.previousSibling);
+                        const rectWidth = +parentRect.attr("width");
+                        const rectHeight = +parentRect.attr("height");
+
+                        if (rectWidth < 60 || rectHeight < 40) {
+                            d3.select(this).style("display", "none");
+                        }
+                    });
+
+                // Add animation
+                leaf.selectAll("rect")
+                    .attr("width", 0)
+                    .attr("height", 0)
+                    .transition()
+                    .duration(800)
+                    .ease(d3.easeBackOut.overshoot(1.1))
+                    .attr("width", d => Math.max(0, d.x1 - d.x0))
+                    .attr("height", d => Math.max(0, d.y1 - d.y0));
+
+                leaf.selectAll("text")
+                    .style("opacity", 0)
+                    .transition()
+                    .delay(400)
+                    .duration(600)
+                    .style("opacity", 1);
+            }
+
+            // Load the chart when document is ready
+            $(document).ready(function() {
+                loadFundingSourcesChart();
+                createJenisLuaranChart();
+
+                // Handle window resize for treemap
+                let resizeTimeout;
+                $(window).resize(function() {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(function() {
+                        createJenisLuaranChart(); // Recreate treemap on resize
+                    }, 250);
+                });
+            });
+
+            // Statistics Modal Functions
+            function showStatisticsModal(type, title) {
+                const currentYear = '{{ $filterYear }}';
+
+                // Update modal title
+                $('#statisticsModalLabel').html('<i class="fas fa-chart-line mr-2"></i>Detail ' + title +
+                    (currentYear !== 'all' ? ' - Tahun ' + currentYear : ' - Semua Tahun'));
+
+                // Show modal with enhanced loading state
+                $('#statisticsModal').modal('show');
+                $('#modalBody').html(`
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                        <h5 class="text-primary">Memuat Data ${title}</h5>
+                        <p class="text-muted">Sedang mengumpulkan informasi detail...</p>
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 style="width: 100%; background: linear-gradient(90deg, #4e73df, #36b9cc);"></div>
+                        </div>
+                    </div>
+                `);
+                $('#exportBtn').hide();
+
+                // Make AJAX request to get detailed data
+                $.ajax({
+                    url: '{{ route('inqa.api.statistics-detail') }}',
+                    method: 'GET',
+                    data: {
+                        type: type,
+                        year: currentYear
+                    },
+                    timeout: 30000, // 30 second timeout
+                    success: function(response) {
+                        renderModalContent(type, response, title);
+                    },
+                    error: function(xhr, status, error) {
+                        let errorMessage = 'Terjadi kesalahan saat mengambil data detail.';
+
+                        if (status === 'timeout') {
+                            errorMessage = 'Permintaan timeout. Server membutuhkan waktu terlalu lama.';
+                        } else if (xhr.status === 404) {
+                            errorMessage = 'Endpoint tidak ditemukan. Silakan hubungi administrator.';
+                        } else if (xhr.status === 500) {
+                            errorMessage = 'Kesalahan server internal. Silakan coba lagi nanti.';
+                        }
+
+                        $('#modalBody').html(`
+                            <div class="text-center py-5">
+                                <i class="fas fa-exclamation-triangle fa-4x text-warning mb-4"></i>
+                                <h5 class="text-warning mb-3">Gagal Memuat Data</h5>
+                                <p class="text-muted mb-4">${errorMessage}</p>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button class="btn btn-primary" onclick="showStatisticsModal('${type}', '${title}')">
+                                        <i class="fas fa-redo mr-2"></i>Coba Lagi
+                                    </button>
+                                    <button class="btn btn-secondary" data-dismiss="modal">
+                                        <i class="fas fa-times mr-2"></i>Tutup
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                    }
+                });
+            }
+
+            function renderModalContent(type, data, title) {
+                let html = '';
+
+                // Summary statistics
+                html += `<div class="row mb-4">`;
+                html += `<div class="col-md-12">`;
+                html += `<div class="card border-left-primary">`;
+                html += `<div class="card-body">`;
+                html += `<div class="row">`;
+
+                if (type === 'pengabdian') {
+                    html += `
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-primary font-weight-bold">${data.total}</h4>
+                            <small class="text-muted">Total Pengabdian</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-success font-weight-bold">${data.kolaborasi}</h4>
+                            <small class="text-muted">Kolaborasi</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-info font-weight-bold">${data.informatika}</h4>
+                            <small class="text-muted">Informatika</small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h4 class="text-warning font-weight-bold">${data.sistem_informasi}</h4>
+                            <small class="text-muted">Sistem Informasi</small>
+                        </div>
+                    `;
+                } else if (type === 'dosen') {
+                    html += `
+                        <div class="col-md-4 text-center">
+                            <h4 class="text-primary font-weight-bold">${data.total}</h4>
+                            <small class="text-muted">Total Dosen</small>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h4 class="text-info font-weight-bold">${data.informatika}</h4>
+                            <small class="text-muted">Informatika</small>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h4 class="text-warning font-weight-bold">${data.sistem_informasi}</h4>
+                            <small class="text-muted">Sistem Informasi</small>
+                        </div>
+                    `;
+                } else if (type === 'mahasiswa') {
+                    html += `
+                        <div class="col-md-4 text-center">
+                            <h4 class="text-primary font-weight-bold">${data.total}</h4>
+                            <small class="text-muted">Total Pengabdian dengan Mahasiswa</small>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h4 class="text-info font-weight-bold">${data.informatika}</h4>
+                            <small class="text-muted">Mahasiswa Informatika</small>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h4 class="text-warning font-weight-bold">${data.sistem_informasi}</h4>
+                            <small class="text-muted">Mahasiswa Sistem Informasi</small>
+                        </div>
+                    `;
+                }
+
+                html += `</div></div></div></div></div>`;
+
+                // Data table
+                if (data.details && data.details.length > 0) {
+                    html += `<div class="card">`;
+                    html += `<div class="card-header bg-primary text-white">`;
+                    html += `<h6 class="mb-0"><i class="fas fa-table mr-2"></i>Data Detail ${title}</h6>`;
+                    html += `</div>`;
+                    html += `<div class="card-body">`;
+                    html += `<div class="table-responsive">`;
+                    html += `<table class="table table-striped table-hover" id="detailTable">`;
+
+                    // Table headers based on type
+                    if (type === 'pengabdian') {
+                        html += `
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Judul Pengabdian</th>
+                                    <th>Tanggal</th>
+                                    <th>Ketua</th>
+                                    <th>Sumber Dana</th>
+                                    <th>Prodi</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                        `;
+
+                        data.details.forEach((item, index) => {
+                            const statusClass = item.dengan_mahasiswa ? 'badge-success' : 'badge-secondary';
+                            const statusText = item.dengan_mahasiswa ? 'Dengan Mahasiswa' : 'Tanpa Mahasiswa';
+
+                            html += `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>
+                                        <div class="font-weight-bold text-primary">${item.judul}</div>
+                                        <small class="text-muted">${item.id_pengabdian}</small>
+                                    </td>
+                                    <td>${new Date(item.tanggal_pengabdian).toLocaleDateString('id-ID')}</td>
+                                    <td>${item.ketua}</td>
+                                    <td><span class="badge badge-info">${item.sumber_dana}</span></td>
+                                    <td><span class="badge badge-secondary">${item.kategori_prodi}</span></td>
+                                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                                </tr>
+                            `;
+                        });
+
+                    } else if (type === 'dosen') {
+                        html += `
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama Dosen</th>
+                                    <th>NIK</th>
+                                    <th>Program Studi</th>
+                                    <th>Jumlah Pengabdian</th>
+                                    <th>Jabatan</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                        `;
+
+                        data.details.forEach((item, index) => {
+                            const prodiClass = item.prodi === 'Informatika' ? 'badge-info' : 'badge-warning';
+
+                            html += `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>
+                                        <div class="font-weight-bold text-primary">${item.nama}</div>
+                                        <small class="text-muted">NIDN: ${item.nidn || 'N/A'}</small>
+                                    </td>
+                                    <td><span class="badge badge-secondary">${item.nik}</span></td>
+                                    <td><span class="badge ${prodiClass}">${item.prodi}</span></td>
+                                    <td class="text-center">
+                                        <span class="badge badge-primary">${item.jumlah_pengabdian}</span>
+                                    </td>
+                                    <td>${item.jabatan || 'N/A'}</td>
+                                    <td>${item.email || 'N/A'}</td>
+                                </tr>
+                            `;
+                        });
+
+                    } else if (type === 'mahasiswa') {
+                        html += `
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Judul Pengabdian</th>
+                                    <th>Tanggal</th>
+                                    <th>Ketua</th>
+                                    <th>Jumlah Mahasiswa</th>
+                                    <th>Prodi Mahasiswa</th>
+                                    <th>Sumber Dana</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                        `;
+
+                        data.details.forEach((item, index) => {
+                            html += `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>
+                                        <div class="font-weight-bold text-primary">${item.judul}</div>
+                                        <small class="text-muted">${item.id_pengabdian}</small>
+                                    </td>
+                                    <td>${new Date(item.tanggal_pengabdian).toLocaleDateString('id-ID')}</td>
+                                    <td>${item.ketua}</td>
+                                    <td class="text-center">
+                                        <span class="badge badge-success">${item.jumlah_mahasiswa}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">Informatika: ${item.mahasiswa_informatika}</span>
+                                        <span class="badge badge-warning">SI: ${item.mahasiswa_sistem_informasi}</span>
+                                    </td>
+                                    <td><span class="badge badge-secondary">${item.sumber_dana}</span></td>
+                                </tr>
+                            `;
+                        });
+                    }
+
+                    html += `</tbody></table></div></div></div>`;
+                } else {
+                    html += `
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Tidak ada data</h5>
+                            <p class="text-muted">Belum ada data detail untuk kategori ini.</p>
+                        </div>
+                    `;
+                }
+
+                $('#modalBody').html(html);
+
+                // Initialize DataTable if there's data
+                if (data.details && data.details.length > 0) {
+                    setTimeout(() => {
+                        $('#detailTable').DataTable({
+                            "pageLength": 10,
+                            "order": [
+                                [0, "asc"]
+                            ],
+                            "language": {
+                                "search": "Cari:",
+                                "lengthMenu": "Tampilkan _MENU_ data per halaman",
+                                "zeroRecords": "Tidak ada data yang sesuai",
+                                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                                "infoEmpty": "Tidak ada data",
+                                "paginate": {
+                                    "first": "Pertama",
+                                    "last": "Terakhir",
+                                    "next": "Selanjutnya",
+                                    "previous": "Sebelumnya"
+                                }
+                            }
+                        });
+                    }, 100);
+                }
+
+                // Show export button if there's data
+                if (data.details && data.details.length > 0) {
+                    $('#exportBtn').show().off('click').on('click', function() {
+                        exportModalData(type, data);
+                    });
+                } else {
+                    $('#exportBtn').hide();
+                }
+            }
+
+            function exportModalData(type, data) {
+                // Simple CSV export functionality
+                let csvContent = "data:text/csv;charset=utf-8,";
+
+                if (type === 'pengabdian') {
+                    csvContent += "No,Judul Pengabdian,ID Pengabdian,Tanggal,Ketua,Sumber Dana,Prodi,Dengan Mahasiswa\n";
+                    data.details.forEach((item, index) => {
+                        csvContent +=
+                            `${index + 1},"${item.judul}","${item.id_pengabdian}","${item.tanggal_pengabdian}","${item.ketua}","${item.sumber_dana}","${item.kategori_prodi}","${item.dengan_mahasiswa ? 'Ya' : 'Tidak'}"\n`;
+                    });
+                } else if (type === 'dosen') {
+                    csvContent += "No,Nama Dosen,NIK,NIDN,Program Studi,Jumlah Pengabdian,Jabatan,Email\n";
+                    data.details.forEach((item, index) => {
+                        csvContent +=
+                            `${index + 1},"${item.nama}","${item.nik}","${item.nidn || ''}","${item.prodi}","${item.jumlah_pengabdian}","${item.jabatan || ''}","${item.email || ''}"\n`;
+                    });
+                } else if (type === 'mahasiswa') {
+                    csvContent +=
+                        "No,Judul Pengabdian,ID Pengabdian,Tanggal,Ketua,Jumlah Mahasiswa,Mahasiswa Informatika,Mahasiswa SI,Sumber Dana\n";
+                    data.details.forEach((item, index) => {
+                        csvContent +=
+                            `${index + 1},"${item.judul}","${item.id_pengabdian}","${item.tanggal_pengabdian}","${item.ketua}","${item.jumlah_mahasiswa}","${item.mahasiswa_informatika}","${item.mahasiswa_sistem_informasi}","${item.sumber_dana}"\n`;
+                    });
+                }
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `detail_${type}_{{ $filterYear }}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
         </script>
     @endpush
 @endsection

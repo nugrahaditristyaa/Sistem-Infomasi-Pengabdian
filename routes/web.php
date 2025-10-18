@@ -67,5 +67,14 @@ Route::middleware(['auth:admin', 'role:Staff InQA'])->group(function () {
 
         // buat route khusus untuk update KPI berdasarkan kode (untuk modal AJAX)
         Route::put('kpi/update/{kode}', [\App\Http\Controllers\Inqa\InqaKpiController::class, 'updateByCode'])->name('kpi.updateByCode');
+
+        // API routes
+        Route::get('/api/funding-sources', [\App\Http\Controllers\InQA\InQaController::class, 'getFundingSourcesData'])->name('api.funding-sources');
+        Route::get('/api/statistics-detail', [\App\Http\Controllers\InQA\InQaController::class, 'getStatisticsDetail'])->name('api.statistics-detail');
+        Route::get('/api/sparkline-data', [\App\Http\Controllers\InQA\InQaController::class, 'getSparklineData'])->name('api.sparkline-data');
+
+        // Dosen recap routes
+        Route::get('/dosen/rekap', [\App\Http\Controllers\InQA\InQaController::class, 'dosenRekap'])->name('dosen.rekap');
+        Route::get('/dosen/detail/{nik}', [\App\Http\Controllers\InQA\InQaController::class, 'dosenDetail'])->name('dosen.detail');
     });
 });

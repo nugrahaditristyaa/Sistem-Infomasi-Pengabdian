@@ -51,13 +51,15 @@
 
             /* Enhanced Dashboard Layout Styling */
             .statistics-card {
-                transition: all 0.2s ease-in-out;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 border-left-width: 0.25rem !important;
+                border-radius: 12px;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
             }
 
             .statistics-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+                transform: translateY(-4px);
+                box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12) !important;
             }
 
             .statistics-card .card-body {
@@ -117,42 +119,132 @@
 
             .tooltip-icon {
                 opacity: 0.7;
-                transition: opacity 0.2s;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
 
             .tooltip-icon:hover {
                 opacity: 1;
+                color: #4e73df !important;
+                transform: scale(1.15);
+                filter: drop-shadow(0 2px 4px rgba(78, 115, 223, 0.3));
             }
 
             .clickable-stat {
-                transition: color 0.2s;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
 
             .clickable-stat:hover {
                 color: #4e73df !important;
+                transform: scale(1.03);
+                text-shadow: 0 2px 8px rgba(78, 115, 223, 0.2);
+            }
+
+            .clickable-stat-number {
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                cursor: pointer;
+            }
+
+            .clickable-stat-number:hover {
+                color: #4e73df !important;
+                text-shadow: 0 2px 8px rgba(78, 115, 223, 0.2);
             }
 
             .dashboard-actions .btn {
-                transition: all 0.2s ease;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                border-radius: 8px;
             }
 
             .dashboard-actions .btn:hover {
-                transform: scale(1.05);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
             }
 
             /* Card Enhancement */
             .card {
-                transition: box-shadow 0.2s ease;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                border-radius: 12px;
+                border: none;
+                box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06);
             }
 
             .card:hover {
-                box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1) !important;
+                transform: translateY(-3px);
+                box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12) !important;
+            }
+
+            /* Modal Fix - Prevent interference with card animations */
+            .modal {
+                pointer-events: auto !important;
+            }
+
+            .modal-backdrop {
+                pointer-events: auto !important;
+            }
+
+            .modal-dialog {
+                pointer-events: auto !important;
+                transition: transform 0.3s ease-out !important;
+            }
+
+            .modal.fade .modal-dialog {
+                transition: transform 0.3s ease-out !important;
+                transform: translate(0, -50px) !important;
+            }
+
+            .modal.show .modal-dialog {
+                transform: none !important;
+            }
+
+            /* Prevent card hover effects when modal is open */
+            body.modal-open .card:hover {
+                transform: none !important;
+                box-shadow: none !important;
+            }
+
+            body.modal-open .modern-card:hover {
+                transform: none !important;
+                box-shadow: none !important;
+            }
+
+            body.modal-open .statistics-card:hover {
+                transform: none !important;
+                box-shadow: none !important;
+            }
+
+            /* Modern Card Enhanced Hover Animation */
+            .modern-card {
+                border-radius: 16px;
+                border: none;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .modern-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15) !important;
+            }
+
+            .modern-card .card-header {
+                background: transparent;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+                padding: 1.25rem 1.5rem;
+                border-radius: 16px 16px 0 0;
+            }
+
+            .modern-card .card-body {
+                padding: 1.5rem;
+            }
+
+            .modern-card .card-header h6 {
+                font-weight: 600;
+                font-size: 0.95rem;
             }
 
             /* Action List Items */
             .list-group-item-action {
-                transition: all 0.2s ease;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 border-left: 3px solid transparent;
+                border-radius: 8px;
             }
 
             /* Status Button Consistent Size - Enhanced */
@@ -170,14 +262,15 @@
                 font-size: 0.8rem !important;
                 line-height: 1 !important;
                 padding: 0.375rem 0.5rem !important;
-                transition: all 0.2s ease !important;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
                 border: none !important;
                 outline: none !important;
+                border-radius: 8px !important;
             }
 
             .status-btn:hover {
-                transform: translateY(-1px) !important;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+                transform: translateY(-2px) scale(1.02) !important;
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
             }
 
             .status-btn:focus {
@@ -197,7 +290,8 @@
             .list-group-item-action:hover {
                 border-left-color: #4e73df;
                 background-color: #f8f9fc;
-                transform: translateX(2px);
+                transform: translateX(4px);
+                box-shadow: 0 4px 15px rgba(78, 115, 223, 0.1);
             }
 
             .statPengabdianDosen {
@@ -289,18 +383,18 @@
 
                 /* Chart Container Toggle */
                 .chart-container {
-                    transition: all 0.4s ease-in-out;
+                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
                     opacity: 1;
                 }
 
                 .chart-container.d-none {
                     opacity: 0;
-                    transform: translateY(-20px);
+                    transform: translateY(-20px) scale(0.98);
                 }
 
                 /* Toggle Buttons */
                 .btn-group .btn {
-                    transition: all 0.2s ease;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     border-radius: 0.375rem !important;
                 }
 
@@ -315,13 +409,26 @@
                 }
 
                 .btn-group .btn.active {
-                    transform: scale(1.05);
-                    box-shadow: 0 2px 8px rgba(78, 115, 223, 0.3);
+                    transform: scale(1.05) translateY(-1px);
+                    box-shadow: 0 4px 15px rgba(78, 115, 223, 0.25);
+                }
+
+                .btn-group .btn:hover:not(.active) {
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
                 }
 
                 /* Badge Animation */
                 #currentViewBadge {
-                    transition: all 0.3s ease;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                .badge {
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                .badge:hover {
+                    transform: scale(1.05);
                 }
 
                 /* Chart Info Text */
@@ -447,14 +554,14 @@
         <div class="row mb-4">
             <!-- [ Statistik Cepat 1 ] - Total Pengabdian -->
             <div class="col-xl-4 col-md-6 mb-4">
-                <div class="card border-left-primary shadow h-100 py-2 statistics-card modern-card">
+                <div class="card shadow h-100 py-2 statistics-card modern-card">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
                                 <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                     Total Pengabdian
                                     @if ($filterYear !== 'all')
-                                        <small class="text-lowercase">(Tahun {{ $filterYear }})</small>
+                                        <span class="fs-3">({{ $filterYear }})</span>
                                     @endif
                                     <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
                                         title="Total pengabdian {{ $filterYear !== 'all' ? 'pada tahun ' . $filterYear : 'keseluruhan' }}"
@@ -483,7 +590,7 @@
                                             {{ $stats['pengabdian_kolaborasi'] }}
                                         </span>
                                         <br>
-                                        <span class="text-primary font-weight-bold" data-toggle="tooltip"
+                                        <span class="text-secondary font-weight-bold" data-toggle="tooltip"
                                             title="Pengabdian khusus Informatika">
                                             <i class="fas fa-laptop-code mr-1"></i>Informatika:
                                             {{ $stats['pengabdian_khusus_informatika'] }}
@@ -506,14 +613,14 @@
 
             <!-- [ Statistik Cepat 2 ] - Total Dosen Terlibat -->
             <div class="col-xl-4 col-md-6 mb-4">
-                <div class="card border-left-success shadow h-100 py-2 statistics-card modern-card">
+                <div class="card shadow h-100 py-2 statistics-card modern-card">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                     Dosen Terlibat
                                     @if ($filterYear !== 'all')
-                                        <small class="text-lowercase">(Tahun {{ $filterYear }})</small>
+                                        <span class="fs-3">({{ $filterYear }})</span>
                                     @endif
                                     <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
                                         title="Jumlah dosen yang terlibat dalam pengabdian {{ $filterYear !== 'all' ? 'pada tahun ' . $filterYear : 'keseluruhan' }}"
@@ -526,6 +633,46 @@
                                     onclick="window.location.href='{{ route('admin.dosen.index') }}'">
                                     {{ $stats['total_dosen'] }}
                                 </div>
+                                <div class="text-xs text-success mt-1 mb-2" data-toggle="tooltip"
+                                    title="Jumlah dosen terlibat dari total seluruh dosen FTI">
+
+
+                                    @if (isset($stats['total_dosen_keseluruhan']) && $stats['total_dosen_keseluruhan'] > 0)
+                                        {{-- 1. Logika Blade untuk menentukan class warna (di luar div agar bisa dipakai di class div) --}}
+                                        @php
+                                            $badgeClass = 'badge-warning'; // Default: Warning (kuning)
+                                            $textClass = 'text-warning'; // Default: Warning text color
+
+                                            // Cek jika total dosen terlibat SAMA dengan total keseluruhan
+                                            if ($stats['total_dosen'] >= $stats['total_dosen_keseluruhan']) {
+                                                $badgeClass = 'badge-success'; // Ubah menjadi Success (hijau)
+                                                $textClass = 'text-success'; // Ubah menjadi Success text color
+                                            }
+                                        @endphp
+
+                                        {{-- 2. Terapkan variabel $textClass ke div --}}
+                                        <div class="{{ $textClass }} text-xs mt-1 mb-2" data-toggle="tooltip"
+                                            title="Jumlah dosen terlibat dari total seluruh dosen FTI">
+                                            <i class="fas fa-users mr-1"></i>
+                                            <span class="font-weight-bold">{{ $stats['total_dosen'] }} dari
+                                                {{ $stats['total_dosen_keseluruhan'] ?? 'N/A' }} dosen</span>
+
+                                            {{-- 3. Terapkan variabel $badgeClass ke badge --}}
+                                            <span class="badge {{ $badgeClass }} ml-1">
+                                                {{ round(($stats['total_dosen'] / $stats['total_dosen_keseluruhan']) * 100, 1) }}%
+                                            </span>
+                                        </div>
+                                    @else
+                                        {{-- Tampilan Default jika data tidak tersedia atau total keseluruhan 0 --}}
+                                        <div class="text-secondary text-xs mt-1 mb-2" data-toggle="tooltip"
+                                            title="Data total dosen FTI tidak tersedia">
+                                            <i class="fas fa-users mr-1"></i>
+                                            <span class="font-weight-bold">{{ $stats['total_dosen'] }} dari N/A
+                                                dosen</span>
+                                            <span class="badge badge-secondary ml-1">N/A</span>
+                                        </div>
+                                    @endif
+                                </div>
                                 <div class="text-xs text-muted mt-1">
                                     @if ($stats['percentage_change_dosen'] != 0)
                                         <span
@@ -537,7 +684,7 @@
                                     @endif
                                     {{ $stats['year_label'] }}
                                     <div class="mt-2">
-                                        <span class="text-primary font-weight-bold">
+                                        <span class="text-secondary font-weight-bold">
                                             <i class="fas fa-laptop-code mr-1"></i>Informatika:
                                             {{ $stats['dosen_informatika'] }}
                                         </span>
@@ -559,14 +706,14 @@
 
             <!-- [ Statistik Cepat 3 ] - % dgn Mahasiswa -->
             <div class="col-xl-4 col-md-6 mb-4">
-                <div class="card border-left-info shadow h-100 py-2 statistics-card modern-card">
+                <div class="card shadow h-100 py-2 statistics-card modern-card">
                     <div class="card-body">
                         <div class="row no-gutters align-items-center">
                             <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-info mb-1">
+                                <div class="text-xs font-weight-bold text-primary mb-1">
                                     PkM DENGAN MAHASISWA
                                     @if ($filterYear !== 'all')
-                                        <small class="text-lowercase">(Tahun {{ $filterYear }})</small>
+                                        <span class="fs-3">({{ $filterYear }})</span>
                                     @endif
                                     <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
                                         title="Persentase pengabdian yang melibatkan mahasiswa {{ $filterYear !== 'all' ? 'pada tahun ' . $filterYear : 'keseluruhan' }}"
@@ -593,7 +740,7 @@
                                     </span>
                                     • {{ $stats['year_label'] }}
                                     <div class="mt-2">
-                                        <span class="text-primary font-weight-bold">
+                                        <span class="text-secondary font-weight-bold">
                                             <i class="fas fa-laptop-code mr-1"></i>Informatika:
                                             {{ $stats['mahasiswa_informatika'] }}
                                         </span>
@@ -621,7 +768,7 @@
             <!-- KOLOM KIRI (Area Aksi & Analisis Utama) (col-xl-8) -->
             <div class="col-xl-8">
                 <!-- [ 1. Dokumen Belum Lengkap ] (Daftar pengabdian dengan dokumen kurang) -->
-                <div class="card shadow mb-4">
+                <div class="card shadow mb-4 modern-card">
                     <div class="card-header py-3 d-flex align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary">
                             <i class="fas fa-exclamation-triangle mr-2 text-warning"></i>Dokumen Belum Lengkap
@@ -688,7 +835,7 @@
                 </div>
 
                 <!-- [ 2. Rekap Pengabdian per Dosen ] (Unified Chart with Toggle) -->
-                <div class="card shadow mb-4">
+                <div class="card shadow mb-4 modern-card">
                     <div class="card-header py-3">
                         <div class="row align-items-center">
                             <div class="col-md-6">
@@ -763,7 +910,7 @@
 
 
                 <!-- [ 3. Distribusi Luaran ] (Grafik Treemap) -->
-                <div class="card shadow mb-4">
+                <div class="card shadow mb-4 modern-card">
                     <div class="card-header py-3">
                         <div>
                             <h6 class="m-0 font-weight-bold text-primary">
@@ -797,7 +944,7 @@
             <!-- KOLOM KANAN (Info Sekunder) (col-xl-4) -->
             <div class="col-xl-4">
                 <!-- [ 4. Status Kelengkapan ] (Grafik Donut) -->
-                <div class="card shadow mb-4">
+                <div class="card shadow mb-4 modern-card">
                     <div class="card-header py-3">
                         <div>
                             <h6 class="m-0 font-weight-bold text-primary">
@@ -818,7 +965,7 @@
                 </div>
 
                 <!-- [ 5. Pengabdian Terbaru ] (Tabel Log Aktivitas) -->
-                <div class="card shadow mb-4" id="latestPengabdianCard">
+                <div class="card shadow mb-4 modern-card" id="latestPengabdianCard">
                     <div class="card-header py-3 d-flex align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary">
                             <i class="fas fa-history mr-2"></i>Pengabdian Terbaru
@@ -1437,7 +1584,7 @@
                                                 $missingLabels[] = $m;
                                             } else {
                                                 // maybe it's an internal key -> find corresponding label
-        $labelFound = array_search($m, $labelToKey, true);
+                                        $labelFound = array_search($m, $labelToKey, true);
         if ($labelFound !== false) {
             $missingLabels[] = $labelFound;
         } else {
@@ -1648,6 +1795,12 @@ $dataMissing = implode('|', $dataMissingArr);
 
                 function refreshLatestCard() {
                     try {
+                        // Skip refresh if modal is currently open
+                        if ($('.modal.show').length > 0) {
+                            console.log('Skipping card refresh: modal is open');
+                            return;
+                        }
+
                         fetch(window.location.href, {
                             credentials: 'same-origin'
                         }).then(function(resp) {
@@ -1659,11 +1812,35 @@ $dataMissing = implode('|', $dataMissingArr);
                                 var newCard = doc.querySelector('#latestPengabdianCard');
                                 var oldCard = document.querySelector('#latestPengabdianCard');
                                 if (newCard && oldCard) {
+                                    // Clean up existing modals first to prevent conflicts
+                                    $('.modal[id^="docsModal"]').each(function() {
+                                        $(this).modal('hide');
+                                        $(this).remove();
+                                    });
+                                    $('.modal-backdrop').remove();
+                                    $('body').removeClass('modal-open').css({
+                                        'padding-right': '',
+                                        'overflow': ''
+                                    });
+
+                                    // Replace card content
                                     oldCard.innerHTML = newCard.innerHTML;
-                                    // re-initialize tooltips for new content
-                                    $('[data-toggle="tooltip"]').tooltip();
-                                    // re-run modal init to rebind handlers
-                                    if (window.initNeedActionModal) window.initNeedActionModal();
+
+                                    // Wait for DOM to update, then re-initialize
+                                    setTimeout(function() {
+                                        // re-initialize tooltips for new content
+                                        $('[data-toggle="tooltip"]').tooltip();
+
+                                        // re-run modal init to rebind handlers
+                                        if (window.initNeedActionModal) window.initNeedActionModal();
+
+                                        // Ensure modals are properly initialized
+                                        $('.modal[id^="docsModal"]').modal({
+                                            show: false,
+                                            backdrop: true,
+                                            keyboard: true
+                                        });
+                                    }, 100);
                                 }
                             } catch (e) {
                                 console.warn('Failed to parse refreshed dashboard HTML', e);

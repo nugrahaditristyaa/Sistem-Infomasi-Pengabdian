@@ -71,6 +71,21 @@
         @csrf
         @method('PUT')
 
+        {{-- Display All Validation Errors --}}
+        @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <h6><i class="fas fa-exclamation-triangle mr-2"></i>Terdapat kesalahan pada form:</h6>
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            </div>
+        @endif
+
         {{-- Informasi Utama --}}
         <div class="card shadow mb-4">
             <div class="card-header py-3">
@@ -92,7 +107,7 @@
                             <label for="nama_mitra">Nama Mitra <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('nama_mitra') is-invalid @enderror"
                                 id="nama_mitra" name="nama_mitra"
-                                value="{{ old('nama_mitra', optional($pengabdian->mitra->first())->nama_mitra) }}" required>
+                                value="{{ old('nama_mitra', optional($pengabdian->mitra->first())->nama_mitra) }}">
                             @error('nama_mitra')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -103,8 +118,7 @@
                             <label for="lokasi_kegiatan">Lokasi Kegiatan Mitra <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('lokasi_kegiatan') is-invalid @enderror"
                                 id="lokasi_kegiatan" name="lokasi_kegiatan"
-                                value="{{ old('lokasi_kegiatan', optional($pengabdian->mitra->first())->lokasi_mitra) }}"
-                                required>
+                                value="{{ old('lokasi_kegiatan', optional($pengabdian->mitra->first())->lokasi_mitra) }}">
                             @error('lokasi_kegiatan')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -207,7 +221,8 @@
         {{-- Mahasiswa Terlibat --}}
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-user-graduate fa-fw mr-2"></i>Mahasiswa yang
+                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-user-graduate fa-fw mr-2"></i>Mahasiswa
+                    yang
                     Terlibat</h6>
             </div>
             <div class="card-body">
@@ -511,7 +526,7 @@
 
         <div class="d-flex justify-content-end mb-4">
             <a href="{{ route('admin.pengabdian.index') }}" class="btn btn-secondary mr-2">Batal</a>
-            <button type="submit" class="btn btn-primary shadow-sm">
+            <button type="submit" id="submitBtn" class="btn btn-primary shadow-sm">
                 <i class="fas fa-save fa-sm mr-1"></i> Perbarui Data
             </button>
         </div>
@@ -527,7 +542,7 @@
         </div>
     </script>
     <script>
-        // Diagnostic: capture form submit and record form data (files) to localStorage and a visible banner
+        // Clean diagnostic code for form submission
         (function() {
             var form = document.getElementById('pengabdianForm');
             if (!form) return;
@@ -539,59 +554,7 @@
                 return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
             }
 
-            form.addEventListener('submit', function(evt) {
-                try {
-                    var fd = new FormData(form);
-                    var summary = {
-                        files: [],
-                        fields: {}
-                    };
-                    for (var pair of fd.entries()) {
-                        var key = pair[0];
-                        var val = pair[1];
-                        if (val instanceof File) {
-                            if (val && val.name) {
-                                summary.files.push({
-                                    field: key,
-                                    name: val.name,
-                                    size: val.size,
-                                    human: humanFileSize(val.size)
-                                });
-                            }
-                        } else {
-                            // for big fields, only store length
-                            var str = String(val || '');
-                            summary.fields[key] = str.length > 100 ? str.slice(0, 100) + '...(' + str.length +
-                                ' chars)' : str;
-                        }
-                    }
 
-
-
-                }
-                // allow the form to submit normally
-            }, true);
-        })();
-        };
-        if (inp.type === 'file') {
-            obj.files = [];
-            var fls = inp.files || [];
-            for (var i = 0; i < fls.length; i++) {
-                obj.files.push({
-                    name: fls[i].name,
-                    size: fls[i].size,
-                    human: humanFileSize(fls[i].size)
-                });
-            }
-        } else {
-            obj.valuePreview = (inp.value || '').toString().slice(0, 200);
-        }
-        snap.inputs.push(obj);
-        }
-        catch (e) {
-            /* ignore per-input */
-        }
-        });
         })();
     </script>
 
@@ -616,6 +579,14 @@
             'Internal': ['LPPM', 'Universitas', 'Fakultas', 'Prodi', 'Mandiri'],
             'Eksternal': ['DRPM', 'Swasta', 'Gereja', 'LSM', 'Sekolah', 'Fakultas Bisnis', 'Lainnya']
         };
+
+
+
+
+
+
+
+
 
         $(document).ready(function() {
             const PengabdianForm = {
@@ -692,17 +663,29 @@
                     };
                     const addRow = () => {
                         const idx = new Date().getTime();
-                        container.append(template.html().replace(/__INDEX__/g, idx));
+                        const templateHTML = template.html();
+
+                        if (!templateHTML) {
+                            return;
+                        }
+
+                        const processedHTML = templateHTML.replace(/__INDEX__/g, idx);
+                        container.append(processedHTML);
                         manageDeleteButtons();
                     };
                     showFormButton.on('click', function() {
                         mahasiswaBaruSection.show();
                         $(this).hide();
-                        if (container.children('.mahasiswa-baru-item').length === 0) {
+
+                        const currentItems = container.children('.mahasiswa-baru-item').length;
+
+                        if (currentItems === 0) {
                             addRow();
                         }
                     });
-                    addButton.on('click', addRow);
+                    addButton.on('click', function() {
+                        addRow();
+                    });
                     container.on('click', '.btn-hapus-mhs-baru', function() {
                         $(this).closest('.mahasiswa-baru-item').remove();
                         if (container.children('.mahasiswa-baru-item').length === 0) {
@@ -924,7 +907,15 @@
                 //     });
                 // }
             };
-            PengabdianForm.init();
+
+            // Initialize with error handling
+            try {
+                PengabdianForm.init();
+
+
+            } catch (error) {
+                // Silent error handling
+            }
 
             // Small helper: if URL has ?highlight=slug then focus the corresponding file input
             (function() {

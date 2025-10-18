@@ -38,7 +38,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover table-striped" id="dataTable" width="100%"
+                        <table class="table table-hover table-striped" id="dataTable" width="100%"
                             cellspacing="0">
                             <thead>
                                 <tr>
@@ -109,6 +109,9 @@
             background-color: #f8f9fc;
         }
 
+        .table-responsive thead {
+            background-color: #f8f9fc;
+        }
 
         /* Zebra striping to match Pengabdian index */
         .table-striped tbody tr:nth-of-type(odd) {

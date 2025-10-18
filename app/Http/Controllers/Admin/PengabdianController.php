@@ -76,8 +76,10 @@ class PengabdianController extends Controller
         $request->validate([
             // --- Aturan Validasi ---
             'judul_pengabdian'      => 'required|string|max:255',
-            'nama_mitra'            => 'required|string|max:255',
-            'lokasi_kegiatan'       => 'required|string|max:255',
+            'nama_mitra'            => 'nullable|string|max:255',
+            // 'nama_mitra'            => 'required|string|max:255',
+            // 'lokasi_kegiatan'       => 'required|string|max:255',
+            'lokasi_kegiatan'       => 'nullable|string|max:255',
             'tanggal_pengabdian'    => ['required', new ValidTanggal(2000, 'Tanggal Pengabdian')],
             'jumlah_luaran_direncanakan'   => 'required|array|min:1',
             'jumlah_luaran_direncanakan.*' => 'required|exists:jenis_luaran,nama_jenis_luaran',
@@ -281,6 +283,10 @@ class PengabdianController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (session('_token') !== $request->input('_token')) {
+            return response()->json(['error' => 'CSRF Token Mismatch: Token tidak valid atau kadaluarsa.'], 419);
+        }
+
         $pengabdian = Pengabdian::with('luaran.jenisLuaran', 'luaran.detailHki')->findOrFail($id);
 
         // Optional debug: if URL contains ?debug_snapshot=1, log incoming files for diagnosis
@@ -330,8 +336,10 @@ class PengabdianController extends Controller
         $request->validate([
             // --- Aturan Validasi ---
             'judul_pengabdian'      => 'required|string|max:255',
-            'nama_mitra'            => 'required|string|max:255',
-            'lokasi_kegiatan'       => 'required|string|max:255',
+            'nama_mitra'            => 'nullable|string|max:255',
+            // 'nama_mitra'            => 'required|string|max:255',
+            // 'lokasi_kegiatan'       => 'required|string|max:255',
+            'lokasi_kegiatan'       => 'nullable|string|max:255',
             'tanggal_pengabdian'    => ['required', new ValidTanggal(2000)],
             'jumlah_luaran_direncanakan'   => 'required|array|min:1',
             'jumlah_luaran_direncanakan.*' => 'required|exists:jenis_luaran,nama_jenis_luaran',
@@ -341,7 +349,7 @@ class PengabdianController extends Controller
             'mahasiswa_ids'         => 'nullable|array',
             'mahasiswa_ids.*'       => 'nullable|exists:mahasiswa,nim',
             'mahasiswa_baru'        => 'nullable|array',
-            'mahasiswa_baru.*.nim'  => 'required_with:mahasiswa_baru.*.nama|nullable|numeric|digits:9|distinct|unique:mahasiswa,nim',
+            'mahasiswa_baru.*.nim'  => 'required_with:mahasiswa_baru.*.nama|nullable|numeric|digits:8|distinct|unique:mahasiswa,nim',
             'mahasiswa_baru.*.nama' => 'required_with:mahasiswa_baru.*.nim|nullable|string|max:255',
             'mahasiswa_baru.*.prodi' => 'required_with:mahasiswa_baru.*.nim|nullable|string|max:255',
             'sumber_dana'               => 'required|array|min:1',
