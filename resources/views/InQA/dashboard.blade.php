@@ -90,21 +90,6 @@
             margin-bottom: 0.25rem !important;
         }
 
-        /* Progress Bar Styling */
-        /* .kpi-progress-item {
-                                                                transition: all 0.3s ease;
-                                                                border-radius: 8px;
-                                                                padding: 15px;
-                                                                background: rgba(255, 255, 255, 0.7);
-                                                                border: 1px solid rgba(0, 0, 0, 0.05);
-                                                            } */
-
-        /* .progress {
-                                                            border-radius: 10px;
-                                                            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-                                                            background-color: #e9ecef;
-                                                        } */
-
         .progress-bar {
             border-radius: 10px;
             font-size: 0.8rem;
@@ -637,6 +622,69 @@
         .border-left-info .sparkline-container {
             background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
         }
+
+        /* Fix sidebar dan footer untuk zoom out */
+        #wrapper {
+            min-height: 100vh !important;
+        }
+
+        /* Sidebar harus meregang penuh ke bawah */
+        .sidebar {
+            min-height: 100vh !important;
+            position: fixed !important;
+            height: 100% !important;
+        }
+
+        /* Content wrapper mengakomodasi sidebar */
+        #content-wrapper {
+            min-height: 100vh !important;
+            margin-left: 224px !important;
+            /* Lebar sidebar default */
+        }
+
+        /* Responsive sidebar untuk mobile */
+        @media (max-width: 768px) {
+            #content-wrapper {
+                margin-left: 0 !important;
+            }
+        }
+
+        /* Footer styling - match default SB Admin 2 height */
+        footer.sticky-footer {
+            background-color: #fff !important;
+            padding: 1.25rem 0 !important;
+            border-top: 1px solid #e3e6f0 !important;
+        }
+
+        footer.sticky-footer .container {
+            padding: 0 1.5rem !important;
+        }
+
+        footer.sticky-footer .copyright {
+            font-size: 0.8rem !important;
+            color: #5a5c69 !important;
+        }
+
+        /* Fix overflow */
+        html,
+        body {
+            overflow-x: hidden !important;
+        }
+
+        #content-wrapper {
+            min-height: unset !important;
+        }
+
+        #content-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* 2. Ini adalah perintah kuncinya: perintahkan area konten untuk tumbuh */
+        #content {
+            flex-grow: 1;
+        }
     </style>
 @endpush
 
@@ -712,16 +760,13 @@
 
                                 {{-- RINCIAN SEKUNDER (PER PRODI) --}}
                                 <div class="text-xs text-muted">
-                                    <span><i class="fas fa-handshake mr-1"></i> Kolaborasi:
+                                    <span>Kolaborasi:
                                         <strong>{{ $stats['pengabdian_kolaborasi'] }}</strong></span>
                                     <span class="mx-2">•</span>
                                     <span>IT: <strong>{{ $stats['pengabdian_khusus_informatika'] }}</strong></span>
                                     <span class="mx-2">•</span>
                                     <span>SI: <strong>{{ $stats['pengabdian_khusus_sistem_informasi'] }}</strong></span>
                                 </div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-clipboard-list fa-3x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
@@ -776,10 +821,8 @@
                                                 ($stats['total_dosen'] / $stats['total_dosen_keseluruhan']) * 100,
                                                 1,
                                             );
-                                            $colorClass = $participationRate >= 75 ? 'text-success' : 'text-warning';
                                         @endphp
-                                        <div class="{{ $colorClass }} mb-2">
-                                            <i class="fas fa-users mr-1"></i>
+                                        <div class="mb-2">
                                             <span class="font-weight-bold">{{ $stats['total_dosen'] }}</span> dari
                                             {{ $stats['total_dosen_keseluruhan'] }} Dosen FTI ({{ $participationRate }}%)
                                         </div>
@@ -794,11 +837,6 @@
                                             <strong>{{ $stats['dosen_sistem_informasi'] }}</strong></span>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="col-auto">
-                                {{-- DIUBAH: Ikon diperbesar agar seimbang --}}
-                                <i class="fas fa-chalkboard-teacher fa-3x text-gray-300"></i>
                             </div>
                         </div>
                     </div>
@@ -870,10 +908,9 @@
                                     {{-- Rincian Jumlah Pengabdian --}}
                                     <div class="mb-2" data-toggle="tooltip"
                                         title="{{ $stats['total_mahasiswa'] }} dari {{ $stats['total_pengabdian'] }} pengabdian melibatkan mahasiswa">
-                                        <i class="fas fa-check-circle mr-1"></i>
-                                        <span class="font-weight-bold">{{ $stats['total_mahasiswa'] }} /
+                                        <span class="font-weight-bold">{{ $stats['total_mahasiswa'] }} dari
                                             {{ $stats['total_pengabdian'] }}</span>
-                                        pengabdian
+                                        pengabdian melibatkan mahasiswa
                                     </div>
 
                                     {{-- Rincian Per Prodi --}}
@@ -886,11 +923,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="col-auto">
-                                {{-- DIUBAH: Ikon diperbesar agar seimbang --}}
-                                <i class="fas fa-user-graduate fa-3x text-gray-300"></i>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -900,15 +932,14 @@
         <!-- Jenis Luaran Treemap & KPI Progress Bar Row -->
         <div class="row mb-4 main-content-row">
 
-            <!-- KPI Progress Bar -->
+            <!-- KPI Radar Chart -->
             <div class="col-lg-6 col-md-12 mb-4">
                 <div class="card shadow modern-card h-100">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        {{-- ... (Header card tidak berubah) ... --}}
-                        <h6 class="m-0 font-weight-bold text-primary">
-                            <i class="fas fa-tasks mr-2"></i>Progress Capaian KPI
+                        <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            <i class="fas fa-chart-radar mr-2"></i>Capaian KPI Komparatif
                             @if ($filterYear !== 'all')
-                                <span class="fs-3">({{ $filterYear }})</span>
+                                <span class="text-primary">({{ $filterYear }})</span>
                             @else
                                 <small class="text-muted">(Semua Tahun)</small>
                             @endif
@@ -918,8 +949,7 @@
                                 $totalKpi = count($kpiRadarData);
                                 $tercapai = collect($kpiRadarData)
                                     ->filter(function ($kpi) {
-                                        $skorNormalisasi = $kpi['skor_normalisasi'] ?? $kpi['persentase'];
-                                        return $skorNormalisasi >= 100;
+                                        return $kpi['skor_normalisasi'] >= 100;
                                     })
                                     ->count();
                             @endphp
@@ -928,109 +958,9 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div id="kpi-progress-container">
-                            @php
-                                // Kamus untuk memetakan kode KPI ke teks singkat
-                                $kpiLabels = [
-                                    'PGB.I.1.1' => 'Memenuhi luaran (>=80%) sesuai proposal',
-                                    'PGB.I.5.6' => 'Peningkatan jumlah (>= 10 %) per tahun',
-                                    'PGB.I.7.4' => 'Mendapat pendanaan eksternal (>=30%)',
-                                    'PGB.I.7.9' => 'Peningkatan jumlah proposal yang diterima (>=10%)',
-                                    'IKT.I.5.g' => 'Digunakan dalam proses pembelajaran (>= 5 %)',
-                                    'IKT.I.5.h' => 'Dilakukan dibidang INFOKOM (>= 70%)',
-                                    'IKT.I.5.i' => 'Minimum Prodi memiliki 1 HKI setiap tahun',
-                                    'IKT.I.5.j' => 'Minimum 70% PkM melibatkan minimal 1 mahasiswa',
-                                ];
-
-                                $kpiOrder = array_keys($kpiLabels);
-                                $sortedKpiData = collect($kpiRadarData)->sortBy(function ($kpi) use ($kpiOrder) {
-                                    $pos = array_search($kpi['kode'], $kpiOrder);
-                                    return $pos === false ? PHP_INT_MAX : $pos;
-                                });
-                            @endphp
-
-                            @foreach ($sortedKpiData as $index => $kpi)
-                                @php
-                                    $kpiCode = $kpi['kode'];
-                                    $displayText = $kpiLabels[$kpiCode] ?? $kpiCode;
-                                    $skorNormalisasi = $kpi['skor_normalisasi'] ?? $kpi['persentase'];
-                                    $isNegative = $skorNormalisasi < 0;
-                                    $targetValue = $kpi['target'];
-                                    $satuan = $kpi['satuan'];
-                                    $isDynamicBenchmark =
-                                        $satuan === '%' &&
-                                        $targetValue < 100 &&
-                                        in_array($kpiCode, [
-                                            'PGB.I.1.1',
-                                            'IKT.I.5.g',
-                                            'IKT.I.5.h',
-                                            'IKT.I.5.j',
-                                            'PGB.I.7.4',
-                                        ]);
-
-                                    $benchmarkPositionPercent = 0;
-                                    $progressPercentage = 0;
-                                    $isTercapai = false;
-
-                                    if ($isDynamicBenchmark && !$isNegative) {
-                                        $benchmarkPositionPercent = $targetValue;
-                                        $progressPercentage = max(0, min(100, $kpi['realisasi']));
-                                        $isTercapai = $kpi['realisasi'] >= $targetValue;
-                                    } else {
-                                        $benchmarkPositionPercent = 100;
-                                        $progressPercentage = max(0, min(100, $skorNormalisasi));
-                                        $isTercapai = $skorNormalisasi >= 100;
-                                    }
-                                @endphp
-
-                                {{-- DIUBAH: Menggunakan kpi-progress-item dan mengurangi margin bawah (mb-3) --}}
-                                <div class="kpi-progress-item mb-3 border-left-{{ $isTercapai ? 'success' : ($isNegative ? 'warning' : 'warning') }} pl-3"
-                                    data-toggle="tooltip" data-html="true" data-placement="top"
-                                    title="<strong>{{ $kpi['indikator'] }}</strong><br>
-                                        <strong>Target:</strong> {{ number_format($kpi['target']) }} {{ $kpi['satuan'] }}<br>
-                                        <strong>Realisasi:</strong> {{ number_format($kpi['realisasi'], 2) }} {{ $kpi['satuan'] }}<br>
-                                        <strong>Capaian:</strong> {{ number_format($skorNormalisasi, 1) }}%">
-
-                                    {{-- DIUBAH: Margin bawah dikurangi (mb-1), badge & ikon dihilangkan untuk simplisitas --}}
-                                    <div class="d-flex align-items-center mb-1">
-                                        <h6 class="mb-0 font-weight-bold text-gray-800" style="font-size: 0.9rem;">
-                                            {{ $displayText }}</h6>
-                                        <span
-                                            class="ml-auto font-weight-bold text-{{ $isTercapai ? 'success' : 'warning' }}">
-                                            @if ($isNegative)
-                                                0.0%
-                                            @else
-                                                {{ number_format($skorNormalisasi, 1) }}%
-                                            @endif
-                                        </span>
-                                    </div>
-
-                                    {{-- DIUBAH: Dibuat lebih ringkas, tanpa margin atas/bawah yang besar --}}
-                                    <div class="position-relative">
-                                        {{-- DIUBAH: Progress bar dibuat lebih ramping (height: 12px) --}}
-                                        <div class="progress" style="height: 12px;">
-                                            @if ($isNegative)
-                                                {{-- Untuk nilai negatif, tampilkan progress bar kosong berwarna kuning/warning --}}
-                                                <div class="progress-bar bg-warning" role="progressbar"
-                                                    style="width: 0%;"></div>
-                                            @else
-                                                <div class="progress-bar bg-{{ $isTercapai ? 'success' : 'warning' }}"
-                                                    role="progressbar" style="width: {{ $progressPercentage }}%;"></div>
-                                            @endif
-                                        </div>
-
-                                        {{-- DIUBAH: Garis benchmark disesuaikan (height: 12px, width: 3px) dan label angka dihilangkan --}}
-                                        <div class="position-absolute"
-                                            style="top: 0; left: {{ $benchmarkPositionPercent }}%; transform: translateX(-50%); height: 12px; width: 3px; background-color: #e74a3b; z-index: 10;">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {{-- Menambahkan garis pemisah antar item untuk kejelasan visual --}}
-                                @if (!$loop->last)
-                                    <hr class="my-3">
-                                @endif
-                            @endforeach
+                        <!-- Radar Chart Canvas -->
+                        <div class="chart-container mb-3" style="height: 350px;">
+                            <canvas id="kpiRadarChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -1040,133 +970,61 @@
             <div class="col-lg-6 col-md-12 mb-4">
                 <div class="card shadow modern-card h-100">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary">
-                            <i class="fas fa-money-bill-wave mr-2"></i>Sumber Dana Pengabdian - Perbandingan Tahunan
+                        <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Sumber Dana Pengabdian
                             @if ($filterYear != 'all')
-                                <span class="badge badge-info ml-2">{{ $filterYear - 1 }} vs {{ $filterYear }}</span>
-                            @else
-                                <span class="badge badge-secondary ml-2">{{ date('Y') - 1 }} vs
-                                    {{ date('Y') }}</span>
+                                <span class="text-primary">({{ $filterYear - 1 }} vs {{ $filterYear }})</span>
                             @endif
                         </h6>
-                        <div class="dropdown no-arrow">
-                            <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-                                aria-labelledby="dropdownMenuLink">
-                                <div class="dropdown-header">Opsi Chart:</div>
-                                <a class="dropdown-item" href="#" onclick="refreshFundingChart()">
-                                    <i class="fas fa-sync fa-sm fa-fw mr-2 text-gray-400"></i>Refresh Data
-                                </a>
-                            </div>
-                        </div>
                     </div>
                     <div class="card-body">
                         <div class="chart-bar" style="height: 400px;">
                             <canvas id="fundingSourcesChart" width="100%" height="400"></canvas>
                         </div>
-                        <div class="mt-3 text-center">
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle mr-1"></i>
-                                <strong>Keterangan:</strong> Grafik menampilkan total dana per sumber
-                                @if ($filterYear != 'all')
-                                    untuk {{ $filterYear - 1 }} vs {{ $filterYear }}
-                                @else
-                                    untuk {{ date('Y') - 1 }} vs {{ date('Y') }}
-                                @endif
-                            </small>
-                        </div>
                     </div>
                 </div>
             </div>
-
-
-            <!-- Treemap Jenis Luaran -->
-
         </div>
 
         <!-- Funding Sources Chart Section -->
         <div class="row mb-4 main-content-row">
 
             <div class="col-lg-6 col-md-12 mb-4">
+                @php
+                    $allDosenCount = count($namaDosen ?? []);
+                    $maxCanvasHeight = max(100, $allDosenCount * 35); // Reduced height per item
+                @endphp
                 <div class="card shadow mb-4 modern-card h-100">
                     <div class="card-header py-3">
                         <div class="row align-items-center">
                             <div class="col-md-6">
-                                <h6 class="m-0 font-weight-bold text-primary">
+                                <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                     <i class="fas fa-chart-bar mr-2"></i>Rekap Pengabdian per Dosen
-                                    <span id="currentViewBadge" class="badge badge-info ml-2">Top 5</span>
+                                    <span class="text-primary">{{ $allDosenCount }} Dosen
+                                        @if ($filterYear !== 'all')
+                                            ({{ $filterYear }})
+                                        @endif
+                                    </span>
                                 </h6>
-
-                                <small class="text-muted">
-                                    @if ($filterYear !== 'all')
-                                        Menampilkan data untuk tahun {{ $filterYear }}
-                                    @else
-                                        Menampilkan data untuk semua tahun
-                                    @endif
-                                </small>
-                                {{-- @if ($filterYear !== 'all')
-                            <small class="text-muted">
-                                <i class="fas fa-filter mr-1"></i>Tahun: {{ $filterYear }}
-                            </small>
-                        @endif --}}
                             </div>
                             <div class="col-md-6 text-right">
-                                <div class="btn-group mr-2" role="group" aria-label="View Toggle">
-                                    <button id="viewTop5Btn" type="button" class="btn btn-sm btn-primary active"
-                                        title="Tampilkan 5 dosen teratas">
-                                        <i class="fas fa-trophy mr-1"></i>Top 5
-                                    </button>
-                                    <button id="viewAllBtn" type="button" class="btn btn-sm btn-outline-primary"
-                                        title="Tampilkan semua dosen">
-                                        <i class="fas fa-list mr-1"></i>Semua
-                                    </button>
-                                </div>
                                 <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-secondary"
-                                    data-order="desc" title="Urutkan jumlah (tertinggi)">
-                                    <i class="fas fa-sort-amount-down"></i>
+                                    data-order="desc" title="Urutkan jumlah (tertinggi ke terendah)">
+                                    <i class="fas fa-sort-amount-down mr-1"></i>Urutkan
                                 </button>
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-12">
-                                <small id="chartInfoText" class="text-muted">
-                                    <i class="fas fa-info-circle mr-1"></i>Menampilkan 5 dosen dengan pengabdian terbanyak
-                                </small>
                             </div>
                         </div>
                     </div>
                     <div class="card-body">
-                        @php
-                            $allDosenCount = count($namaDosen ?? []);
-                            $top5DosenCount = min($allDosenCount, 5);
-                            $maxCanvasHeight = max(600, $allDosenCount * 60);
-                        @endphp
 
-                        <!-- Top 5 Chart Container -->
-                        <div id="top5ChartContainer" class="chart-container">
-                            <div class="chart-bar" style="height: {{ max(400, $top5DosenCount * 80) }}px;">
-                                <canvas id="dosenChart" width="100%"
-                                    height="{{ max(400, $top5DosenCount * 80) }}"></canvas>
-                            </div>
-                        </div>
-
-                        <!-- All Data Chart Container -->
-                        <div id="allChartContainer" class="chart-container d-none">
+                        <!-- Dosen Chart Container - 8 Teratas + Lainnya -->
+                        <div id="dosenChartContainer" class="chart-container">
                             <div class="chart-bar-scrollable"
-                                style="max-height: 600px; overflow-y: auto; overflow-x: hidden; border: 1px solid #e3e6f0; border-radius: 8px; padding: 20px; background-color: #f8f9fc;">
-                                <div style="height: {{ $maxCanvasHeight }}px; min-width: 900px;">
-                                    <canvas id="dosenAllChart" width="100%" height="{{ $maxCanvasHeight }}"></canvas>
+                                style="max-height: 310px; overflow-y: auto; overflow-x: hidden; border-radius: 8px; padding: 15px; background-color: transparent;">
+
+                                <div style="height: {{ $maxCanvasHeight }}px; min-width: 700px;">
+                                    <canvas id="dosenChart" width="100%" height="{{ $maxCanvasHeight }}"></canvas>
                                 </div>
-                            </div>
-                            <div class="mt-3 text-center">
-                                <small class="text-muted">
-                                    <i class="fas fa-scroll mr-1"></i>
-                                    <strong>Tips:</strong> Gunakan scroll untuk navigasi. Total: <span
-                                        class="font-weight-bold text-primary">{{ $allDosenCount }}</span> dosen
-                                </small>
                             </div>
                         </div>
                     </div>
@@ -1177,10 +1035,10 @@
             <div class="col-lg-6 col-md-12 mb-4">
                 <div class="card shadow modern-card h-100">
                     <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">
-                            <i class="fas fa-chart-area mr-2"></i>Distribusi Jenis Luaran
+                        <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Distribusi Jenis Luaran
                             @if ($filterYear !== 'all')
-                                <span class="badge badge-info ml-2">{{ $filterYear }}</span>
+                                <span class="text-primary">({{ $filterYear }})</span>
                             @else
                                 <small class="text-muted">(Semua Tahun)</small>
                             @endif
@@ -1264,6 +1122,9 @@
                 // Load sparkline charts
                 loadSparklineCharts();
 
+                // Initialize KPI Radar Chart
+                initKpiRadarChart();
+
                 // Add click handlers for statistics cards
                 $('#statTotalPengabdian').click(function() {
                     showStatisticsModal('pengabdian', 'Total Pengabdian');
@@ -1278,7 +1139,6 @@
                 });
             });
 
-            // --- GANTI SEMUA KODE JAVASCRIPT LAMA ANDA DENGAN KODE INI ---
 
             // === SPARKLINE CHARTS ===
             function loadSparklineCharts() {
@@ -1370,6 +1230,144 @@
                 });
             }
 
+            // === KPI RADAR CHART ===
+            function initKpiRadarChart() {
+                const kpiData = @json($kpiRadarData);
+
+                if (!kpiData || kpiData.length === 0) {
+                    console.warn('No KPI data available for radar chart');
+                    return;
+                }
+
+                const ctx = document.getElementById('kpiRadarChart');
+                if (!ctx) {
+                    console.warn('KPI Radar Chart canvas not found');
+                    return;
+                }
+
+                const existingChart = Chart.getChart('kpiRadarChart');
+                if (existingChart) {
+                    existingChart.destroy();
+                }
+
+                // --- PERUBAHAN 1: Buat mapping untuk label yang lebih mudah dibaca ---
+                const kpiLabelsMap = {
+                    'PGB.I.1.1': 'Luaran Sesuai',
+                    'PGB.I.5.6': 'Peningkatan PkM',
+                    'PGB.I.7.4': 'Dana Eksternal',
+                    'PGB.I.7.9': 'Proposal Diterima',
+                    'IKT.I.5.g': 'Digunakan di PBM',
+                    'IKT.I.5.h': 'Bidang INFOKOM',
+                    'IKT.I.5.i': 'HKI per Prodi',
+                    'IKT.I.5.j': 'Keterlibatan Mhs.'
+                };
+
+                // Gunakan mapping untuk membuat label
+                const labels = kpiData.map(kpi => kpiLabelsMap[kpi.kode] || kpi.kode);
+                const actualScores = kpiData.map(kpi => kpi.skor_normalisasi);
+                const benchmarkScores = kpiData.map(() => 100);
+
+                new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                                label: 'Capaian Aktual',
+                                data: actualScores,
+                                backgroundColor: 'rgba(28, 200, 138, 0.2)', // Hijau
+                                borderColor: 'rgba(28, 200, 138, 1)',
+                                pointBackgroundColor: 'rgba(28, 200, 138, 1)',
+                                pointBorderColor: '#fff',
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                fill: true,
+                                datalabels: {
+                                    display: false // Ini akan menyembunyikan angka capaian
+                                }
+
+                            },
+                            {
+                                label: 'Target',
+                                data: benchmarkScores, // Kuning // Tidak akan ada warna isian
+                                borderColor: 'rgba(246, 194, 62)',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                // --- PERUBAHAN 2: Sederhanakan garis target ---
+                                fill: false,
+                                pointRadius: 0,
+                                pointHoverRadius: 0,
+                                datalabels: {
+                                    display: false // Ini akan menyembunyikan angka 100
+                                }
+
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: false
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        return kpiData[context[0].dataIndex].indikator;
+                                    },
+                                    label: function(context) {
+                                        // --- PERUBAHAN 3: Perbaiki akses data di tooltip ---
+                                        if (context.datasetIndex === 1) {
+                                            return 'Target Universal: 100%';
+                                        }
+
+                                        const kpi = kpiData[context.dataIndex];
+                                        let persentaseCapaian = 0;
+                                        if (kpi.target > 0) {
+                                            persentaseCapaian = (kpi.realisasi / kpi.target) * 100;
+                                        }
+
+                                        let statusLabel = `(${persentaseCapaian.toFixed(1)}% dari Target)`;
+                                        if (kpi.skor_normalisasi >= 100 && persentaseCapaian > 100) {
+                                            statusLabel = `(Terlampaui: ${persentaseCapaian.toFixed(1)}%)`;
+                                        }
+
+                                        return [
+                                            `Skor Capaian: ${kpi.skor_normalisasi.toFixed(1)}%`,
+                                            `Realisasi: ${kpi.realisasi}${kpi.satuan} ${statusLabel}`,
+                                            `Target: ${kpi.target}${kpi.satuan}`
+                                        ];
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                min: 0,
+                                // --- PERUBAHAN 4: Kembalikan max ke 100 untuk kejelasan ---
+                                max: 100,
+                                ticks: {
+                                    stepSize: 20,
+                                    callback: value => value + '%'
+                                },
+                                pointLabels: {
+                                    font: {
+                                        size: 12
+                                    },
+                                    padding: 10
+
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
             // Daftarkan plugin datalabels secara global
             Chart.register(ChartDataLabels);
 
@@ -1388,38 +1386,63 @@
                 jumlah: allJumlahPengabdian[index]
             }));
 
-            // 3. Fungsi untuk membuat atau mengupdate chart
-            function createDosenChart(canvasId, labels, data) {
-                const ctx = document.getElementById(canvasId).getContext('2d');
+            // Function to truncate long names
+            function truncateName(name, maxLength = 15) {
+                if (name.length <= maxLength) return name;
 
-                const existingChart = Chart.getChart(canvasId);
+                // Split by spaces and take first word + initial of second word
+                const parts = name.split(' ');
+                if (parts.length > 1) {
+                    return parts[0] + ' ' + parts[1].charAt(0) + '.';
+                }
+
+                // If single word, truncate with ellipsis
+                return name.substring(0, maxLength - 3) + '...';
+            }
+
+            // 3. Fungsi untuk membuat chart dengan 8 teratas + lainnya
+            function createDosenChart(labels, data) {
+                const ctx = document.getElementById('dosenChart').getContext('2d');
+
+                const existingChart = Chart.getChart('dosenChart');
                 if (existingChart) {
                     existingChart.destroy();
                 }
 
-                // --- INI BAGIAN UTAMA UNTUK MEMBUAT GRADASI ANTAR BAR ---
-                const backgroundColors = data.map(value => {
+                // Truncate labels for display
+                const truncatedLabels = labels.map(label => truncateName(label));
+
+                // Buat warna dengan pembedaan untuk 8 teratas
+                const backgroundColors = data.map((value, index) => {
                     const baseColor = [78, 115, 223]; // RGB untuk warna biru dasar #4e73df
                     const maxValue = Math.max(...data);
 
                     if (maxValue === 0) return `rgb(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]})`;
 
-                    // Hitung opacity berdasarkan nilai. Nilai tertinggi = opacity 1 (solid), terendah = opacity 0.3 (pudar)
-                    const minOpacity = 0.3;
-                    const maxOpacity = 1.0;
-                    const opacity = minOpacity + (maxOpacity - minOpacity) * (value / maxValue);
+                    // 8 teratas mendapat opacity lebih tinggi
+                    let minOpacity, maxOpacity;
+                    if (index < 8) {
+                        // Top 8: opacity lebih tinggi (lebih solid)
+                        minOpacity = 0.7;
+                        maxOpacity = 1.0;
+                    } else {
+                        // Lainnya: opacity lebih rendah (lebih transparan)
+                        minOpacity = 0.3;
+                        maxOpacity = 0.5;
+                    }
 
+                    const opacity = minOpacity + (maxOpacity - minOpacity) * (value / maxValue);
                     return `rgba(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, ${opacity.toFixed(2)})`;
                 });
 
                 new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: labels,
+                        labels: labels.map(label => truncateName(label)),
                         datasets: [{
                             label: "Jumlah Pengabdian",
                             data: data,
-                            backgroundColor: backgroundColors, // Gunakan array warna yang sudah dibuat
+                            backgroundColor: backgroundColors,
                             borderRadius: 4,
                             borderSkipped: false,
                         }],
@@ -1444,7 +1467,7 @@
                             y: {
                                 ticks: {
                                     font: {
-                                        size: 14
+                                        size: 11
                                     }
                                 },
                                 grid: {
@@ -1458,6 +1481,10 @@
                             },
                             tooltip: {
                                 callbacks: {
+                                    title: function(context) {
+                                        const index = context[0].dataIndex;
+                                        return labels[index];
+                                    },
                                     label: function(context) {
                                         return `Jumlah: ${context.parsed.x} pengabdian`;
                                     }
@@ -1490,57 +1517,160 @@
                 });
             }
 
-            // 4. Fungsi untuk update dan render ulang kedua chart
-            function updateCharts(dataToShow) {
-                const labels = dataToShow.map(d => d.nama);
-                const counts = dataToShow.map(d => d.jumlah);
+            // 4. Fungsi untuk membuat All chart
+            function createAllChart(labels, data) {
+                const ctx = document.getElementById('allDosenChart').getContext('2d');
 
-                // Sesuaikan kembali ke Top 5
-                createDosenChart('dosenChart', labels.slice(0, 5), counts.slice(0, 5));
-                createDosenChart('dosenAllChart', labels, counts);
+                const existingChart = Chart.getChart('allDosenChart');
+                if (existingChart) {
+                    existingChart.destroy();
+                }
+
+                const backgroundColors = data.map(value => {
+                    const baseColor = [78, 115, 223];
+                    const maxValue = Math.max(...data);
+                    if (maxValue === 0) return `rgb(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]})`;
+
+                    const minOpacity = 0.4;
+                    const maxOpacity = 1.0;
+                    const opacity = minOpacity + (maxOpacity - minOpacity) * (value / maxValue);
+                    return `rgba(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, ${opacity.toFixed(2)})`;
+                });
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels.map(label => truncateName(label)),
+                        datasets: [{
+                            label: "Jumlah Pengabdian",
+                            data: data,
+                            backgroundColor: backgroundColors,
+                            borderRadius: 4,
+                            borderSkipped: false,
+                        }],
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        maintainAspectRatio: false,
+                        responsive: true,
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0,
+                                    font: {
+                                        size: 12
+                                    }
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            },
+                            y: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    }
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        const index = context[0].dataIndex;
+                                        return labels[index];
+                                    },
+                                    label: function(context) {
+                                        return `Jumlah: ${context.parsed.x} pengabdian`;
+                                    }
+                                }
+                            },
+                            datalabels: {
+                                display: true,
+                                color: '#2d3e50',
+                                anchor: 'end',
+                                align: 'right',
+                                offset: 8,
+                                font: {
+                                    weight: 'bold',
+                                    size: 14
+                                },
+                                formatter: function(value) {
+                                    return value > 0 ? value : '';
+                                }
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                right: 50,
+                                top: 10,
+                                bottom: 10,
+                                left: 10
+                            }
+                        }
+                    }
+                });
             }
 
-            // 5. Logika untuk tombol-tombol
+            // 5. Update charts function
+            function updateCharts() {
+                const labels = originalData.map(d => d.nama);
+                const counts = originalData.map(d => d.jumlah);
+
+                if (currentView === 'top8') {
+                    const top8Labels = labels.slice(0, 8);
+                    const top8Counts = counts.slice(0, 8);
+                    createTop8Chart(top8Labels, top8Counts);
+                } else {
+                    createAllChart(labels, counts);
+                }
+            }
+
+            // 6. Toggle view function
+            function toggleView(view) {
+                currentView = view;
+
+                if (view === 'top8') {
+                    document.getElementById('top8ChartContainer').style.display = 'block';
+                    document.getElementById('allChartContainer').style.display = 'none';
+                    document.getElementById('showTop8Btn').classList.remove('btn-outline-primary');
+                    document.getElementById('showTop8Btn').classList.add('btn-primary');
+                    document.getElementById('showAllBtn').classList.remove('btn-primary');
+                    document.getElementById('showAllBtn').classList.add('btn-outline-primary');
+                } else {
+                    document.getElementById('top8ChartContainer').style.display = 'none';
+                    document.getElementById('allChartContainer').style.display = 'block';
+                    document.getElementById('showAllBtn').classList.remove('btn-outline-primary');
+                    document.getElementById('showAllBtn').classList.add('btn-primary');
+                    document.getElementById('showTop8Btn').classList.remove('btn-primary');
+                    document.getElementById('showTop8Btn').classList.add('btn-outline-primary');
+                }
+
+                updateCharts();
+            }
+
+            // 4. Update chart function
+            function updateChart() {
+                const labels = originalData.map(d => d.nama);
+                const counts = originalData.map(d => d.jumlah);
+                createDosenChart(labels, counts);
+            }
+
+            // 5. Event listeners
             document.addEventListener('DOMContentLoaded', function() {
-                updateCharts(originalData);
+                // Initial sort and display
+                originalData.sort((a, b) => b.jumlah - a.jumlah);
+                updateChart();
 
-                const viewTop5Btn = document.getElementById('viewTop5Btn');
-                const viewAllBtn = document.getElementById('viewAllBtn');
+                // Sort button
                 const dosenSortBtn = document.getElementById('dosenSortBtn');
-                const top5Container = document.getElementById('top5ChartContainer');
-                const allContainer = document.getElementById('allChartContainer');
-                const badge = document.getElementById('currentViewBadge');
-                const infoText = document.getElementById('chartInfoText');
-
-                viewTop5Btn.addEventListener('click', function() {
-                    this.classList.add('active', 'btn-primary');
-                    this.classList.remove('btn-outline-primary');
-                    viewAllBtn.classList.remove('active', 'btn-primary');
-                    viewAllBtn.classList.add('btn-outline-primary');
-
-                    top5Container.classList.remove('d-none');
-                    allContainer.classList.add('d-none');
-
-                    // Sesuaikan kembali ke Top 5
-                    badge.textContent = 'Top 5';
-                    infoText.innerHTML =
-                        '<i class="fas fa-info-circle mr-1"></i>Menampilkan 5 dosen dengan pengabdian terbanyak';
-                });
-
-                viewAllBtn.addEventListener('click', function() {
-                    this.classList.add('active', 'btn-primary');
-                    this.classList.remove('btn-outline-primary');
-                    viewTop5Btn.classList.remove('active', 'btn-primary');
-                    viewTop5Btn.classList.add('btn-outline-primary');
-
-                    top5Container.classList.add('d-none');
-                    allContainer.classList.remove('d-none');
-
-                    badge.textContent = 'Semua';
-                    infoText.innerHTML =
-                        '<i class="fas fa-info-circle mr-1"></i>Menampilkan semua dosen yang tercatat';
-                });
-
                 dosenSortBtn.addEventListener('click', function() {
                     const currentOrder = this.dataset.order;
                     const newOrder = currentOrder === 'desc' ? 'asc' : 'desc';
@@ -1549,12 +1679,13 @@
                         .jumlah));
 
                     this.dataset.order = newOrder;
-                    this.innerHTML = newOrder === 'asc' ? '<i class="fas fa-sort-amount-up"></i>' :
-                        '<i class="fas fa-sort-amount-down"></i>';
-                    this.title = newOrder === 'asc' ? 'Urutkan jumlah (terendah)' :
-                        'Urutkan jumlah (tertinggi)';
+                    this.innerHTML = newOrder === 'asc' ?
+                        '<i class="fas fa-sort-amount-up mr-1"></i>Urutkan' :
+                        '<i class="fas fa-sort-amount-down mr-1"></i>Urutkan';
+                    this.title = newOrder === 'asc' ? 'Urutkan jumlah (terendah ke tertinggi)' :
+                        'Urutkan jumlah (tertinggi ke terendah)';
 
-                    updateCharts(originalData);
+                    updateChart();
                 });
             });
 
@@ -1758,8 +1889,7 @@
                         },
                         plugins: {
                             title: {
-                                display: true,
-                                text: 'Perbandingan Sumber Dana: ' + data.years.previous + ' vs ' + data.years.current,
+                                display: false,
                                 font: {
                                     size: 16,
                                     weight: 'bold'

@@ -1,350 +1,168 @@
 <!DOCTYPE html>
-<html lang="en">
-   <head>
-      <meta charset="utf-8"/>
-      <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"/>
-      <meta name="description" content="Interactive entity-relationship diagram or data model diagram implemented by GoJS in JavaScript for HTML."/>
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.6/tailwind.min.css"/>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisasi KPI - Radar Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
 
-      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/gojs/2.1.46/go.js"></script>
-      <script src="https://unpkg.com/gojs@2.1.47/extensions/Figures.js"></script>
-      <title>ERD</title>
-   </head>
-   <body class="bg-gray-100 tracking-wide bg-gray-200">
-        <nav class="bg-white py-2 ">
-            <div class="container px-4 mx-auto md:flex md:items-center">
+        .chart-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 25px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px HKI12px rgba(0, 0, 0, 0.08);
+        }
 
-            <div class="flex justify-between items-center">
-                <a href="erd" class="font-bold text-xl text-indigo-600">ERD</a>
-            </div>
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+        }
+    </style>
+</head>
+<body>
 
-                <div class="hidden md:flex flex-col md:flex-row md:ml-auto mt-3 md:mt-0" id="navbar-collapse">
+    <div class="chart-container">
+        <h2>Ringkasan Capaian KPI (2024)</h2>
+        <canvas id="kpiRadarChart"></canvas>
+    </div>
 
-                    <a href="https://github.com/kevincobain2000/laravel-erd" class="p-2 lg:px-4 md:mx-2 text-indigo-600 text-center border border-solid border-indigo-600 rounded hover:bg-indigo-600 hover:text-white transition-colors duration-300 mt-1 md:mt-0 md:ml-1">Request Feature</a>
-                </div>
-            </div>
-        </nav>  
-        <div id="app" v-cloak class="w-full flex lg:pt-10">
-            <aside class="text-xl text-grey-darkest break-all bg-gray-200 pl-2 h-screen sticky top-1 overflow-auto">
-                <b class="text-sm">Filter by Relation Type</b>
-                <div class="text-sm">
-                    <input type="checkbox" class="text-sm" id="input-relation-type-checkbox-check-all"> check all
-                </div>
+    <script>
+        // 3. Data KPI Anda (diambil dari gambar)
+        const kpiData = [
+            { kode: 'PGB.I.1.1', indikator: 'Memenuhi luaran (>=80%) sesuai proposal', realisasi: 100.0, target: 80.0, satuan: '%' },
+            { kode: 'PGB.I.5.6', indikator: 'Peningkatan jumlah (>= 10 %) per tahun', realisasi: 0.0, target: 10.0, satuan: '%' },
+            { kode: 'PGB.I.7.4', indikator: 'Mendapat pendanaan eksternal (>=30%)', realisasi: 0.0, target: 30.0, satuan: '%' },
+            { kode: 'PGB.I.7.9', indikator: 'Peningkatan jumlah proposal yang diterima (>=10%)', realisasi: 0.0, target: 10.0, satuan: '%' },
+            { kode: 'IKT.I.5.g', indikator: 'Digunakan dalam proses pembelajaran (>= 5 %)', realisasi: 100.0, target: 5.0, satuan: '%' },
+            { kode: 'IKT.I.5.h', indikator: 'Dilakukan dibidang INFOKOM (>= 70%)', realisasi: 100.0, target: 70.0, satuan: '%' },
+            { kode: 'IKT.I.5.i', indikator: 'Minimum Prodi memiliki 1 HKI setiap tahun', realisasi: 0.0, target: 1.0, satuan: ' HKI' },
+            { kode: 'IKT.I.5.j', indikator: 'Minimum 70% PkM melibatkan minimal 1 mahasiswa', realisasi: 0.0, target: 70.0, satuan: '%' }
+        ];
 
-                <div id="filter-by-relation-type"></div>
-                <b class="text-sm">Filter by Table Name</b>
-                <div class="text-sm">
-                    <input type="checkbox" id="input-table-names-checkbox-check-all"> check all
-                </div>
-                <div id="filter-by-table-name"></div>
-            </aside>
-            <div class="ml-6 mr-6 pl-2 w-10/12 bg-gray-300 p-2">
-                <div id="myDiagramDiv" style="background-color: white; width: 100%; height: 95vh"></div>
-            </div>
-      </div>
-      <script>
+        // 4. Proses data: Hitung Skor Normalisasi (0-100)
+        kpiData.forEach(kpi => {
+            let skor = 0;
+            const { kode, realisasi, target } = kpi;
 
-var nodeDataArray = [];
-var linkDataArray = [];
-var nodeDataArray = [];
-var linkDataArray = [];
-function init() {
-  var $ = go.GraphObject.make; // for conciseness in defining templates
+            if (kode === 'PGB.I.5.6' || kode === 'PGB.I.7.9') { // KPI Pertumbuhan
+                const batasBawah = -10.0; // Asumsi performa terburuk adalah penurunan 10%
+                const rentang = target - batasBawah;
+                if (rentang > 0) {
+                    skor = ((realisasi - batasBawah) / rentang) * 100;
+                }
+            } else if (kode === 'IKT.I.5.i') { // KPI Biner (Lulus/Gagal)
+                skor = (realisasi >= target) ? 100 : 0;
+            } else { // KPI Standar
+                if (target > 0) {
+                    skor = (realisasi / target) * 100;
+                }
+            }
+            // Batasi skor agar selalu dalam rentang 0-100 untuk visualisasi
+            kpi.skor_normalisasi = Math.max(0, Math.min(skor, 100));
+        });
 
-  myDiagram =
-      $(go.Diagram, "myDiagramDiv", // must name or refer to the DIV HTML element
-          {
-              allowDelete: false,
-              allowCopy: false,
-              layout: $(go.ForceDirectedLayout),
-              "undoManager.isEnabled": true
-          });
+        // 5. Siapkan data untuk Chart.js
+        const kpiLabelsMap = {
+            'PGB.I.1.1': 'Luaran Sesuai',
+            'PGB.I.5.6': 'Peningkatan PkM',
+            'PGB.I.7.4': 'Dana Eksternal',
+            'PGB.I.7.9': 'Proposal Diterima',
+            'IKT.I.5.g': 'Digunakan di PBM',
+            'IKT.I.5.h': 'Bidang INFOKOM',
+            'IKT.I.5.i': 'HKI per Prodi',
+            'IKT.I.5.j': 'Keterlibatan Mhs.'
+        };
+        
+        const labels = kpiData.map(kpi => kpiLabelsMap[kpi.kode]);
+        const actualScores = kpiData.map(kpi => kpi.skor_normalisasi);
+        const targetScores = kpiData.map(() => 100);
 
-  var itemTempl =
-      $(go.Panel, "Horizontal", // this Panel is a row in the containing Table
-          new go.Binding("portId", "name"), // this Panel is a "port"
-          {
-              background: "transparent", // so this port's background can be picked by the mouse
-              fromSpot: go.Spot.Right, // links only go from the right side to the left side
-              toSpot: go.Spot.Left,
-              // allow drawing links from or to this port:
-              fromLinkable: false,
-              toLinkable: false
-          },
-          $(go.Shape, {
-                  desiredSize: new go.Size(15, 15),
-                  strokeJoin: "round",
-                  strokeWidth: 3,
-                  stroke: null,
-                  margin: 2,
-                  // but disallow drawing links from or to this shape:
-                  fromLinkable: false,
-                  toLinkable: false
-              },
-              new go.Binding("figure", "figure"),
-              new go.Binding("stroke", "color"),
-              new go.Binding("fill", "color")),
-          $(go.TextBlock, {
-                  margin: new go.Margin(0, 5),
-                  column: 1,
-                  font: "13px sans-serif",
-                  alignment: go.Spot.Left,
-                  // and disallow drawing links from or to this text:
-                  fromLinkable: false,
-                  toLinkable: false
-              },
-              new go.Binding("text", "name")),
-          $(go.TextBlock, {
-                  margin: new go.Margin(0, 5),
-                  column: 2,
-                  font: "11px courier",
-                  alignment: go.Spot.Left
-              },
-              new go.Binding("text", "info"))
-      );
+        // 6. Inisialisasi Chart
+        const ctx = document.getElementById('kpiRadarChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Capaian',
+                    data: actualScores,
+                    fill: true,
+                    backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                    borderColor: 'rgb(78, 115, 223)',
+                    pointBackgroundColor: 'rgb(78, 115, 223)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(78, 115, 223)'
+                }, {
+                    label: 'Target',
+                    data: targetScores,
+                    fill: false,
+                    borderColor: 'rgba(246, 194, 62)',
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    r: {
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20,
+                            backdropColor: 'transparent',
+                            callback: value => value + '%'
+                        },
+                        pointLabels: {
+                            font: { size: 12 }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            title: context => kpiData[context[0].dataIndex].indikator,
+                            label: context => {
+                                const kpi = kpiData[context.dataIndex];
+                                let persentaseCapaian = 0;
+                                if (kpi.target > 0) {
+                                    persentaseCapaian = (kpi.realisasi / kpi.target) * 100;
+                                }
+                                
+                                let statusLabel = `(${persentaseCapaian.toFixed(1)}% dari Target)`;
+                                if (kpi.skor_normalisasi >= 100 && persentaseCapaian > 100) {
+                                    statusLabel = `(Terlampaui: ${persentaseCapaian.toFixed(1)}%)`;
+                                }
 
-  // define the Node template, representing an entity
-  myDiagram.nodeTemplate =
-      $(go.Node, "Auto", // the whole node panel
-          {
-              selectionAdorned: true,
-              resizable: true,
-              layoutConditions: go.Part.LayoutStandard & ~go.Part.LayoutNodeSized,
-              fromSpot: go.Spot.AllSides,
-              toSpot: go.Spot.AllSides,
-              isShadowed: true,
-              shadowOffset: new go.Point(3, 3),
-              shadowColor: "#C5C1AA"
-          },
-          new go.Binding("location", "location").makeTwoWay(),
-          // whenever the PanelExpanderButton changes the visible property of the "LIST" panel,
-          // clear out any desiredSize set by the ResizingTool.
-          new go.Binding("desiredSize", "visible", function(v) {
-              return new go.Size(NaN, NaN);
-          }).ofObject("LIST"),
-          // define the node's outer shape, which will surround the Table
-          $(go.Shape, "RoundedRectangle", {
-              fill: 'white',
-              stroke: "#eeeeee",
-              strokeWidth: 6
-          }),
-          $(go.Panel, "Table", {
-                  margin: 8,
-                  stretch: go.GraphObject.Fill
-              },
-              $(go.RowColumnDefinition, {
-                  row: 0,
-                  sizing: go.RowColumnDefinition.None
-              }),
+                                const skor = `Skor Capaian: ${kpi.skor_normalisasi.toFixed(1)}%`;
+                                const realisasi = `Realisasi: ${kpi.realisasi}${kpi.satuan} ${statusLabel}`;
+                                const target = `Target: ${kpi.target}${kpi.satuan}`;
 
-              // the table header
-              $(go.TextBlock, {
-                      row: 0,
-                      alignment: go.Spot.Left,
-                      margin: new go.Margin(0, 24, 0, 2), // leave room for Button
-                      font: "bold 16px sans-serif"
-                  },
-                  new go.Binding("text", "key")),
-              // the collapse/expand button
-              $("PanelExpanderButton", "LIST", // the name of the element whose visibility this button toggles
-                  {
-                      row: 0,
-                      alignment: go.Spot.TopRight
-                  }),
-              // the list of Panels, each showing an attribute
-              $(go.Panel, "Vertical", {
-                      name: "LIST",
-                      row: 1,
-                      padding: 3,
-                      alignment: go.Spot.TopLeft,
-                      defaultAlignment: go.Spot.Left,
-                      stretch: go.GraphObject.Horizontal,
-                      itemTemplate: itemTempl,
-                  },
-                  new go.Binding("itemArray", "schema"))
-          ) // end Table Panel
-      ); // end Node
-  // define the Link template, representing a relationship
-  myDiagram.linkTemplate =
-      $(go.Link, // the whole link panel
-          {
-              selectionAdorned: true,
-              layerName: "Foreground",
-              reshapable: true,
-              routing: go.Link.AvoidsNodes,
-              corner: 5,
-              curve: go.Link.Orthogonal,
-              curviness: 0,
-          },
-          $(go.Shape, // the link shape
-              {
-                  stroke: "#303B45",
-                  strokeWidth: 1.5,
-              }),
-          $(go.Shape, // the arrowhead
-              {
-                  toArrow: "Triangle",
-                  fill: "#1967B3"
-              }),
-          $(go.TextBlock, // the "from" label
-              {
-                  textAlign: "center",
-                  font: "bold 12px sans-serif",
-                  stroke: "#1967B3",
-                  segmentIndex: 1.5,
-                  segmentOffset: new go.Point(NaN, NaN),
-                  segmentOrientation: go.Link.Horizontal,
-                  fromLinkable: true,
-                  toLinkable: true
-              },
-              new go.Binding("text", "fromText")),
+                                return [skor, realisasi, target];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 
-          $(go.TextBlock, // the "to" label
-              {
-                  textAlign: "center",
-                  font: "bold 12px sans-serif",
-                  stroke: "#1967B3",
-                  segmentIndex: -10,
-                  segmentOffset: new go.Point(NaN, NaN),
-                  segmentOrientation: go.Link.OrientUpright,
-                  fromLinkable: true,
-                  toLinkable: true
-              },
-              new go.Binding("text", "toText"))
-      );
-
-  myDiagram.model = $(go.GraphLinksModel, {
-      copiesArrays: true,
-      copiesArrayObjects: true,
-      linkFromPortIdProperty: "fromPort",
-      linkToPortIdProperty: "toPort",
-      nodeDataArray: nodeDataArray,
-      linkDataArray: linkDataArray
-  });
-  loadFilterByTableNames()
-  loadFilterByRelationType()
-  setCheckboxesForTableNames();
-  setCheckboxesForRelationTypes();
-}
-
-
-function loadFilterByRelationType() {
-  var json = linkDataArray;
-  var appended = [];
-  $.each(json, function(i, v) {
-      // check if doesn't exist in the array
-      if ($.inArray(this.type, appended) == -1) {
-          // append
-          appended.push(this.type)
-          $("#filter-by-relation-type").append($("<div class='text-sm'>").text(this.type).prepend(
-              $("<input>").attr({
-                  'type': 'checkbox',
-                  'checked': true,
-                  'class': 'input-relation-type-checkbox',
-                  'name': 'subscribe-relation-type',
-                  "data-feed": this.type
-              }).val(this.type)
-              .prop('checked', this.checked)
-          ));
-      }
-  });
-  $(".input-relation-type-checkbox").on('change', function() {
-      setCheckboxesForTableNames()
-      setCheckboxesForRelationTypes()
-  });
-}
-
-function setCheckboxesForRelationTypes() {
-  newLinkDataArray = []
-
-  $(".input-relation-type-checkbox").each(function() {
-      if ($(this).prop('checked')) {
-          console.log($(this).val())
-          for (let i = 0; i < linkDataArray.length; i++) {
-              const element = linkDataArray[i];
-              if (element.type == $(this).val()) {
-                  newLinkDataArray.push(element)
-              }
-          }
-      }
-  });
-  myDiagram.model.linkDataArray = newLinkDataArray
-}
-
-function loadFilterByTableNames() {
-  var json = nodeDataArray;
-  var appended = [];
-  $.each(json, function(i, v) {
-      // check if doesn't exist in the array
-      if ($.inArray(this.key, appended) == -1) {
-          // append
-          appended.push(this.key)
-          $("#filter-by-table-name").append($("<div class='text-sm'>").text(this.key).prepend(
-              $("<input>").attr({
-                  'type': 'checkbox',
-                  'checked': true,
-                  'class': 'input-table-name-checkbox',
-                  'name': 'subscribe-table-name',
-                  "data-feed": this.key
-              }).val(this.key)
-              .prop('checked', this.checked)
-          ));
-      }
-  });
-
-  $(".input-table-name-checkbox").on('change', function() {
-      setCheckboxesForTableNames();
-      setCheckboxesForRelationTypes();
-  });
-}
-
-
-$("#input-relation-type-checkbox-check-all").on('change', function() {
-  $(".input-relation-type-checkbox").prop('checked', this.checked);
-  setCheckboxesForTableNames();
-  setCheckboxesForRelationTypes();
-});
-
-$("#input-table-names-checkbox-check-all").on('change', function() {
-  $(".input-table-name-checkbox").prop('checked', this.checked);
-  setCheckboxesForTableNames();
-  setCheckboxesForRelationTypes();
-});
-
-function setCheckboxesForTableNames() {
-  newNodeDataArray = []
-  newLinkDataArray = []
-
-  $(".input-table-name-checkbox").each(function() {
-      if ($(this).prop('checked')) {
-
-          for (let i = 0; i < nodeDataArray.length; i++) {
-              const element = nodeDataArray[i];
-              if (element.key == $(this).val()) {
-                  newNodeDataArray.push(element)
-              }
-          }
-          for (let i = 0; i < linkDataArray.length; i++) {
-              const element = linkDataArray[i];
-              if (element.from == $(this).val() || element.to == $(this).val()) {
-                  newLinkDataArray.push(element)
-              }
-          }
-      }
-  });
-  myDiagram.model.nodeDataArray = newNodeDataArray
-  myDiagram.model.linkDataArray = newLinkDataArray
-}
-
-var docs = "{\"link_data\":[{\"from\":\"anggota_hki\",\"to\":\"detail_hki\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_detail_hki\",\"toPort\":\"id_anggota_hki\",\"type\":\"BelongsTo\"},{\"from\":\"anggota_hki\",\"to\":\"dosen\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"nik\",\"toPort\":\"id_anggota_hki\",\"type\":\"BelongsTo\"},{\"from\":\"detail_hki\",\"to\":\"luaran\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_luaran\",\"toPort\":\"id_detail_hki\",\"type\":\"BelongsTo\"},{\"from\":\"detail_hki\",\"to\":\"dokumen\",\"fromText\":\"1..1\\nHas One\",\"toText\":\"\",\"fromPort\":\"id_detail_hki\",\"toPort\":\"id_detail_hki\",\"type\":\"HasOne\"},{\"from\":\"dokumen\",\"to\":\"pengabdian\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_dokumen\",\"type\":\"BelongsTo\"},{\"from\":\"dokumen\",\"to\":\"jenis_dokumen\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_jenis_dokumen\",\"toPort\":\"id_dokumen\",\"type\":\"BelongsTo\"},{\"from\":\"dokumen\",\"to\":\"detail_hki\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_detail_hki\",\"toPort\":\"id_dokumen\",\"type\":\"BelongsTo\"},{\"from\":\"dosen\",\"to\":\"pengabdian_dosen\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"nik\",\"toPort\":\"nik\",\"type\":\"HasMany\"},{\"from\":\"jenis_dokumen\",\"to\":\"dokumen\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"id_jenis_dokumen\",\"toPort\":\"id_jenis_dokumen\",\"type\":\"HasMany\"},{\"from\":\"jenis_luaran\",\"to\":\"luaran\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"id_jenis_luaran\",\"toPort\":\"id_jenis_luaran\",\"type\":\"HasMany\"},{\"from\":\"kpi\",\"to\":\"monitoring_kpi\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"id_kpi\",\"toPort\":\"id_kpi\",\"type\":\"HasMany\"},{\"from\":\"luaran\",\"to\":\"pengabdian\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_luaran\",\"type\":\"BelongsTo\"},{\"from\":\"luaran\",\"to\":\"jenis_luaran\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_jenis_luaran\",\"toPort\":\"id_luaran\",\"type\":\"BelongsTo\"},{\"from\":\"luaran\",\"to\":\"detail_hki\",\"fromText\":\"1..1\\nHas One\",\"toText\":\"\",\"fromPort\":\"id_luaran\",\"toPort\":\"id_luaran\",\"type\":\"HasOne\"},{\"from\":\"luaran_wajib\",\"to\":\"pengabdian\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"id_luaran_wajib\",\"toPort\":\"id_luaran_wajib\",\"type\":\"HasMany\"},{\"from\":\"mahasiswa\",\"to\":\"pengabdian_mahasiswa\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"nim\",\"toPort\":\"nim\",\"type\":\"HasMany\"},{\"from\":\"mitra\",\"to\":\"pengabdian\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_mitra\",\"type\":\"BelongsTo\"},{\"from\":\"monitoring_kpi\",\"to\":\"pengabdian\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_monitoring\",\"type\":\"BelongsTo\"},{\"from\":\"monitoring_kpi\",\"to\":\"kpi\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_kpi\",\"toPort\":\"id_monitoring\",\"type\":\"BelongsTo\"},{\"from\":\"pengabdian\",\"to\":\"pengabdian_dosen\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_pengabdian\",\"type\":\"HasMany\"},{\"from\":\"pengabdian\",\"to\":\"pengabdian_mahasiswa\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_pengabdian\",\"type\":\"HasMany\"},{\"from\":\"pengabdian\",\"to\":\"mitra\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_pengabdian\",\"type\":\"HasMany\"},{\"from\":\"pengabdian\",\"to\":\"dokumen\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_pengabdian\",\"type\":\"HasMany\"},{\"from\":\"pengabdian\",\"to\":\"sumber_dana\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_pengabdian\",\"type\":\"HasMany\"},{\"from\":\"pengabdian\",\"to\":\"luaran\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_pengabdian\",\"type\":\"HasMany\"},{\"from\":\"pengabdian\",\"to\":\"monitoring_kpi\",\"fromText\":\"1..*\\nHas Many\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_pengabdian\",\"type\":\"HasMany\"},{\"from\":\"pengabdian\",\"to\":\"dosen\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"ketua_pengabdian\",\"toPort\":\"id_pengabdian\",\"type\":\"BelongsTo\"},{\"from\":\"pengabdian\",\"to\":\"luaran_wajib\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_luaran_wajib\",\"toPort\":\"id_pengabdian\",\"type\":\"BelongsTo\"},{\"from\":\"pengabdian_dosen\",\"to\":\"pengabdian\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id\",\"type\":\"BelongsTo\"},{\"from\":\"pengabdian_dosen\",\"to\":\"dosen\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"nik\",\"toPort\":\"id\",\"type\":\"BelongsTo\"},{\"from\":\"pengabdian_mahasiswa\",\"to\":\"pengabdian\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_pengabdian_mahasiswa\",\"type\":\"BelongsTo\"},{\"from\":\"pengabdian_mahasiswa\",\"to\":\"mahasiswa\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"nim\",\"toPort\":\"id_pengabdian_mahasiswa\",\"type\":\"BelongsTo\"},{\"from\":\"sumber_dana\",\"to\":\"pengabdian\",\"fromText\":\"1..1\\nBelongs To\",\"toText\":\"\",\"fromPort\":\"id_pengabdian\",\"toPort\":\"id_sumber_dana\",\"type\":\"BelongsTo\"},{\"from\":\"users\",\"to\":\"notifications\",\"fromText\":null,\"toText\":null,\"fromPort\":\"id\",\"toPort\":\"notifiable_id\",\"type\":\"MorphMany\"},{\"from\":\"users\",\"to\":\"notifications\",\"fromText\":null,\"toText\":null,\"fromPort\":\"id\",\"toPort\":\"notifiable_id\",\"type\":\"MorphMany\"},{\"from\":\"users\",\"to\":\"notifications\",\"fromText\":null,\"toText\":null,\"fromPort\":\"id\",\"toPort\":\"notifiable_id\",\"type\":\"MorphMany\"}],\"node_data\":[{\"key\":\"anggota_hki\",\"schema\":[{\"name\":\"id_anggota_hki\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"id_detail_hki\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"nik\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"detail_hki\",\"schema\":[{\"name\":\"id_detail_hki\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"id_luaran\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"no_pendaftaran\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"tgl_permohonan\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"judul_ciptaan\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"pemegang_hak_cipta\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"jenis_ciptaan\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"dokumen\",\"schema\":[{\"name\":\"id_dokumen\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"id_pengabdian\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"id_detail_hki\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"id_jenis_dokumen\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"nama_file\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"path_file\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"dosen\",\"schema\":[{\"name\":\"nik\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"nama\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"nidn\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"jabatan\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"prodi\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"bidang_keahlian\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"email\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"jenis_dokumen\",\"schema\":[{\"name\":\"id_jenis_dokumen\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"nama_jenis_dokumen\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"jenis_luaran\",\"schema\":[{\"name\":\"id_jenis_luaran\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"nama_jenis_luaran\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"kategori_spmi\",\"schema\":[]},{\"key\":\"kpi\",\"schema\":[{\"name\":\"id_kpi\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"kode\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"nama_indikator\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"target\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"satuan\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"luaran\",\"schema\":[{\"name\":\"id_luaran\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"id_pengabdian\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"id_jenis_luaran\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"luaran_wajib\",\"schema\":[{\"name\":\"id_luaran_wajib\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"nama_luaran\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"mahasiswa\",\"schema\":[{\"name\":\"nim\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"nama\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"prodi\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"mitra\",\"schema\":[{\"name\":\"id_mitra\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"id_pengabdian\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"nama_mitra\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"lokasi_mitra\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"monitoring_kpi\",\"schema\":[{\"name\":\"id_monitoring\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"id_kpi\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"id_pengabdian\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"tahun\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"nilai_capai\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"status\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"pengabdian\",\"schema\":[{\"name\":\"id_pengabdian\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"ketua_pengabdian\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"judul_pengabdian\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"id_luaran_wajib\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"tanggal_pengabdian\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"pengabdian_dosen\",\"schema\":[{\"name\":\"id\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"id_pengabdian\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"nik\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"status_anggota\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"pengabdian_mahasiswa\",\"schema\":[{\"name\":\"id_pengabdian_mahasiswa\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"id_pengabdian\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"nim\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"sumber_dana\",\"schema\":[{\"name\":\"id_sumber_dana\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"id_pengabdian\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"jenis\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"nama_sumber\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"jumlah_dana\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]},{\"key\":\"users\",\"schema\":[{\"name\":\"id\",\"isKey\":true,\"figure\":\"Hexagon\",\"color\":\"#be4b15\",\"info\":\"\"},{\"name\":\"username\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"password\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"name\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"role\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"created_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"},{\"name\":\"updated_at\",\"isKey\":false,\"figure\":\"Decision\",\"color\":\"#6ea5f8\",\"info\":\"\"}]}]}"
-docs = JSON.parse(docs)
-nodeDataArray = docs.node_data
-linkDataArray = docs.link_data
-
-
-window.addEventListener('DOMContentLoaded', init);
-
-      </script>
-   </body>
+</body>
 </html>

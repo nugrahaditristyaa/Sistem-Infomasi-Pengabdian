@@ -95,6 +95,12 @@ class AuthController extends Controller
                 if (strtolower($user->role) === 'staff inqa') {
                     return redirect()->route('inqa.dashboard')
                         ->with('success', 'Selamat datang, ' . $user->name . '! Login berhasil.');
+                } elseif ($user->role === 'Kaprodi TI') {
+                    return redirect()->route('kaprodi.ti.dashboard')
+                        ->with('success', 'Selamat datang, ' . $user->name . '! Login berhasil.');
+                } elseif ($user->role === 'Kaprodi SI') {
+                    return redirect()->route('kaprodi.si.dashboard')
+                        ->with('success', 'Selamat datang, ' . $user->name . '! Login berhasil.');
                 }
 
                 return redirect()->route('admin.dashboard')

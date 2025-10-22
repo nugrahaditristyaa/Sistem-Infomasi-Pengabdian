@@ -28,28 +28,25 @@
     </div>
 
     <!-- Nav Item - Data KPI -->
-    <li class="nav-item {{ request()->routeIs('inqa.kpi.*') ? 'active' : '' }}">
+    {{-- <li class="nav-item {{ request()->routeIs('inqa.kpi.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('inqa.kpi.index') }}">
             <i class="fas fa-fw fa-chart-bar"></i>
             <span>Data KPI</span>
         </a>
-    </li>
+    </li> --}}
 
-    <!-- Divider -->
     <hr class="sidebar-divider">
 
-    <!-- Heading -->
     <div class="sidebar-heading">
         Data Akademik
     </div>
 
-    <!-- Nav Item - Rekap Dosen -->
-    <li class="nav-item {{ request()->routeIs('inqa.dosen.*') ? 'active' : '' }}">
+     {{-- <li class="nav-item {{ request()->routeIs('inqa.dosen.*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('inqa.dosen.rekap') }}">
             <i class="fas fa-fw fa-users"></i>
             <span>Rekap Pengabdian Dosen</span>
         </a>
-    </li>
+    </li> --}}
 
     <!-- Divider -->
     <hr class="sidebar-divider d-none d-md-block">

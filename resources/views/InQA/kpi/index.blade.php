@@ -327,6 +327,12 @@
         $(document).ready(function() {
             // Initialize DataTable
             var table = $('#dataTable').DataTable({
+                searching: false,
+                lengthChange: false,
+                info: false,
+                paging: false,
+
+
                 "processing": true,
                 "pageLength": 25,
                 "lengthMenu": [

@@ -59,22 +59,44 @@ Route::middleware(['auth:admin'])->group(function () {
 //                   AKHIR PERBAIKAN
 // ==========================================================
 
-// Staff InQA: KPI Management
+// Shared API Routes (accessible by InQA, Kaprodi TI, Kaprodi SI)
+Route::middleware(['auth:admin'])->group(function () {
+    Route::prefix('inqa/api')->name('inqa.api.')->group(function () {
+        Route::get('/sparkline-data', [App\Http\Controllers\InQA\InQaController::class, 'getSparklineData'])->name('sparkline-data');
+        Route::get('/funding-sources', [App\Http\Controllers\InQA\InQaController::class, 'getFundingSourcesData'])->name('funding-sources');
+        Route::get('/statistics-detail', [App\Http\Controllers\InQA\InQaController::class, 'getStatisticsDetail'])->name('statistics-detail');
+    });
+});
+
+// InQA Routes
 Route::middleware(['auth:admin', 'role:Staff InQA'])->group(function () {
-    Route::prefix('inqa')->as('inqa.')->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\InQA\InQaController::class, 'dashboard'])->name('dashboard');
-        Route::resource('kpi', \App\Http\Controllers\Inqa\InqaKpiController::class);
+    Route::prefix('inqa')->name('inqa.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\InQA\InQaController::class, 'dashboard'])->name('dashboard');
+        Route::get('/pengabdian', [App\Http\Controllers\InQA\InQaController::class, 'pengabdian'])->name('pengabdian');
+        Route::get('/dosen', [App\Http\Controllers\InQA\InQaController::class, 'dosen'])->name('dosen');
+        Route::get('/mahasiswa', [App\Http\Controllers\InQA\InQaController::class, 'mahasiswa'])->name('mahasiswa');
+        Route::get('/monitoring-kpi', [App\Http\Controllers\InQA\InQaController::class, 'monitoringKpi'])->name('monitoring-kpi');
+        Route::get('/monitoring-kpi/{id}/edit', [App\Http\Controllers\InQA\InQaController::class, 'editMonitoringKpi'])->name('monitoring-kpi.edit');
+        Route::put('/monitoring-kpi/{id}', [App\Http\Controllers\InQA\InQaController::class, 'updateMonitoringKpi'])->name('monitoring-kpi.update');
+    });
+});
 
-        // buat route khusus untuk update KPI berdasarkan kode (untuk modal AJAX)
-        Route::put('kpi/update/{kode}', [\App\Http\Controllers\Inqa\InqaKpiController::class, 'updateByCode'])->name('kpi.updateByCode');
+// Kaprodi TI Routes
+Route::middleware(['auth:admin', 'role:Kaprodi TI'])->group(function () {
+    Route::prefix('kaprodi-ti')->name('kaprodi.ti.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'dashboardTI'])->name('dashboard');
+        Route::get('/pengabdian', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'pengabdianList'])->name('pengabdian');
 
-        // API routes
-        Route::get('/api/funding-sources', [\App\Http\Controllers\InQA\InQaController::class, 'getFundingSourcesData'])->name('api.funding-sources');
-        Route::get('/api/statistics-detail', [\App\Http\Controllers\InQA\InQaController::class, 'getStatisticsDetail'])->name('api.statistics-detail');
-        Route::get('/api/sparkline-data', [\App\Http\Controllers\InQA\InQaController::class, 'getSparklineData'])->name('api.sparkline-data');
+        // API Routes (menggunakan namespace inqa.api untuk compatibility dengan view)
+    });
+});
 
-        // Dosen recap routes
-        Route::get('/dosen/rekap', [\App\Http\Controllers\InQA\InQaController::class, 'dosenRekap'])->name('dosen.rekap');
-        Route::get('/dosen/detail/{nik}', [\App\Http\Controllers\InQA\InQaController::class, 'dosenDetail'])->name('dosen.detail');
+// Kaprodi SI Routes
+Route::middleware(['auth:admin', 'role:Kaprodi SI'])->group(function () {
+    Route::prefix('kaprodi-si')->name('kaprodi.si.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'dashboardSI'])->name('dashboard');
+        Route::get('/pengabdian', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'pengabdianList'])->name('pengabdian');
+
+        // API Routes (menggunakan namespace inqa.api untuk compatibility dengan view)
     });
 });

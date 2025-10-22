@@ -27,5 +27,23 @@ class UserSeeder extends Seeder
                 'role' => 'Staff InQA',
             ]
         );
+
+        User::firstOrCreate(
+            ['username' => 'kaprodi_ti'],
+            [
+                'password' => Hash::make('kaprodi123'),
+                'name' => 'Kaprodi Teknik Informatika',
+                'role' => 'Kaprodi TI',
+            ]
+        );
+
+        User::firstOrCreate(
+            ['username' => 'kaprodi_si'],
+            [
+                'password' => Hash::make('kaprodi123'),
+                'name' => 'Kaprodi Sistem Informasi',
+                'role' => 'Kaprodi SI',
+            ]
+        );
     }
 }

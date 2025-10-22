@@ -111,9 +111,12 @@
 @section('content')
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Data Pengabdian</h1>
-        <a href="{{ route('admin.pengabdian.create') }}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-            <i class="fas fa-plus fa-sm text-white-50"></i> Tambah Data Pengabdian
-        </a>
+        <div class="d-flex">
+            <a href="{{ route('admin.pengabdian.create') }}"
+                class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm mr-2">
+                <i class="fas fa-plus fa-sm text-white-50"></i> Tambah Data Pengabdian
+            </a>
+        </div>
     </div>
 
     @if (session('success'))
@@ -139,11 +142,17 @@
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-file-alt mr-2"></i>Data Rekap Pengabdian
+                        <i class="fas fa-file-alt mr-2"></i>Data Rekap Pengabdian
                     </h6>
                 </div>
                 <div class="card-body">
-                    {{-- Controls row: Buttons, length selector and built-in search will be placed by DataTables --}}
+                    {{-- Controls row: place action buttons and table controls here --}}
+                    <div class="d-flex justify-content-end mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal"
+                            data-target="#pengabdianFilterModal">
+                            <i class="fas fa-filter mr-1"></i> Filter
+                        </button>
+                    </div>
 
                     <div class="table-responsive">
                         <table class="table table-hover table-striped" id="dataTable" width="100%" cellspacing="0">
@@ -457,4 +466,91 @@
             $('[data-toggle="tooltip"]').tooltip();
         });
     </script>
+    <!-- Filter Modal -->
+    <div class="modal fade" id="pengabdianFilterModal" tabindex="-1" role="dialog"
+        aria-labelledby="pengabdianFilterModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pengabdianFilterModalLabel"><i class="fas fa-filter mr-2"></i>Filter
+                        Pengabdian</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form method="GET" action="{{ route('admin.pengabdian.index') }}">
+                    <div class="modal-body">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="start_date">Start Date</label>
+                                <input type="date" id="start_date" name="start_date" class="form-control"
+                                    value="{{ request('start_date') }}">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="end_date">End Date</label>
+                                <input type="date" id="end_date" name="end_date" class="form-control"
+                                    value="{{ request('end_date') }}">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="mitra">Mitra</label>
+                                <select id="mitra" name="mitra" class="form-control">
+                                    <option value="">Semua Mitra</option>
+                                    @if (isset($mitraList) && count($mitraList) > 0)
+                                        @foreach ($mitraList as $mitra)
+                                            <option value="{{ $mitra->id_mitra }}"
+                                                {{ request('mitra') == $mitra->id_mitra ? 'selected' : '' }}>
+                                                {{ $mitra->nama_mitra }}</option>
+                                        @endforeach
+                                    @else
+                                        <option value="mitra_a" {{ request('mitra') == 'mitra_a' ? 'selected' : '' }}>
+                                            Mitra
+                                            A (contoh)</option>
+                                        <option value="mitra_b" {{ request('mitra') == 'mitra_b' ? 'selected' : '' }}>
+                                            Mitra
+                                            B (contoh)</option>
+                                    @endif
+                                </select>
+                            </div>
+
+                            <div class="form-group col-md-6">
+                                <label for="prodi">Program Studi</label>
+                                <select id="prodi" name="prodi" class="form-control">
+                                    <option value="">Semua Prodi</option>
+                                    @if (isset($prodiList) && count($prodiList) > 0)
+                                        @foreach ($prodiList as $prodi)
+                                            <option value="{{ $prodi->kode_prodi ?? $prodi->id }}"
+                                                {{ request('prodi') == ($prodi->kode_prodi ?? $prodi->id) ? 'selected' : '' }}>
+                                                {{ $prodi->nama_prodi ?? $prodi->nama }}</option>
+                                        @endforeach
+                                    @else
+                                        <option value="informatika"
+                                            {{ request('prodi') == 'informatika' ? 'selected' : '' }}>Informatika</option>
+                                        <option value="sistem_informasi"
+                                            {{ request('prodi') == 'sistem_informasi' ? 'selected' : '' }}>Sistem Informasi
+                                        </option>
+                                    @endif
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="total_dana">Total Dana Minimal (IDR)</label>
+                                <input type="number" id="total_dana" name="total_dana" class="form-control"
+                                    min="0" step="1000" value="{{ request('total_dana') }}"
+                                    placeholder="Masukkan nilai minimal total dana">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Terapkan Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endpush

@@ -10,6 +10,7 @@ use App\Models\Dosen;
 use App\Models\SumberDana;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class InQaController extends Controller
 {
@@ -368,6 +369,16 @@ class InQaController extends Controller
             }
         }]);
 
+        // Filter hanya dosen yang memiliki pengabdian di tahun yang dipilih
+        if ($filterYear !== 'all') {
+            $dosenQuery->whereHas('pengabdian', function ($query) use ($filterYear) {
+                $query->whereYear('tanggal_pengabdian', $filterYear);
+            });
+        } else {
+            // Untuk "all", tampilkan hanya dosen yang pernah memiliki pengabdian
+            $dosenQuery->whereHas('pengabdian');
+        }
+
         $dosenCounts = $dosenQuery->orderBy('jumlah_pengabdian', 'desc')
             ->get();
 
@@ -554,8 +565,8 @@ class InQaController extends Controller
     }
 
     /**
-     * Get KPI Radar Chart Data
-     *
+     * Get KPI Radar Chart Data with enhanced normalization
+     * 
      * @param string|int $filterYear
      * @return array
      */
@@ -568,22 +579,34 @@ class InQaController extends Controller
 
         foreach ($kpis as $kpi) {
             // Hitung capaian berdasarkan data pengabdian
-            $capaian = $this->calculateKpiAchievement($kpi, $filterYear);
+            $realisasi = $this->calculateKpiAchievement($kpi, $filterYear);
 
-            // Hitung persentase capaian (capaian/target * 100)
-            $persentaseCapaian = $kpi->target > 0 ? ($capaian / $kpi->target * 100) : 0;
+            // Tentukan tipe KPI berdasarkan kode atau karakteristik
+            $kpiType = $this->determineKpiType($kpi->kode);
 
-            // Batasi maksimal 100%
-            $persentaseCapaian = min($persentaseCapaian, 100);
+            // Override target untuk KPI IKT.I.5.i (bergradasi 0, 1, 2 prodi)
+            $targetValue = $kpi->target;
+            if ($kpi->kode === 'IKT.I.5.i') {
+                $targetValue = 2.0; // Target 2 prodi tercapai
+            }
+
+            // Hitung skor normalisasi berdasarkan tipe KPI
+            $skorNormalisasi = $this->calculateNormalizedScore($realisasi, $targetValue, $kpiType, $kpi->kode, $filterYear);
+
+            // Pastikan skor selalu antara 0-100
+            $skorNormalisasi = max(0, min(100, $skorNormalisasi));
 
             $radarData[] = [
                 'kode' => $kpi->kode,
                 'indikator' => $kpi->indikator,
-                'target' => $kpi->target,
-                'realisasi' => $capaian,
-                'persentase' => round($persentaseCapaian, 1),
+                'target' => $targetValue, // Gunakan target yang sudah disesuaikan
+                'realisasi' => round($realisasi, 2),
+                'skor_normalisasi' => round($skorNormalisasi, 1),
                 'satuan' => $kpi->satuan,
-                'status' => $persentaseCapaian >= 100 ? 'Tercapai' : 'Belum Tercapai'
+                'tipe' => $kpiType,
+                'status' => $skorNormalisasi >= 100 ? 'Tercapai' : 'Belum Tercapai',
+                // Data tambahan untuk tooltip
+                'detail' => $this->getKpiDetail($kpi->kode, $realisasi, $kpi->target, $filterYear)
             ];
         }
 
@@ -603,8 +626,8 @@ class InQaController extends Controller
             if ($a['realisasi'] != $b['realisasi']) {
                 return $b['realisasi'] <=> $a['realisasi'];
             }
-            if ($a['persentase'] != $b['persentase']) {
-                return $b['persentase'] <=> $a['persentase'];
+            if ($a['skor_normalisasi'] != $b['skor_normalisasi']) {
+                return $b['skor_normalisasi'] <=> $a['skor_normalisasi'];
             }
             return $a['kode'] <=> $b['kode'];
         });
@@ -614,8 +637,8 @@ class InQaController extends Controller
             if ($a['realisasi'] != $b['realisasi']) {
                 return $b['realisasi'] <=> $a['realisasi']; // -10 comes before -50
             }
-            if ($a['persentase'] != $b['persentase']) {
-                return $b['persentase'] <=> $a['persentase'];
+            if ($a['skor_normalisasi'] != $b['skor_normalisasi']) {
+                return $b['skor_normalisasi'] <=> $a['skor_normalisasi'];
             }
             return $a['kode'] <=> $b['kode'];
         });
@@ -679,6 +702,177 @@ class InQaController extends Controller
         }
 
         return $finalOrder;
+    }
+
+    /**
+     * Determine KPI type based on code and characteristics
+     * 
+     * @param string $kpiCode
+     * @return string
+     */
+    private function determineKpiType($kpiCode)
+    {
+        // Growth-based KPIs (persentase pertumbuhan)
+        if (in_array($kpiCode, ['PGB.I.5.6', 'PGB.I.7.9'])) {
+            return 'growth';
+        }
+
+        // Binary/Achievement KPIs (ya/tidak, tercapai/tidak) - sekarang kosong
+        // IKT.I.5.i sekarang menggunakan standard dengan target 2.0
+        if (in_array($kpiCode, [])) {
+            return 'binary';
+        }
+
+        // Standard percentage KPIs (target dalam persen)
+        if (in_array($kpiCode, ['PGB.I.1.1', 'PGB.I.7.4', 'IKT.I.5.g', 'IKT.I.5.h', 'IKT.I.5.j'])) {
+            return 'percentage';
+        }
+
+        // Default: standard target-based (termasuk IKT.I.5.i)
+        return 'standard';
+    }
+
+    /**
+     * Calculate normalized score (0-100) based on KPI type
+     * 
+     * @param float $realisasi
+     * @param float $target
+     * @param string $tipe
+     * @param string $kpiCode
+     * @param string|int $filterYear
+     * @return float
+     */
+    private function calculateNormalizedScore($realisasi, $target, $tipe, $kpiCode, $filterYear)
+    {
+        $skor = 0;
+
+        switch ($tipe) {
+            case 'standard':
+                // Standard KPIs: Skor = (realisasi / target) * 100
+                if ($target > 0) {
+                    $skor = ($realisasi / $target) * 100;
+                }
+                break;
+
+            case 'percentage':
+                // Percentage KPIs: Skor = (realisasi / target) * 100
+                if ($target > 0) {
+                    $skor = ($realisasi / $target) * 100;
+                }
+                break;
+
+            case 'growth':
+                // Growth KPIs: Menggunakan batas bawah untuk menangani nilai negatif
+                if ($target > 0) {
+                    // Batas bawah untuk growth adalah -100% (penurunan maksimal)
+                    $batasBawah = -100;
+
+                    // Normalisasi dengan batas bawah
+                    if ($realisasi >= $target) {
+                        // Jika mencapai atau melebihi target = 100
+                        $skor = 100;
+                    } else {
+                        // Linear scaling dari batas bawah ke target
+                        // Range: -100% sampai target% --> 0 sampai 100 poin
+                        $range = $target - $batasBawah;
+                        $posisiRelatif = $realisasi - $batasBawah;
+                        $skor = ($posisiRelatif / $range) * 100;
+                    }
+                }
+                break;
+
+            case 'binary':
+                // Binary KPIs: 100 jika tercapai, 0 jika tidak
+                // IKT.I.5.i sekarang menggunakan standard, jadi tidak ada di sini
+                $skor = ($realisasi >= $target) ? 100 : 0;
+                break;
+
+            default:
+                // Fallback ke standard
+                if ($target > 0) {
+                    $skor = ($realisasi / $target) * 100;
+                }
+                break;
+        }
+
+        // WAJIB: Batasi skor dalam rentang 0-100
+        return max(0, min($skor, 100));
+    }
+
+    /**
+     * Get detailed information for KPI tooltip
+     * 
+     * @param string $kpiCode
+     * @param float $realisasi
+     * @param float $target
+     * @param string|int $filterYear
+     * @return array
+     */
+    private function getKpiDetail($kpiCode, $realisasi, $target, $filterYear)
+    {
+        $detail = [
+            'realisasi_format' => $this->formatKpiValue($realisasi, $kpiCode),
+            'target_format' => $this->formatKpiValue($target, $kpiCode),
+            'context' => ''
+        ];
+
+        // Add specific context based on KPI code
+        switch ($kpiCode) {
+            case 'PGB.I.5.6':
+            case 'PGB.I.7.9':
+                $detail['context'] = 'Pertumbuhan dibandingkan tahun sebelumnya';
+                break;
+            case 'IKT.I.5.i':
+                $hkiData = $this->calculateHkiPerProdiCount($filterYear);
+                $prodiTercapai = 0;
+                $statusProdi = [];
+
+                foreach ($hkiData['per_prodi'] as $prodi => $count) {
+                    if ($count >= 1) {
+                        $prodiTercapai++;
+                        $statusProdi[] = "{$prodi}: ✓ ({$count} HKI)";
+                    } else {
+                        $statusProdi[] = "{$prodi}: ✗ ({$count} HKI)";
+                    }
+                }
+
+                $detail['context'] = sprintf(
+                    '%d dari 2 prodi tercapai. %s',
+                    $prodiTercapai,
+                    implode(', ', $statusProdi)
+                );
+                break;
+        }
+
+        return $detail;
+    }
+
+    /**
+     * Format KPI value based on type
+     * 
+     * @param float $value
+     * @param string $kpiCode
+     * @return string
+     */
+    private function formatKpiValue($value, $kpiCode)
+    {
+        // Growth KPIs show as percentage
+        if (in_array($kpiCode, ['PGB.I.5.6', 'PGB.I.7.9'])) {
+            return number_format($value, 1) . '%';
+        }
+
+        // Percentage KPIs
+        if (in_array($kpiCode, ['PGB.I.1.1', 'PGB.I.7.4', 'IKT.I.5.g', 'IKT.I.5.h', 'IKT.I.5.j'])) {
+            return number_format($value, 1) . '%';
+        }
+
+        // HKI KPI: tampilkan sebagai prodi count
+        if ($kpiCode === 'IKT.I.5.i') {
+            return number_format($value, 0) . ' prodi';
+        }
+
+        // Default: integer format
+        return number_format($value, 0);
     }
 
     /**
@@ -760,8 +954,14 @@ class InQaController extends Controller
 
             case 'IKT.I.5.i': // Minimum Prodi memiliki 1 HKI PkM setiap tahun
                 $hkiData = $this->calculateHkiPerProdiCount($filterYear);
-                // Return total HKI atau bisa return berapa prodi yang sudah tercapai
-                return $hkiData['total']; // atau bisa return jumlah prodi yang tercapai
+                // Return jumlah prodi yang tercapai (0, 1, atau 2)
+                $prodiTercapai = 0;
+                foreach ($hkiData['per_prodi'] as $prodi => $count) {
+                    if ($count >= 1) {
+                        $prodiTercapai++;
+                    }
+                }
+                return $prodiTercapai;
 
 
             default:
@@ -1179,7 +1379,12 @@ class InQaController extends Controller
             // Status: minimal 1 HKI per prodi
             'informatika_tercapai' => $hkiInformatika >= 1,
             'sistem_informasi_tercapai' => $hkiSistemInformasi >= 1,
-            'kedua_prodi_tercapai' => ($hkiInformatika >= 1) && ($hkiSistemInformasi >= 1)
+            'kedua_prodi_tercapai' => ($hkiInformatika >= 1) && ($hkiSistemInformasi >= 1),
+            // Add per_prodi array for compatibility
+            'per_prodi' => [
+                'Informatika' => $hkiInformatika,
+                'Sistem Informasi' => $hkiSistemInformasi
+            ]
         ];
     }
 
@@ -1703,7 +1908,7 @@ class InQaController extends Controller
                 'count' => count($sparklineData)
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error in getSparklineData: ' . $e->getMessage());
+            Log::error('Error in getSparklineData: ' . $e->getMessage());
 
             // Return dummy data if there's an error (show last 5 years)
             $currentYear = date('Y');
