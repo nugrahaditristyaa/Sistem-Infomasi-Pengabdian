@@ -47,7 +47,7 @@
                                     <th>Nama</th>
                                     <th>NIDN</th>
                                     <th>Jabatan</th>
-                                    <th>Program Studi</th>
+                                    <th>Prodi</th>
                                     <th>Bidang Keahlian</th>
                                     <th>Email</th>
                                     <th class="aksi-column">Aksi</th>

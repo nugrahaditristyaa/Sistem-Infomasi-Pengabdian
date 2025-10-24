@@ -60,11 +60,12 @@
         </a>
     </li>
 
-    @if (auth('admin')->check() && strtolower(auth('admin')->user()->role) === 'staff inqa')
-        <!-- Nav Item - KPI (Staff InQA) -->
-        <li class="nav-item {{ request()->is('inqa/kpi*') || request()->is('inqa/kpi-monitoring') ? 'active' : '' }}">
+    @if (auth('admin')->check() && strtolower(auth('admin')->user()->role) === 'dekan')
+        <!-- Nav Item - KPI (Dekan) -->
+        <li
+            class="nav-item {{ request()->is('dekan/kpi*') || request()->is('dekan/kpi-monitoring') ? 'active' : '' }}">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseKPI"
-                aria-expanded="{{ request()->is('inqa/kpi*') || request()->is('inqa/kpi-monitoring') ? 'true' : 'false' }}"
+                aria-expanded="{{ request()->is('dekan/kpi*') || request()->is('dekan/kpi-monitoring') ? 'true' : 'false' }}"
                 aria-controls="collapseKPI">
                 <i class="fas fa-chart-line"></i>
                 <span>KPI</span>

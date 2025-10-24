@@ -11,28 +11,28 @@ class UserSeeder extends Seeder
     public function run()
     {
         User::firstOrCreate(
-            ['username' => 'admin'],
+            ['username' => 'staf_fti'],
             [
-                'password' => Hash::make('admin123'),
-                'name' => 'Admin Utama',
+                'password' => Hash::make('staf123'),
+                'name' => 'Staf FTI',
                 'role' => 'admin',
             ]
         );
 
         User::firstOrCreate(
-            ['username' => 'inqa'],
+            ['username' => 'dekan'],
             [
-                'password' => Hash::make('inqa123'),
-                'name' => 'Staff InQA',
-                'role' => 'Staff InQA',
+                'password' => Hash::make('dekan123'),
+                'name' => 'Dekan',
+                'role' => 'Dekan',
             ]
         );
 
         User::firstOrCreate(
             ['username' => 'kaprodi_ti'],
             [
-                'password' => Hash::make('kaprodi123'),
-                'name' => 'Kaprodi Teknik Informatika',
+                'password' => Hash::make('kaproditi123'),
+                'name' => 'Kaprodi Informatika',
                 'role' => 'Kaprodi TI',
             ]
         );
@@ -40,7 +40,7 @@ class UserSeeder extends Seeder
         User::firstOrCreate(
             ['username' => 'kaprodi_si'],
             [
-                'password' => Hash::make('kaprodi123'),
+                'password' => Hash::make('kaprodisi123'),
                 'name' => 'Kaprodi Sistem Informasi',
                 'role' => 'Kaprodi SI',
             ]

@@ -1,4 +1,4 @@
-@extends('inqa.layouts.main')
+@extends('dekan.layouts.main')
 
 @section('title', 'Rekap Pengabdian Dosen')
 
@@ -30,30 +30,6 @@
             color: #4e73df;
             border-bottom-width: 2px;
             background-color: #f8f9fc;
-        }
-
-        .badge-count {
-            background-color: #4e73df;
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.5rem;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .badge-prodi {
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .badge-prodi.informatika {
-            background-color: #1cc88a;
-            color: white;
-        }
-
-        .badge-prodi.sistem-informasi {
-            background-color: #36b9cc;
-            color: white;
         }
 
         .no-column {
@@ -176,6 +152,10 @@
                 <h1 class="h3 mb-0 text-gray-800">Rekap Pengabdian Dosen</h1>
                 <p class="mb-0 text-muted">Daftar dosen dan aktivitas pengabdian mereka</p>
             </div>
+            <a href="{{ route($routeBase . '.dosen.rekap.export', array_filter(['year' => request('year'), 'prodi' => request('prodi')])) }}"
+                class="btn btn-success btn-sm shadow-sm">
+                <i class="fas fa-file-excel mr-1"></i> Ekspor CSV
+            </a>
         </div>
 
         <!-- Alert Success -->
@@ -187,6 +167,55 @@
                 </button>
             </div>
         @endif
+
+        <!-- Filter Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-filter mr-2"></i>Filter Data
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{{ route($routeBase . '.dosen.rekap') }}" class="form-inline">
+                    <!-- Year Filter -->
+                    <div class="form-group mr-3 mb-2">
+                        <label for="yearFilter" class="mr-2">Tahun:</label>
+                        <select name="year" id="yearFilter" class="form-control form-control-sm"
+                            onchange="this.form.submit()">
+                            <option value="all" {{ $filterYear == 'all' ? 'selected' : '' }}>Semua Tahun</option>
+                            @foreach ($availableYears as $year)
+                                <option value="{{ $year }}" {{ $filterYear == $year ? 'selected' : '' }}>
+                                    {{ $year }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    @if ($userRole === 'Dekan')
+                        <!-- Prodi Filter (Only for Dekan) -->
+                        <div class="form-group mr-3 mb-2">
+                            <label for="prodiFilter" class="mr-2">Program Studi:</label>
+                            <select name="prodi" id="prodiFilter" class="form-control form-control-sm"
+                                onchange="this.form.submit()">
+                                <option value="all" {{ $filterProdi == 'all' ? 'selected' : '' }}>Semua Prodi</option>
+                                @foreach ($prodiOptions as $prodi)
+                                    <option value="{{ $prodi }}" {{ $filterProdi == $prodi ? 'selected' : '' }}>
+                                        {{ $prodi }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+
+                    <!-- Reset Button -->
+                    <div class="form-group mb-2">
+                        <a href="{{ route($routeBase . '.dosen.rekap') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-redo mr-1"></i> Reset
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <!-- Data Table Card -->
         <div class="card shadow">
@@ -204,49 +233,42 @@
                                 <tr>
                                     <th class="no-column">No</th>
                                     <th>Nama Dosen</th>
-                                    <th>NIK</th>
-                                    <th>Program Studi</th>
-                                    <th>Bidang Keahlian</th>
-                                    <th class="text-center">Jumlah Kegiatan</th>
-                                    <th class="aksi-column">Aksi</th>
+                                    @if ($userRole === 'Dekan')
+                                        <th>Program Studi</th>
+                                    @endif
+                                    <th class="text-center">Jumlah Kegiatan ▼</th>
+                                    <th>Judul Terlibat</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($dosenData as $index => $dosen)
-                                    <tr>
+                                    @php
+                                        $judulTerlibat = $dosen->pengabdian->pluck('judul')->unique()->implode('; ');
+                                    @endphp
+                                    <tr
+                                        onclick="onRowClick('{{ $dosen->nik }}', '{{ $dosen->nama }}', {{ (int) ($dosen->jumlah_pengabdian > 0) }})">
                                         <td class="no-column">{{ $dosenData->firstItem() + $index }}</td>
                                         <td>
                                             <div class="d-flex flex-column">
                                                 <span class="font-weight-bold text-primary">{{ $dosen->nama }}</span>
-                                                <small class="text-muted">
-                                                    <i class="fas fa-id-card mr-1"></i>NIDN: {{ $dosen->nidn ?? 'N/A' }}
-                                                </small>
+                                                @if ($userRole !== 'Dekan')
+                                                    <small class="text-muted">{{ $dosen->prodi }}</small>
+                                                @endif
                                             </div>
                                         </td>
-                                        <td>
-                                            <span class="badge badge-secondary">{{ $dosen->nik }}</span>
-                                        </td>
-                                        <td>
-                                            <span
-                                                class="badge badge-prodi {{ strtolower(str_replace(' ', '-', $dosen->prodi)) }}">
-                                                {{ $dosen->prodi }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="text-muted">{{ $dosen->bidang_keahlian ?? 'N/A' }}</span>
-                                        </td>
+                                        @if ($userRole === 'Dekan')
+                                            <td>
+                                                <span
+                                                    class="badge badge-prodi {{ strtolower(str_replace(' ', '-', $dosen->prodi)) }}">
+                                                    {{ $dosen->prodi }}
+                                                </span>
+                                            </td>
+                                        @endif
                                         <td class="text-center">
                                             <span class="badge badge-count">{{ $dosen->jumlah_pengabdian }}</span>
                                         </td>
-                                        <td class="aksi-column">
-                                            @if ($dosen->jumlah_pengabdian > 0)
-                                                <button class="btn detail-btn btn-sm"
-                                                    onclick="showDosenDetail('{{ $dosen->nik }}', '{{ $dosen->nama }}')">
-                                                    <i class="fas fa-eye mr-1"></i>Detail
-                                                </button>
-                                            @else
-                                                <span class="text-muted small">Tidak ada data</span>
-                                            @endif
+                                        <td>
+                                            <span class="text-muted">{{ $judulTerlibat ?: '-' }}</span>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -311,30 +333,38 @@
 
     <script>
         $(document).ready(function() {
+            // Determine column configuration based on user role
+            var isDekan = '{{ $userRole }}' === 'Dekan';
+
+            // Configure DataTable columns
+            var nonSortableColumns = isDekan ? [0, 4] : [0, 3]; // No and Judul columns
+            var centerAlignColumns = isDekan ? [0, 3] : [0, 2]; // No and Jumlah Kegiatan columns
+            var sortColumn = isDekan ? 3 : 2; // Jumlah Kegiatan column index
+
             // Initialize DataTable with custom settings
             $('#dosenTable').DataTable({
-                "paging": false, // We use Laravel pagination
-                "searching": true,
-                "ordering": true,
-                "info": false,
-                "fixedHeader": true,
-                "language": {
-                    "search": "Cari:",
-                    "searchPlaceholder": "Nama dosen, NIK, atau prodi...",
-                    "zeroRecords": "Tidak ada data yang sesuai",
-                    "emptyTable": "Tidak ada data tersedia"
+                paging: false, // We use Laravel pagination
+                searching: true,
+                ordering: true,
+                info: false,
+                fixedHeader: true,
+                language: {
+                    search: 'Cari:',
+                    searchPlaceholder: 'Nama dosen...',
+                    zeroRecords: 'Tidak ada data yang sesuai',
+                    emptyTable: 'Tidak ada data tersedia'
                 },
-                "columnDefs": [{
-                        "orderable": false,
-                        "targets": [0, 6]
-                    }, // No and Action columns not sortable
+                columnDefs: [{
+                        orderable: false,
+                        targets: nonSortableColumns
+                    },
                     {
-                        "className": "text-center",
-                        "targets": [0, 5, 6]
+                        className: 'text-center',
+                        targets: centerAlignColumns
                     }
                 ],
-                "order": [
-                    [5, "desc"]
+                order: [
+                    [sortColumn, 'desc']
                 ] // Sort by jumlah kegiatan descending
             });
 
@@ -351,7 +381,7 @@
 
             // Make AJAX request
             $.ajax({
-                url: '{{ route('inqa.dosen.detail', ':nik') }}'.replace(':nik', nik),
+                url: '{{ route($routeBase . '.dosen.detail', ':nik') }}'.replace(':nik', nik),
                 method: 'GET',
                 success: function(response) {
                     let html = '';
@@ -436,6 +466,13 @@
                     );
                 }
             });
+        }
+
+        // Row click handler to open modal when data exists
+        function onRowClick(nik, nama, hasData) {
+            if (hasData) {
+                showDosenDetail(nik, nama);
+            }
         }
     </script>
 @endpush

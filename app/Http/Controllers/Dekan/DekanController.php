@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\InQA;
+namespace App\Http\Controllers\Dekan;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kpi;
@@ -11,11 +11,12 @@ use App\Models\SumberDana;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
-class InQaController extends Controller
+class DekanController extends Controller
 {
     /**
-     * Display InQA Dashboard.
+     * Display Dekan Dashboard.
      *
      * @return \Illuminate\View\View
      */
@@ -23,7 +24,7 @@ class InQaController extends Controller
     {
         if (!$request->has('year')) {
             // Redirect to current year if 'year' parameter is missing
-            return redirect()->route('inqa.dashboard', ['year' => date('2024')]);
+            return redirect()->route('dekan.dashboard', ['year' => date('2024')]);
         }
 
         // Year filter logic (same as admin)
@@ -393,7 +394,7 @@ class InQaController extends Controller
         // Get data for treemap chart (jenis luaran)
         $jenisLuaranData = $this->getJenisLuaranTreemapData($filterYear);
 
-        return view('inqa.dashboard', compact(
+        return view('dekan.dashboard', compact(
             'totalKpi',
             'totalMonitoring',
             'avgAchievement',
@@ -417,7 +418,7 @@ class InQaController extends Controller
     public function index()
     {
         $kpi = Kpi::orderBy('kode')->paginate(10);
-        return view('inqa.kpi.index', compact('kpi'));
+        return view('dekan.kpi.index', compact('kpi'));
     }
 
     /**
@@ -427,7 +428,7 @@ class InQaController extends Controller
      */
     public function create()
     {
-        return view('inqa.kpi.create');
+        return view('dekan.kpi.create');
     }
 
     /**
@@ -463,7 +464,7 @@ class InQaController extends Controller
     public function show($id)
     {
         $kpi = Kpi::with(['monitoringKpi.pengabdian'])->findOrFail($id);
-        return view('inqa.kpi.show', compact('kpi'));
+        return view('dekan.kpi.show', compact('kpi'));
     }
 
     /**
@@ -475,7 +476,7 @@ class InQaController extends Controller
     public function edit($id)
     {
         $kpi = Kpi::findOrFail($id);
-        return view('inqa.kpi.edit', compact('kpi'));
+        return view('dekan.kpi.edit', compact('kpi'));
     }
 
     /**
@@ -536,7 +537,7 @@ class InQaController extends Controller
             ->orderBy('tahun', 'desc')
             ->paginate(15);
 
-        return view('inqa.kpi.monitoring', compact('kpi', 'pengabdian', 'monitoring'));
+        return view('dekan.kpi.monitoring', compact('kpi', 'pengabdian', 'monitoring'));
     }
 
     /**
@@ -1410,6 +1411,9 @@ class InQaController extends Controller
     {
         $filterYear = $request->get('year', date('Y'));
 
+        // Determine prodi filter for Kaprodi users (InQA sees all)
+        $prodiFilter = $this->getProdiFilterForCurrentUser();
+
         // Handle 'all' filter - show overall comparison between two most recent years
         if ($filterYear === 'all') {
             $currentYear = date('Y');
@@ -1423,6 +1427,15 @@ class InQaController extends Controller
         $currentYearData = DB::table('sumber_dana')
             ->join('pengabdian', 'sumber_dana.id_pengabdian', '=', 'pengabdian.id_pengabdian')
             ->whereYear('pengabdian.tanggal_pengabdian', $currentYear)
+            ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                $q->whereExists(function ($sub) use ($prodiFilter) {
+                    $sub->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', $prodiFilter);
+                });
+            })
             ->select('sumber_dana.nama_sumber', DB::raw('SUM(sumber_dana.jumlah_dana) as total_dana'))
             ->groupBy('sumber_dana.nama_sumber')
             ->get()
@@ -1432,6 +1445,15 @@ class InQaController extends Controller
         $previousYearData = DB::table('sumber_dana')
             ->join('pengabdian', 'sumber_dana.id_pengabdian', '=', 'pengabdian.id_pengabdian')
             ->whereYear('pengabdian.tanggal_pengabdian', $previousYear)
+            ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                $q->whereExists(function ($sub) use ($prodiFilter) {
+                    $sub->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', $prodiFilter);
+                });
+            })
             ->select('sumber_dana.nama_sumber', DB::raw('SUM(sumber_dana.jumlah_dana) as total_dana'))
             ->groupBy('sumber_dana.nama_sumber')
             ->get()
@@ -1574,6 +1596,7 @@ class InQaController extends Controller
         // Year filter logic
         $currentYear = date('Y');
         $filterYear = $request->get('year', $currentYear);
+        $filterProdi = $request->get('prodi', 'all');
 
         // Get available years from pengabdian data
         $availableYears = Pengabdian::selectRaw('YEAR(tanggal_pengabdian) as year')
@@ -1594,9 +1617,9 @@ class InQaController extends Controller
                 }
             }]);
 
-        // Apply filters if needed
-        if ($request->has('prodi') && $request->prodi !== 'all') {
-            $dosenQuery->where('prodi', $request->prodi);
+        // Apply prodi filter
+        if ($filterProdi !== 'all') {
+            $dosenQuery->where('prodi', $filterProdi);
         }
 
         $dosenData = $dosenQuery->orderBy('jumlah_pengabdian', 'desc')
@@ -1608,12 +1631,89 @@ class InQaController extends Controller
             ->orderBy('prodi')
             ->pluck('prodi');
 
-        return view('inqa.dosen.rekap', compact(
+        $routeBase = 'dekan';
+        $userRole = auth('admin')->user()->role ?? 'Dekan';
+
+        return view('dekan.dosen.rekap', compact(
             'dosenData',
             'filterYear',
+            'filterProdi',
             'availableYears',
-            'prodiOptions'
+            'prodiOptions',
+            'routeBase',
+            'userRole'
         ));
+    }
+
+    /**
+     * Export dosen rekap to CSV
+     */
+    public function exportDosenRekap(Request $request)
+    {
+        $filterYear = $request->get('year', date('Y'));
+        $filterProdi = $request->get('prodi', 'all');
+
+        // Get dosen data with pengabdian count and details
+        $dosenQuery = Dosen::with(['pengabdian' => function ($query) use ($filterYear) {
+            if ($filterYear !== 'all') {
+                $query->whereYear('tanggal_pengabdian', $filterYear);
+            }
+            $query->orderBy('tanggal_pengabdian', 'desc');
+        }])
+            ->withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
+                if ($filterYear !== 'all') {
+                    $query->whereYear('tanggal_pengabdian', $filterYear);
+                }
+            }]);
+
+        // Apply prodi filter
+        if ($filterProdi !== 'all') {
+            $dosenQuery->where('prodi', $filterProdi);
+        }
+
+        $dosenData = $dosenQuery->orderBy('jumlah_pengabdian', 'desc')->get();
+
+        // Generate CSV
+        $filename = 'rekap_pengabdian_dosen_' . ($filterYear !== 'all' ? $filterYear : 'semua_tahun') . '_' . date('YmdHis') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function () use ($dosenData) {
+            $file = fopen('php://output', 'w');
+
+            // UTF-8 BOM for Excel compatibility
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // Header row
+            fputcsv($file, ['No', 'Nama Dosen', 'NIK', 'NIDN', 'Program Studi', 'Bidang Keahlian', 'Jumlah Kegiatan', 'Judul Terlibat']);
+
+            // Data rows
+            $no = 1;
+            foreach ($dosenData as $dosen) {
+                $judulTerlibat = $dosen->pengabdian->pluck('judul')->unique()->implode('; ');
+
+                fputcsv($file, [
+                    $no++,
+                    $dosen->nama,
+                    $dosen->nik,
+                    $dosen->nidn ?? '-',
+                    $dosen->prodi,
+                    $dosen->bidang_keahlian ?? '-',
+                    $dosen->jumlah_pengabdian,
+                    $judulTerlibat ?: '-'
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     /**
@@ -1676,6 +1776,18 @@ class InQaController extends Controller
     {
         $query = Pengabdian::with(['sumberDana', 'pengabdianDosen.dosen']);
 
+        // Apply prodi filter for Kaprodi users
+        $prodiFilter = $this->getProdiFilterForCurrentUser();
+        if ($prodiFilter) {
+            $query->whereExists(function ($sub) use ($prodiFilter) {
+                $sub->select(DB::raw(1))
+                    ->from('pengabdian_dosen')
+                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                    ->where('dosen.prodi', $prodiFilter);
+            });
+        }
+
         if ($filterYear !== 'all') {
             $query->whereYear('tanggal_pengabdian', $filterYear);
         }
@@ -1735,11 +1847,16 @@ class InQaController extends Controller
      */
     private function getDosenDetail($filterYear)
     {
-        $query = Dosen::withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
-            if ($filterYear !== 'all') {
-                $query->whereYear('tanggal_pengabdian', $filterYear);
-            }
-        }]);
+        $prodiFilter = $this->getProdiFilterForCurrentUser();
+
+        $query = Dosen::when($prodiFilter, function ($q) use ($prodiFilter) {
+            $q->where('prodi', $prodiFilter);
+        })
+            ->withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
+                if ($filterYear !== 'all') {
+                    $query->whereYear('tanggal_pengabdian', $filterYear);
+                }
+            }]);
 
         // Only include dosen who have pengabdian activities in the specified year
         $query->whereHas('pengabdian', function ($q) use ($filterYear) {
@@ -1782,6 +1899,17 @@ class InQaController extends Controller
     {
         $query = Pengabdian::with(['sumberDana', 'pengabdianDosen.dosen', 'mahasiswa'])
             ->whereHas('mahasiswa');
+
+        $prodiFilter = $this->getProdiFilterForCurrentUser();
+        if ($prodiFilter) {
+            $query->whereExists(function ($sub) use ($prodiFilter) {
+                $sub->select(DB::raw(1))
+                    ->from('pengabdian_dosen')
+                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                    ->where('dosen.prodi', $prodiFilter);
+            });
+        }
 
         if ($filterYear !== 'all') {
             $query->whereYear('tanggal_pengabdian', $filterYear);
@@ -1860,23 +1988,57 @@ class InQaController extends Controller
 
             $sparklineData = [];
 
+            // Determine prodi filter for Kaprodi users
+            $prodiFilter = $this->getProdiFilterForCurrentUser();
+
             foreach ($availableYears as $year) {
                 // Total pengabdian per year
                 $pengabdianCount = Pengabdian::whereYear('tanggal_pengabdian', $year)
+                    ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                        $q->whereExists(function ($sub) use ($prodiFilter) {
+                            $sub->select(DB::raw(1))
+                                ->from('pengabdian_dosen')
+                                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                                ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                                ->where('dosen.prodi', $prodiFilter);
+                        });
+                    })
                     ->count();
 
                 // Unique dosen per year
                 $dosenCount = DB::table('pengabdian_dosen')
                     ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
                     ->whereYear('pengabdian.tanggal_pengabdian', $year)
+                    ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                        $q->where('dosen.prodi', $prodiFilter);
+                    })
                     ->distinct('pengabdian_dosen.nik')
                     ->count('pengabdian_dosen.nik');
 
                 // Percentage of pengabdian with mahasiswa per year
                 $totalPengabdianYear = Pengabdian::whereYear('tanggal_pengabdian', $year)
+                    ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                        $q->whereExists(function ($sub) use ($prodiFilter) {
+                            $sub->select(DB::raw(1))
+                                ->from('pengabdian_dosen')
+                                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                                ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                                ->where('dosen.prodi', $prodiFilter);
+                        });
+                    })
                     ->count();
 
                 $pengabdianWithMahasiswaYear = Pengabdian::whereYear('tanggal_pengabdian', $year)
+                    ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                        $q->whereExists(function ($sub) use ($prodiFilter) {
+                            $sub->select(DB::raw(1))
+                                ->from('pengabdian_dosen')
+                                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                                ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                                ->where('dosen.prodi', $prodiFilter);
+                        });
+                    })
                     ->whereHas('mahasiswa')
                     ->count();
 
@@ -1925,6 +2087,23 @@ class InQaController extends Controller
                 'count' => 5,
                 'message' => 'Error loading sparkline data'
             ]);
+        }
+    }
+
+    /**
+     * Determine prodi filter for current authenticated admin user (Kaprodi TI/SI)
+     * Returns 'Informatika' | 'Sistem Informasi' | null
+     */
+    private function getProdiFilterForCurrentUser(): ?string
+    {
+        try {
+            $user = Auth::guard('admin')->user();
+            if (!$user) return null;
+            if ($user->role === 'Kaprodi TI') return 'Informatika';
+            if ($user->role === 'Kaprodi SI') return 'Sistem Informasi';
+            return null;
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 }

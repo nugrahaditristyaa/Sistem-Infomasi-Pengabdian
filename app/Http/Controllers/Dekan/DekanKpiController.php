@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Inqa;
+namespace App\Http\Controllers\Dekan;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kpi;
@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class InqaKpiController extends Controller
+class DekanKpiController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -20,7 +20,7 @@ class InqaKpiController extends Controller
         try {
             $kpis = Kpi::orderBy('kode', 'asc')->get();
 
-            return view('inqa.kpi.index', compact('kpis'));
+            return view('dekan.kpi.index', compact('kpis'));
         } catch (\Exception $e) {
             Log::error('Error in InqaKpiController@index: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data KPI.');
@@ -55,7 +55,7 @@ class InqaKpiController extends Controller
         try {
             $kpi = Kpi::findOrFail($id);
 
-            return view('inqa.kpi.show', compact('kpi'));
+            return view('dekan.kpi.show', compact('kpi'));
         } catch (\Exception $e) {
             Log::error('Error in InqaKpiController@show: ' . $e->getMessage());
             return redirect()->route('inqa.kpi.index')->with('error', 'KPI tidak ditemukan.');
@@ -70,7 +70,7 @@ class InqaKpiController extends Controller
         try {
             $kpi = Kpi::findOrFail($id);
 
-            return view('inqa.kpi.edit', compact('kpi'));
+            return view('dekan.kpi.edit', compact('kpi'));
         } catch (\Exception $e) {
             Log::error('Error in InqaKpiController@edit: ' . $e->getMessage());
             return redirect()->route('inqa.kpi.index')->with('error', 'KPI tidak ditemukan.');

@@ -59,25 +59,29 @@ Route::middleware(['auth:admin'])->group(function () {
 //                   AKHIR PERBAIKAN
 // ==========================================================
 
-// Shared API Routes (accessible by InQA, Kaprodi TI, Kaprodi SI)
+// Shared API Routes (accessible by Dekan, Kaprodi TI, Kaprodi SI)
 Route::middleware(['auth:admin'])->group(function () {
-    Route::prefix('inqa/api')->name('inqa.api.')->group(function () {
-        Route::get('/sparkline-data', [App\Http\Controllers\InQA\InQaController::class, 'getSparklineData'])->name('sparkline-data');
-        Route::get('/funding-sources', [App\Http\Controllers\InQA\InQaController::class, 'getFundingSourcesData'])->name('funding-sources');
-        Route::get('/statistics-detail', [App\Http\Controllers\InQA\InQaController::class, 'getStatisticsDetail'])->name('statistics-detail');
+    Route::prefix('dekan/api')->name('dekan.api.')->group(function () {
+        Route::get('/sparkline-data', [App\Http\Controllers\Dekan\DekanController::class, 'getSparklineData'])->name('sparkline-data');
+        Route::get('/funding-sources', [App\Http\Controllers\Dekan\DekanController::class, 'getFundingSourcesData'])->name('funding-sources');
+        Route::get('/statistics-detail', [App\Http\Controllers\Dekan\DekanController::class, 'getStatisticsDetail'])->name('statistics-detail');
     });
 });
 
-// InQA Routes
-Route::middleware(['auth:admin', 'role:Staff InQA'])->group(function () {
-    Route::prefix('inqa')->name('inqa.')->group(function () {
-        Route::get('/dashboard', [App\Http\Controllers\InQA\InQaController::class, 'dashboard'])->name('dashboard');
-        Route::get('/pengabdian', [App\Http\Controllers\InQA\InQaController::class, 'pengabdian'])->name('pengabdian');
-        Route::get('/dosen', [App\Http\Controllers\InQA\InQaController::class, 'dosen'])->name('dosen');
-        Route::get('/mahasiswa', [App\Http\Controllers\InQA\InQaController::class, 'mahasiswa'])->name('mahasiswa');
-        Route::get('/monitoring-kpi', [App\Http\Controllers\InQA\InQaController::class, 'monitoringKpi'])->name('monitoring-kpi');
-        Route::get('/monitoring-kpi/{id}/edit', [App\Http\Controllers\InQA\InQaController::class, 'editMonitoringKpi'])->name('monitoring-kpi.edit');
-        Route::put('/monitoring-kpi/{id}', [App\Http\Controllers\InQA\InQaController::class, 'updateMonitoringKpi'])->name('monitoring-kpi.update');
+// Dekan Routes
+Route::middleware(['auth:admin', 'role:Dekan'])->group(function () {
+    Route::prefix('dekan')->name('dekan.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\Dekan\DekanController::class, 'dashboard'])->name('dashboard');
+        Route::get('/pengabdian', [App\Http\Controllers\Dekan\DekanController::class, 'pengabdian'])->name('pengabdian');
+        Route::get('/dosen', [App\Http\Controllers\Dekan\DekanController::class, 'dosen'])->name('dosen');
+        Route::get('/dosen/rekap', [App\Http\Controllers\Dekan\DekanController::class, 'dosenRekap'])->name('dosen.rekap');
+        Route::get('/dosen/rekap/export', [App\Http\Controllers\Dekan\DekanController::class, 'exportDosenRekap'])->name('dosen.rekap.export');
+        Route::get('/dosen/{nik}', [App\Http\Controllers\Dekan\DekanController::class, 'dosenDetail'])->name('dosen.detail');
+        Route::get('/mahasiswa', [App\Http\Controllers\Dekan\DekanController::class, 'mahasiswa'])->name('mahasiswa');
+
+        // KPI Routes
+        Route::get('/kpi', [App\Http\Controllers\Dekan\DekanKpiController::class, 'index'])->name('kpi.index');
+        Route::put('/kpi/update/{kode}', [App\Http\Controllers\Dekan\DekanKpiController::class, 'updateByCode'])->name('kpi.updateByCode');
     });
 });
 
@@ -87,7 +91,12 @@ Route::middleware(['auth:admin', 'role:Kaprodi TI'])->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'dashboardTI'])->name('dashboard');
         Route::get('/pengabdian', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'pengabdianList'])->name('pengabdian');
 
-        // API Routes (menggunakan namespace inqa.api untuk compatibility dengan view)
+        // Rekap Dosen
+        Route::get('/dosen/rekap', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'dosenRekapTI'])->name('dosen.rekap');
+        Route::get('/dosen/rekap/export', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'exportDosenRekapTI'])->name('dosen.rekap.export');
+        Route::get('/dosen/{nik}', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'dosenDetail'])->name('dosen.detail');
+
+        // API Routes (menggunakan namespace dekan.api untuk compatibility dengan view)
     });
 });
 
@@ -97,6 +106,11 @@ Route::middleware(['auth:admin', 'role:Kaprodi SI'])->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'dashboardSI'])->name('dashboard');
         Route::get('/pengabdian', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'pengabdianList'])->name('pengabdian');
 
-        // API Routes (menggunakan namespace inqa.api untuk compatibility dengan view)
+        // Rekap Dosen
+        Route::get('/dosen/rekap', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'dosenRekapSI'])->name('dosen.rekap');
+        Route::get('/dosen/rekap/export', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'exportDosenRekapSI'])->name('dosen.rekap.export');
+        Route::get('/dosen/{nik}', [App\Http\Controllers\Kaprodi\KaprodiController::class, 'dosenDetail'])->name('dosen.detail');
+
+        // API Routes (menggunakan namespace dekan.api untuk compatibility dengan view)
     });
 });

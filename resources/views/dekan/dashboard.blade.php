@@ -1,6 +1,6 @@
-@extends('inqa.layouts.main')
+@extends('dekan.layouts.main')
 
-@section('title', 'Dashboard InQA')
+@section('title', 'Dashboard Dekan')
 
 @push('styles')
     <!-- DataTables CSS -->
@@ -492,8 +492,13 @@
         }
 
         .modal-header {
-            background: linear-gradient(135deg, #4e73df 0%, #36b9cc 100%);
-            border-bottom: none;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 1rem 1rem;
+            border-bottom: 1px solid #e3e6f0;
+            border-top-left-radius: calc(0.3rem - 1px);
+            border-top-right-radius: calc(0.3rem - 1px);
         }
 
         .table th {
@@ -649,21 +654,7 @@
             }
         }
 
-        /* Footer styling - match default SB Admin 2 height */
-        footer.sticky-footer {
-            background-color: #fff !important;
-            padding: 1.25rem 0 !important;
-            border-top: 1px solid #e3e6f0 !important;
-        }
-
-        footer.sticky-footer .container {
-            padding: 0 1.5rem !important;
-        }
-
-        footer.sticky-footer .copyright {
-            font-size: 0.8rem !important;
-            color: #5a5c69 !important;
-        }
+        /* Footer styling moved to layout (inqa/layouts/main.blade.php) */
 
         /* Fix overflow */
         html,
@@ -685,6 +676,22 @@
         #content {
             flex-grow: 1;
         }
+
+        /* Word Cloud Styles */
+        #wordCloudContainer {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            border-radius: 8px;
+        }
+
+        .wordcloud-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #6c757d;
+        }
     </style>
 @endpush
 
@@ -695,7 +702,20 @@
             <h1 class="h3 mb-0 text-gray-800">Dashboard Pengabdian</h1>
             <div class="d-flex align-items-center">
                 <!-- Year Filter -->
-                <form method="GET" action="{{ route('inqa.dashboard') }}" class="mr-3">
+                @php
+                    // Tentukan route berdasarkan role user
+                    $user = auth('admin')->user();
+                    $dashboardRoute = 'dekan.dashboard'; // default
+
+                    if ($user) {
+                        if ($user->role === 'Kaprodi TI') {
+                            $dashboardRoute = 'kaprodi.ti.dashboard';
+                        } elseif ($user->role === 'Kaprodi SI') {
+                            $dashboardRoute = 'kaprodi.si.dashboard';
+                        }
+                    }
+                @endphp
+                <form method="GET" action="{{ route($dashboardRoute) }}" class="mr-3">
                     <select name="year" class="form-control form-control-sm" onchange="this.form.submit()">
                         <option value="all" {{ $filterYear == 'all' ? 'selected' : '' }}>Semua Tahun</option>
                         @foreach ($availableYears as $year)
@@ -937,7 +957,7 @@
                 <div class="card shadow modern-card h-100">
                     <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                         <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            <i class="fas fa-chart-radar mr-2"></i>Capaian KPI Komparatif
+                            <i class="fas fa-chart-radar mr-2"></i>Capaian KPI
                             @if ($filterYear !== 'all')
                                 <span class="text-primary">({{ $filterYear }})</span>
                             @else
@@ -999,13 +1019,31 @@
                         <div class="row align-items-center">
                             <div class="col-md-6">
                                 <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    <i class="fas fa-chart-bar mr-2"></i>Rekap Pengabdian per Dosen
+                                    Rekap Pengabdian per Dosen
                                     <span class="text-primary">{{ $allDosenCount }} Dosen
                                         @if ($filterYear !== 'all')
                                             ({{ $filterYear }})
                                         @endif
                                     </span>
                                 </h6>
+                                @php
+                                    $totalLuaran = is_array($jenisLuaranData ?? null)
+                                        ? array_sum(array_column($jenisLuaranData, 'value'))
+                                        : 0;
+                                    $totalJudulSI =
+                                        isset($judulPengabdianSI) && is_array($judulPengabdianSI)
+                                            ? count($judulPengabdianSI)
+                                            : 0;
+                                @endphp
+                                <div class="mt-1">
+                                    <span class="badge badge-primary mr-1">Dosen: {{ $allDosenCount }}</span>
+                                    @if (($totalLuaran ?? 0) > 0)
+                                        <span class="badge badge-info mr-1">Luaran: {{ $totalLuaran }}</span>
+                                    @endif
+                                    @if (isset($prodiFilter) && $prodiFilter === 'Sistem Informasi' && ($totalJudulSI ?? 0) > 0)
+                                        <span class="badge badge-secondary">Judul: {{ $totalJudulSI }}</span>
+                                    @endif
+                                </div>
                             </div>
                             <div class="col-md-6 text-right">
                                 <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-secondary"
@@ -1066,6 +1104,43 @@
                 </div>
             </div>
         </div>
+
+        @if (isset($prodiFilter) && $prodiFilter === 'Sistem Informasi')
+            <!-- Word Cloud Section (Only for Kaprodi SI) -->
+            <div class="row">
+                <div class="col-lg-12 mb-4">
+                    <div class="card shadow modern-card">
+                        <div class="card-header py-3">
+                            <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Word Cloud - Pengabdian Sistem Informasi
+                                @if ($filterYear !== 'all')
+                                    <span class="text-primary">({{ $filterYear }})</span>
+                                @endif
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            @if (count($judulPengabdianSI) > 0)
+                                <div id="wordCloudContainer"></div>
+                                <div class="mt-3 text-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <strong>Total:</strong> {{ count($judulPengabdianSI) }} judul pengabdian
+                                    </small>
+                                </div>
+                            @else
+                                <div class="wordcloud-empty">
+                                    <div class="text-center">
+                                        <i class="fas fa-cloud fa-3x mb-3"></i>
+                                        <div class="h6">Belum ada data judul pengabdian</div>
+                                        <p class="text-muted small">Word cloud akan muncul di sini ketika ada data</p>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
 
     </div>
@@ -1143,7 +1218,7 @@
             // === SPARKLINE CHARTS ===
             function loadSparklineCharts() {
                 // Load sparkline data from API
-                fetch('{{ route('inqa.api.sparkline-data') }}')
+                fetch('{{ route('dekan.api.sparkline-data') }}')
                     .then(response => response.json())
                     .then(data => {
                         console.log('Sparkline data received:', data); // Debug log
@@ -1695,7 +1770,7 @@
             function loadFundingSourcesChart() {
                 // Get current year from the filter
                 const currentYear = '{{ $filterYear }}';
-                const url = '{{ route('inqa.api.funding-sources') }}' + '?year=' + currentYear;
+                const url = '{{ route('dekan.api.funding-sources') }}' + '?year=' + currentYear;
 
                 fetch(url)
                     .then(response => response.json())
@@ -2188,17 +2263,204 @@
                     .style("opacity", 1);
             }
 
+            // === WORD CLOUD ===
+            function createWordCloud() {
+                @if (isset($prodiFilter) && $prodiFilter === 'Sistem Informasi')
+                    const judulPengabdian = @json($judulPengabdianSI);
+
+                    if (!judulPengabdian || judulPengabdian.length === 0) {
+                        return;
+                    }
+
+                    // Clear previous content
+                    d3.select("#wordCloudContainer").selectAll("*").remove();
+
+                    // Combine all titles into one text
+                    const allText = judulPengabdian.join(' ');
+
+                    // Common words to exclude (stopwords)
+                    const stopWords = new Set([
+                        'dan', 'atau', 'yang', 'di', 'ke', 'dari', 'pada', 'untuk', 'dengan',
+                        'adalah', 'sebagai', 'dalam', 'oleh', 'akan', 'dapat', 'telah', 'ini',
+                        'itu', 'ia', 'mereka', 'kami', 'kita', 'anda', 'saya', 'yang', 'ada',
+                        'tidak', 'juga', 'lebih', 'bisa', 'sudah', 'masih', 'harus', 'antara',
+                        'hingga', 'melalui', 'terhadap', 'atas', 'bagi', 'tersebut', 'suatu',
+                        'the', 'a', 'an', 'of', 'to', 'in', 'for', 'on', 'with', 'as', 'by',
+                        'at', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being'
+                    ]);
+
+                    // Process text to extract word frequencies
+                    const words = allText
+                        .toLowerCase()
+                        .replace(/[^\w\s]/g, ' ') // Remove punctuation
+                        .split(/\s+/)
+                        .filter(word => word.length > 3 && !stopWords.has(word)); // Filter short words and stopwords
+
+                    // Count word frequencies
+                    const wordFreq = {};
+                    words.forEach(word => {
+                        wordFreq[word] = (wordFreq[word] || 0) + 1;
+                    });
+
+                    // Convert to array and sort by frequency
+                    const wordData = Object.entries(wordFreq)
+                        .map(([word, freq]) => ({
+                            word,
+                            freq
+                        }))
+                        .sort((a, b) => b.freq - a.freq)
+                        .slice(0, 50); // Top 50 words
+
+                    if (wordData.length === 0) {
+                        return;
+                    }
+
+                    // Set dimensions
+                    const container = document.getElementById('wordCloudContainer');
+                    const width = container.clientWidth;
+                    const height = 400;
+
+                    // Configuration to control positions and layout
+                    const cfg = {
+                        centerX: 0.5, // Titik pusat horizontal (tetap 0.5)
+                        centerY: 0.5, // Titik pusat vertikal (tetap 0.5)
+
+                        // Perkecil nilai sebaran (spread) untuk lebih compact
+                        spreadX: 0.2, // Naikkan sedikit untuk memberi ruang
+                        spreadY: 0.2, // Naikkan sedikit untuk memberi ruang
+
+                        padding: 15, // Naikkan padding untuk memberi ruang
+                        collisionPad: 8, // Naikkan untuk mencegah tumpang tindih
+
+                        // Sudut (angles) tetap sama
+                        angles: [0, 0, 0, 90]
+                    };
+
+                    // Create SVG
+                    const svg = d3.select("#wordCloudContainer")
+                        .append("svg")
+                        .attr("width", width)
+                        .attr("height", height);
+                    const g = svg.append("g");
+
+                    // Color scale
+                    const colorScale = d3.scaleOrdinal([
+                        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e',
+                        '#e74a3b', '#858796', '#5a5c69', '#2e59d9'
+                    ]);
+
+                    // Font size scale based on frequency
+                    const maxFreq = d3.max(wordData, d => d.freq);
+                    const minFreq = d3.min(wordData, d => d.freq);
+                    const fontScale = d3.scaleLinear()
+                        .domain([minFreq, maxFreq])
+                        .range([14, 60]);
+
+                    // Simple word cloud layout using force simulation (configurable)
+                    // Kata dengan frekuensi tinggi diposisikan lebih dekat ke center
+                    const nodes = wordData.map((d, i) => {
+                        // Hitung faktor jarak berdasarkan ranking (kata teratas lebih dekat ke center)
+                        const rankFactor = i / wordData.length; // 0 untuk kata pertama, mendekati 1 untuk kata terakhir
+                        const spreadMultiplier = 0.3 + (rankFactor * 1.5); // Kata teratas: 0.3x, kata terbawah: 1.8x
+
+                        return {
+                            word: d.word,
+                            freq: d.freq,
+                            fontSize: fontScale(d.freq),
+                            x: width * cfg.centerX + (Math.random() - 0.5) * width * cfg.spreadX * spreadMultiplier,
+                            y: height * cfg.centerY + (Math.random() - 0.5) * height * cfg.spreadY * spreadMultiplier,
+                            color: colorScale(i),
+                            rotate: cfg.angles[Math.floor(Math.random() * cfg.angles.length)],
+                            rankFactor: rankFactor // Simpan untuk digunakan di force simulation
+                        };
+                    });
+
+                    // Create text elements
+                    const text = g.selectAll("text")
+                        .data(nodes)
+                        .enter().append("text")
+                        .attr("font-family", "Nunito, sans-serif")
+                        .attr("font-weight", "bold")
+                        .attr("text-anchor", "middle")
+                        .attr("fill", d => d.color)
+                        .attr("font-size", d => d.fontSize + "px")
+                        .attr("x", 0)
+                        .attr("y", 0)
+                        .attr("transform", d => `translate(${d.x},${d.y}) rotate(${d.rotate})`)
+                        .text(d => d.word)
+                        .style("cursor", "pointer")
+                        .style("opacity", 0)
+                        .on("mouseover", function(event, d) {
+                            d3.select(this)
+                                .transition()
+                                .duration(200)
+                                .attr("font-size", (d.fontSize * 1.2) + "px")
+                                .style("opacity", 1);
+                        })
+                        .on("mouseout", function(event, d) {
+                            d3.select(this)
+                                .transition()
+                                .duration(200)
+                                .attr("font-size", d.fontSize + "px")
+                                .style("opacity", 0.9);
+                        });
+
+                    // Apply force simulation to prevent overlaps - DIPERBARUI
+                    const simulation = d3.forceSimulation(nodes)
+                        .force("charge", d3.forceManyBody().strength(-50)) // Naikkan tolakan untuk mencegah tumpang tindih
+                        .force("center", d3.forceCenter(width * cfg.centerX, height * cfg.centerY).strength(
+                            0.8)) // Kurangi tarikan pusat
+                        .force("collision", d3.forceCollide().radius(d => {
+                            // Hitung radius berdasarkan ukuran teks yang sebenarnya
+                            const textWidth = d.word.length * d.fontSize * 0.6;
+                            const textHeight = d.fontSize;
+                            // Gunakan dimensi yang lebih besar untuk collision
+                            return Math.max(textWidth, textHeight) / 2 + cfg.collisionPad;
+                        }).strength(1).iterations(3)) // Tambah iterations untuk collision lebih akurat
+                        .force("x", d3.forceX(width * cfg.centerX).strength(d => {
+                            // Kata dengan frekuensi tinggi (rankFactor kecil) lebih kuat ditarik ke center
+                            return 0.15 + (1 - d.rankFactor) * 0.2; // 0.35 untuk kata teratas, 0.15 untuk kata terbawah
+                        }))
+                        .force("y", d3.forceY(height * cfg.centerY).strength(d => {
+                            // Kata dengan frekuensi tinggi (rankFactor kecil) lebih kuat ditarik ke center
+                            return 0.15 + (1 - d.rankFactor) * 0.2; // 0.35 untuk kata teratas, 0.15 untuk kata terbawah
+                        }))
+                        .velocityDecay(0.4) // Tambah decay untuk stabilisasi lebih cepat
+                        .on("tick", () => {
+                            // Clamp positions to keep words inside padded area
+                            nodes.forEach(d => {
+                                d.x = Math.max(cfg.padding + d.fontSize, Math.min(width - cfg.padding - d.fontSize,
+                                    d.x));
+                                d.y = Math.max(cfg.padding + d.fontSize, Math.min(height - cfg.padding - d.fontSize,
+                                    d.y));
+                            });
+                            text.attr("transform", d => `translate(${d.x},${d.y}) rotate(${d.rotate})`);
+                        });
+
+                    // Fade in animation
+                    text.transition()
+                        .delay((d, i) => i * 20)
+                        .duration(800)
+                        .style("opacity", 0.9);
+
+                    // Stop simulation after stabilization
+                    setTimeout(() => simulation.stop(), 5000); // Perpanjang waktu simulasi
+                @endif
+            }
+
             // Load the chart when document is ready
             $(document).ready(function() {
                 loadFundingSourcesChart();
                 createJenisLuaranChart();
+                createWordCloud();
 
-                // Handle window resize for treemap
+                // Handle window resize for treemap and word cloud
                 let resizeTimeout;
                 $(window).resize(function() {
                     clearTimeout(resizeTimeout);
                     resizeTimeout = setTimeout(function() {
                         createJenisLuaranChart(); // Recreate treemap on resize
+                        createWordCloud(); // Recreate word cloud on resize
                     }, 250);
                 });
             });
@@ -2232,7 +2494,7 @@
 
                 // Make AJAX request to get detailed data
                 $.ajax({
-                    url: '{{ route('inqa.api.statistics-detail') }}',
+                    url: '{{ route('dekan.api.statistics-detail') }}',
                     method: 'GET',
                     data: {
                         type: type,

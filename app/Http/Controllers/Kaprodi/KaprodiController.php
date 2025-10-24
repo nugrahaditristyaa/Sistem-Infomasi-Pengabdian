@@ -40,8 +40,27 @@ class KaprodiController extends Controller
     private function dashboard(Request $request, $prodiFilter)
     {
         if (!$request->has('year')) {
+            // Gunakan tahun dengan data pengabdian terbanyak sebagai default
+            $baseProdiFilter = function ($query) use ($prodiFilter) {
+                $query->whereExists(function ($subQuery) use ($prodiFilter) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', $prodiFilter);
+                });
+            };
+
+            $mostRecentYear = Pengabdian::where($baseProdiFilter)
+                ->selectRaw('YEAR(tanggal_pengabdian) as year, COUNT(*) as count')
+                ->groupBy('year')
+                ->orderBy('count', 'desc')
+                ->orderBy('year', 'desc')
+                ->value('year');
+
+            $defaultYear = $mostRecentYear ?? date('Y');
             $route = $prodiFilter === 'Informatika' ? 'kaprodi.ti.dashboard' : 'kaprodi.si.dashboard';
-            return redirect()->route($route, ['year' => date('Y')]);
+            return redirect()->route($route, ['year' => $defaultYear]);
         }
 
         $currentYear = date('Y');
@@ -481,14 +500,32 @@ class KaprodiController extends Controller
         $namaDosen = $dosenCounts->pluck('nama');
         $jumlahPengabdianDosen = $dosenCounts->pluck('jumlah_pengabdian');
 
-        // KPI Radar Chart Data (kosong untuk sementara, akan diimplementasikan nanti)
-        $kpiRadarData = [];
+        // KPI Radar Chart Data per Prodi
+        $kpiRadarData = $this->getKpiRadarDataForProdi($filterYear, $prodiFilter);
 
         // Jenis Luaran Data (dengan filter prodi)
         $jenisLuaranData = $this->getJenisLuaranTreemapDataWithProdiFilter($filterYear, $prodiFilter);
 
+        // Ambil judul pengabdian untuk word cloud (khusus untuk Kaprodi SI)
+        $judulPengabdianSI = [];
+        if ($prodiFilter === 'Sistem Informasi') {
+            $judulQuery = Pengabdian::whereExists(function ($query) use ($prodiFilter) {
+                $query->select(DB::raw(1))
+                    ->from('pengabdian_dosen')
+                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                    ->where('dosen.prodi', $prodiFilter);
+            });
+
+            if ($filterYear !== 'all') {
+                $judulQuery->whereYear('tanggal_pengabdian', $filterYear);
+            }
+
+            $judulPengabdianSI = $judulQuery->pluck('judul_pengabdian')->toArray();
+        }
+
         // Gunakan view inqa.dashboard
-        return view('inqa.dashboard', compact(
+        return view('dekan.dashboard', compact(
             'totalKpi',
             'totalMonitoring',
             'avgAchievement',
@@ -500,8 +537,189 @@ class KaprodiController extends Controller
             'kpiRadarData',
             'namaDosen',
             'jumlahPengabdianDosen',
-            'jenisLuaranData'
+            'jenisLuaranData',
+            'judulPengabdianSI',
+            'prodiFilter'
         ));
+    }
+
+    /**
+     * Rekap Pengabdian Dosen - Kaprodi TI
+     */
+    public function dosenRekapTI(Request $request)
+    {
+        return $this->dosenRekap($request, 'Informatika', 'kaprodi.ti');
+    }
+
+    /**
+     * Rekap Pengabdian Dosen - Kaprodi SI
+     */
+    public function dosenRekapSI(Request $request)
+    {
+        return $this->dosenRekap($request, 'Sistem Informasi', 'kaprodi.si');
+    }
+
+    /**
+     * Shared handler for rekap dosen for Kaprodi scopes
+     */
+    private function dosenRekap(Request $request, string $prodiFilter, string $routeBase)
+    {
+        $currentYear = date('Y');
+        $filterYear = $request->get('year', $currentYear);
+
+        // Available years (based on pengabdian that involve this prodi)
+        $availableYears = Pengabdian::selectRaw('YEAR(tanggal_pengabdian) as year')
+            ->whereExists(function ($sub) use ($prodiFilter) {
+                $sub->select(DB::raw(1))
+                    ->from('pengabdian_dosen')
+                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                    ->where('dosen.prodi', $prodiFilter);
+            })
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year');
+
+        // Dosen in this prodi with counts and eager-loaded pengabdian filtered by year
+        $dosenQuery = Dosen::where('prodi', $prodiFilter)
+            ->with(['pengabdian' => function ($query) use ($filterYear) {
+                if ($filterYear !== 'all') {
+                    $query->whereYear('tanggal_pengabdian', $filterYear);
+                }
+                $query->orderBy('tanggal_pengabdian', 'desc');
+            }])
+            ->withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
+                if ($filterYear !== 'all') {
+                    $query->whereYear('tanggal_pengabdian', $filterYear);
+                }
+            }]);
+
+        $dosenData = $dosenQuery->orderBy('jumlah_pengabdian', 'desc')->paginate(20);
+
+        // For Kaprodi, prodiOptions is just the single prodi, used for label if needed
+        $prodiOptions = collect([$prodiFilter]);
+        $filterProdi = $prodiFilter; // Set default filter to the prodi
+        $userRole = auth('admin')->user()->role ?? '';
+
+        return view('dekan.dosen.rekap', compact('dosenData', 'filterYear', 'filterProdi', 'availableYears', 'prodiOptions', 'routeBase', 'userRole'));
+    }
+
+    /**
+     * Export Kaprodi rekap to CSV (TI)
+     */
+    public function exportDosenRekapTI(Request $request)
+    {
+        return $this->exportDosenRekap($request, 'Informatika');
+    }
+
+    /**
+     * Export Kaprodi rekap to CSV (SI)
+     */
+    public function exportDosenRekapSI(Request $request)
+    {
+        return $this->exportDosenRekap($request, 'Sistem Informasi');
+    }
+
+    /**
+     * Shared export handler for Kaprodi
+     */
+    private function exportDosenRekap(Request $request, string $prodiFilter)
+    {
+        $filterYear = $request->get('year', date('Y'));
+
+        // Get dosen data
+        $dosenQuery = Dosen::where('prodi', $prodiFilter)
+            ->with(['pengabdian' => function ($query) use ($filterYear) {
+                if ($filterYear !== 'all') {
+                    $query->whereYear('tanggal_pengabdian', $filterYear);
+                }
+                $query->orderBy('tanggal_pengabdian', 'desc');
+            }])
+            ->withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
+                if ($filterYear !== 'all') {
+                    $query->whereYear('tanggal_pengabdian', $filterYear);
+                }
+            }]);
+
+        $dosenData = $dosenQuery->orderBy('jumlah_pengabdian', 'desc')->get();
+
+        // Generate CSV
+        $filename = 'rekap_pengabdian_dosen_' . str_replace(' ', '_', strtolower($prodiFilter)) . '_' . ($filterYear !== 'all' ? $filterYear : 'semua_tahun') . '_' . date('YmdHis') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function () use ($dosenData) {
+            $file = fopen('php://output', 'w');
+
+            // UTF-8 BOM for Excel compatibility
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // Header row
+            fputcsv($file, ['No', 'Nama Dosen', 'NIK', 'NIDN', 'Program Studi', 'Bidang Keahlian', 'Jumlah Kegiatan', 'Judul Terlibat']);
+
+            // Data rows
+            $no = 1;
+            foreach ($dosenData as $dosen) {
+                $judulTerlibat = $dosen->pengabdian->pluck('judul')->unique()->implode('; ');
+
+                fputcsv($file, [
+                    $no++,
+                    $dosen->nama,
+                    $dosen->nik,
+                    $dosen->nidn ?? '-',
+                    $dosen->prodi,
+                    $dosen->bidang_keahlian ?? '-',
+                    $dosen->jumlah_pengabdian,
+                    $judulTerlibat ?: '-'
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Dosen detail constrained to Kaprodi's prodi
+     */
+    public function dosenDetail(Request $request, $nik)
+    {
+        $role = auth('admin')->user()->role ?? '';
+        $prodiFilter = $role === 'Kaprodi TI' ? 'Informatika' : 'Sistem Informasi';
+        $filterYear = $request->get('year', date('Y'));
+
+        $dosen = Dosen::where('prodi', $prodiFilter)
+            ->with(['pengabdian' => function ($query) use ($filterYear) {
+                if ($filterYear !== 'all') {
+                    $query->whereYear('tanggal_pengabdian', $filterYear);
+                }
+                $query->orderBy('tanggal_pengabdian', 'desc');
+            }])
+            ->findOrFail($nik);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'dosen' => $dosen,
+                'pengabdian' => $dosen->pengabdian->map(function ($pengabdian) {
+                    return [
+                        'id_pengabdian' => $pengabdian->id_pengabdian,
+                        'judul' => $pengabdian->judul,
+                        'tanggal_pengabdian' => $pengabdian->tanggal_pengabdian,
+                        'status_anggota' => $pengabdian->pivot->status_anggota ?? 'Anggota',
+                        'sumber_dana' => $pengabdian->sumberDana->nama_sumber ?? 'N/A'
+                    ];
+                })
+            ]);
+        }
+
+        return response()->json(['error' => 'Invalid request'], 400);
     }
 
     /**
@@ -555,6 +773,340 @@ class KaprodiController extends Controller
         }
 
         return $treemapData;
+    }
+
+    /**
+     * KPI Radar Data khusus prodi (TI / SI) mengikuti struktur InQaController
+     */
+    private function getKpiRadarDataForProdi($filterYear, $prodiFilter)
+    {
+        $kpis = Kpi::orderBy('kode')->get();
+        $radarData = [];
+
+        foreach ($kpis as $kpi) {
+            $realisasi = $this->calculateKpiAchievementForProdi($kpi, $filterYear, $prodiFilter);
+            $kpiType = $this->determineKpiTypeForProdi($kpi->kode);
+
+            // Override target untuk IKT.I.5.i (target 2 prodi di level fakultas; untuk prodi, target 1 cukup)
+            $targetValue = $kpi->target;
+            if ($kpi->kode === 'IKT.I.5.i') {
+                $targetValue = 1.0; // Untuk prodi, minimal 1 HKI prodi tersebut
+            }
+
+            $skorNormalisasi = $this->calculateNormalizedScoreForProdi($realisasi, $targetValue, $kpiType, $kpi->kode, $filterYear);
+            $skorNormalisasi = max(0, min(100, $skorNormalisasi));
+
+            $radarData[] = [
+                'kode' => $kpi->kode,
+                'indikator' => $kpi->indikator,
+                'target' => $targetValue,
+                'realisasi' => round($realisasi, 2),
+                'skor_normalisasi' => round($skorNormalisasi, 1),
+                'satuan' => $kpi->satuan,
+                'tipe' => $kpiType,
+                'status' => $skorNormalisasi >= 100 ? 'Tercapai' : 'Belum Tercapai',
+                'detail' => $this->getKpiDetailForProdi($kpi->kode, $realisasi, $targetValue, $filterYear, $prodiFilter)
+            ];
+        }
+
+        // Sederhanakan pengurutan: tampilkan realisasi tertinggi dulu
+        usort($radarData, function ($a, $b) {
+            return $b['realisasi'] <=> $a['realisasi'];
+        });
+
+        return $radarData;
+    }
+
+    private function determineKpiTypeForProdi($kpiCode)
+    {
+        if (in_array($kpiCode, ['PGB.I.5.6', 'PGB.I.7.9'])) return 'growth';
+        if (in_array($kpiCode, ['PGB.I.1.1', 'PGB.I.7.4', 'IKT.I.5.g', 'IKT.I.5.h', 'IKT.I.5.j'])) return 'percentage';
+        return 'standard';
+    }
+
+    private function calculateNormalizedScoreForProdi($realisasi, $target, $tipe, $kpiCode, $filterYear)
+    {
+        $skor = 0;
+        switch ($tipe) {
+            case 'standard':
+            case 'percentage':
+                if ($target > 0) $skor = ($realisasi / $target) * 100;
+                break;
+            case 'growth':
+                if ($target > 0) {
+                    $batasBawah = -100;
+                    if ($realisasi >= $target) {
+                        $skor = 100;
+                    } else {
+                        $range = $target - $batasBawah;
+                        $posisiRelatif = $realisasi - $batasBawah;
+                        $skor = ($posisiRelatif / $range) * 100;
+                    }
+                }
+                break;
+            default:
+                if ($target > 0) $skor = ($realisasi / $target) * 100;
+        }
+
+        return max(0, min(100, $skor));
+    }
+
+    /**
+     * Hitung capaian KPI berdasarkan pengabdian yang melibatkan dosen prodi tertentu
+     */
+    private function calculateKpiAchievementForProdi($kpi, $filterYear, $prodiFilter)
+    {
+        $pkmFilter = function ($q) use ($prodiFilter) {
+            $q->whereExists(function ($sub) use ($prodiFilter) {
+                $sub->select(DB::raw(1))
+                    ->from('pengabdian_dosen')
+                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                    ->where('dosen.prodi', $prodiFilter);
+            });
+        };
+
+        switch ($kpi->kode) {
+            case 'KPI001': // Jumlah Pengabdian
+                return Pengabdian::when($filterYear !== 'all', fn($q) => $q->whereYear('tanggal_pengabdian', $filterYear))
+                    ->where($pkmFilter)
+                    ->count();
+
+            case 'KPI002': // Jumlah Dosen Terlibat (prodi ini)
+                return DB::table('pengabdian_dosen')
+                    ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                    ->when($filterYear !== 'all', fn($q) => $q->whereYear('pengabdian.tanggal_pengabdian', $filterYear))
+                    ->where('dosen.prodi', $prodiFilter)
+                    ->distinct('pengabdian_dosen.nik')
+                    ->count('pengabdian_dosen.nik');
+
+            case 'KPI003': // Jumlah Mahasiswa Terlibat (di pengabdian prodi ini)
+                return DB::table('pengabdian_mahasiswa')
+                    ->join('pengabdian', 'pengabdian_mahasiswa.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                    ->when($filterYear !== 'all', fn($q) => $q->whereYear('pengabdian.tanggal_pengabdian', $filterYear))
+                    ->whereExists(function ($sub) use ($prodiFilter) {
+                        $sub->select(DB::raw(1))
+                            ->from('pengabdian_dosen')
+                            ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                            ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                            ->where('dosen.prodi', $prodiFilter);
+                    })
+                    ->distinct('pengabdian_mahasiswa.nim')
+                    ->count('pengabdian_mahasiswa.nim');
+
+            case 'KPI004': // Jumlah Mitra
+                return DB::table('pengabdian')
+                    ->join('mitra', 'pengabdian.id_pengabdian', '=', 'mitra.id_pengabdian')
+                    ->when($filterYear !== 'all', fn($q) => $q->whereYear('pengabdian.tanggal_pengabdian', $filterYear))
+                    ->where($pkmFilter)
+                    ->count();
+
+            case 'KPI005': // Jumlah Luaran
+                return DB::table('luaran')
+                    ->join('pengabdian', 'luaran.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                    ->when($filterYear !== 'all', fn($q) => $q->whereYear('pengabdian.tanggal_pengabdian', $filterYear))
+                    ->where($pkmFilter)
+                    ->count();
+
+            case 'IKT.I.5.g': // Persentase PkM Pendidikan/Pelatihan
+                return $this->calculateKeywordPercentageForProdi(['siswa', 'sma', 'pembelajaran', 'pelatihan', 'latihan', 'pendampingan', 'sd', 'pengenalan', 'penulisan', 'pemanfaatan', 'peningkatan', 'uji', 'kompetisi', 'sekolah'], $filterYear, $prodiFilter);
+
+            case 'IKT.I.5.h': // Persentase PkM INFOKOM
+                return $this->calculateKeywordPercentageForProdi(['AI', 'Algoritma', 'Digital', 'ICT', 'Informatika', 'Komputer', 'Teknologi', 'TI', 'Web', 'Website', 'Aplikasi', 'Big Data', 'Sistem', 'Sistem Informasi', 'Program', 'Pemrograman', 'Internet of Things', 'IoT', 'Robotika', 'Android'], $filterYear, $prodiFilter);
+
+            case 'IKT.I.5.j': // Persentase PkM dengan Mahasiswa
+                return $this->calculateStudentInvolvementPercentageForProdi($filterYear, $prodiFilter);
+
+            case 'PGB.I.7.4': // Persentase PkM dana eksternal
+                return $this->calculateExternalFundingPercentageForProdi($filterYear, $prodiFilter);
+
+            case 'PGB.I.7.9': // Pertumbuhan 3 tahun
+                return $this->calculateThreeYearGrowthPercentageForProdi($filterYear, $prodiFilter);
+
+            case 'PGB.I.5.6': // Pertumbuhan tahunan
+                return $this->calculateAnnualGrowthPercentageForProdi($filterYear, $prodiFilter);
+
+            case 'PGB.I.1.1': // Persentase Realisasi Luaran Pengabdian
+                return $this->calculateOutputRealizationPercentageForProdi($filterYear, $prodiFilter);
+
+            case 'IKT.I.5.i': // Minimum prodi punya 1 HKI PkM
+                return $this->calculateHkiCountForProdi($filterYear, $prodiFilter) >= 1 ? 1 : 0;
+
+            default:
+                // Gunakan monitoring jika ada (tanpa prodi spesifik)
+                $monitoring = MonitoringKpi::where('id_kpi', $kpi->id_kpi)
+                    ->when($filterYear !== 'all', function ($query) use ($filterYear) {
+                        return $query->where('tahun', $filterYear);
+                    })
+                    ->sum('nilai_capai');
+                return $monitoring ?? 0;
+        }
+    }
+
+    private function calculateKeywordPercentageForProdi(array $keywords, $filterYear, $prodiFilter)
+    {
+        $base = Pengabdian::query()
+            ->whereExists(function ($sub) use ($prodiFilter) {
+                $sub->select(DB::raw(1))
+                    ->from('pengabdian_dosen')
+                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                    ->where('dosen.prodi', $prodiFilter);
+            });
+
+        if ($filterYear !== 'all') $base->whereYear('tanggal_pengabdian', $filterYear);
+        $total = $base->count();
+        if ($total == 0) return 0.0;
+
+        $match = (clone $base)->where(function ($q) use ($keywords) {
+            foreach ($keywords as $kw) $q->orWhere('judul_pengabdian', 'LIKE', "%{$kw}%");
+        })->count();
+
+        return round(($match / $total) * 100, 2);
+    }
+
+    private function calculateStudentInvolvementPercentageForProdi($filterYear, $prodiFilter)
+    {
+        $base = Pengabdian::query()
+            ->whereExists(function ($sub) use ($prodiFilter) {
+                $sub->select(DB::raw(1))
+                    ->from('pengabdian_dosen')
+                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                    ->where('dosen.prodi', $prodiFilter);
+            });
+        if ($filterYear !== 'all') $base->whereYear('tanggal_pengabdian', $filterYear);
+        $total = $base->count();
+        if ($total == 0) return 0.0;
+        $withMhs = (clone $base)->whereHas('mahasiswa')->count();
+        return round(($withMhs / $total) * 100, 2);
+    }
+
+    private function calculateExternalFundingPercentageForProdi($filterYear, $prodiFilter)
+    {
+        $base = Pengabdian::query()
+            ->whereExists(function ($sub) use ($prodiFilter) {
+                $sub->select(DB::raw(1))
+                    ->from('pengabdian_dosen')
+                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                    ->where('dosen.prodi', $prodiFilter);
+            });
+        if ($filterYear !== 'all') $base->whereYear('tanggal_pengabdian', $filterYear);
+        $total = $base->count();
+        if ($total == 0) return 0.0;
+        $ext = (clone $base)->whereHas('sumberDana', function ($q) {
+            $q->where('jenis', 'Eksternal');
+        })->count();
+        return round(($ext / $total) * 100, 2);
+    }
+
+    private function calculateThreeYearGrowthPercentageForProdi($filterYear, $prodiFilter)
+    {
+        $yearN = ($filterYear !== 'all') ? (int)$filterYear : (int)date('Y');
+        $yearN3 = $yearN - 3;
+        $countN = Pengabdian::whereYear('tanggal_pengabdian', $yearN)->whereExists(function ($sub) use ($prodiFilter) {
+            $sub->select(DB::raw(1))
+                ->from('pengabdian_dosen')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                ->where('dosen.prodi', $prodiFilter);
+        })->count();
+        $countN3 = Pengabdian::whereYear('tanggal_pengabdian', $yearN3)->whereExists(function ($sub) use ($prodiFilter) {
+            $sub->select(DB::raw(1))
+                ->from('pengabdian_dosen')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                ->where('dosen.prodi', $prodiFilter);
+        })->count();
+        if ($countN3 == 0) return $countN > 0 ? 100.0 : 0.0;
+        return round((($countN - $countN3) / $countN3) * 100, 2);
+    }
+
+    private function calculateAnnualGrowthPercentageForProdi($filterYear, $prodiFilter)
+    {
+        $yearN = ($filterYear !== 'all') ? (int)$filterYear : (int)date('Y');
+        $yearN1 = $yearN - 1;
+        $n = Pengabdian::whereYear('tanggal_pengabdian', $yearN)->whereExists(function ($sub) use ($prodiFilter) {
+            $sub->select(DB::raw(1))
+                ->from('pengabdian_dosen')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                ->where('dosen.prodi', $prodiFilter);
+        })->count();
+        $n1 = Pengabdian::whereYear('tanggal_pengabdian', $yearN1)->whereExists(function ($sub) use ($prodiFilter) {
+            $sub->select(DB::raw(1))
+                ->from('pengabdian_dosen')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                ->where('dosen.prodi', $prodiFilter);
+        })->count();
+        if ($n1 == 0) return $n > 0 ? 100.0 : 0.0;
+        return round((($n - $n1) / $n1) * 100, 2);
+    }
+
+    private function calculateOutputRealizationPercentageForProdi($filterYear, $prodiFilter)
+    {
+        $query = Pengabdian::query()->whereExists(function ($sub) use ($prodiFilter) {
+            $sub->select(DB::raw(1))
+                ->from('pengabdian_dosen')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                ->where('dosen.prodi', $prodiFilter);
+        });
+        if ($filterYear !== 'all') $query->whereYear('tanggal_pengabdian', $filterYear);
+
+        $pengabdianData = $query->select('id_pengabdian', 'jumlah_luaran_direncanakan')->get();
+        if ($pengabdianData->isEmpty()) return 0.0;
+
+        $totalPkm = 0;
+        $pkmMemenuhi = 0;
+        foreach ($pengabdianData as $pengabdian) {
+            $totalPkm++;
+            $luaranDirencanakan = $pengabdian->jumlah_luaran_direncanakan;
+            if (is_string($luaranDirencanakan)) {
+                $luaranArray = json_decode($luaranDirencanakan, true);
+            } else {
+                $luaranArray = $luaranDirencanakan;
+            }
+            $nDirencanakan = is_array($luaranArray) ? count($luaranArray) : 0;
+            $nTerealisasi = DB::table('luaran')->where('id_pengabdian', $pengabdian->id_pengabdian)->count();
+            if ($nTerealisasi >= $nDirencanakan) $pkmMemenuhi++;
+        }
+        return round(($pkmMemenuhi / max(1, $totalPkm)) * 100, 2);
+    }
+
+    private function calculateHkiCountForProdi($filterYear, $prodiFilter)
+    {
+        $base = DB::table('luaran')
+            ->join('pengabdian', 'luaran.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+            ->join('jenis_luaran', 'luaran.id_jenis_luaran', '=', 'jenis_luaran.id_jenis_luaran')
+            ->where('jenis_luaran.nama_jenis_luaran', 'HKI');
+        if ($filterYear !== 'all') $base->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
+        return $base
+            ->join('pengabdian_dosen', 'pengabdian.id_pengabdian', '=', 'pengabdian_dosen.id_pengabdian')
+            ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+            ->where('dosen.prodi', $prodiFilter)
+            ->distinct('luaran.id_luaran')
+            ->count('luaran.id_luaran');
+    }
+
+    private function getKpiDetailForProdi($kpiCode, $realisasi, $target, $filterYear, $prodiFilter)
+    {
+        // Ringkas: tampilkan format realisasi/target dan konteks prodi
+        $detail = [
+            'realisasi_format' => number_format($realisasi, in_array($kpiCode, ['PGB.I.5.6', 'PGB.I.7.9', 'PGB.I.1.1', 'PGB.I.7.4', 'IKT.I.5.g', 'IKT.I.5.h', 'IKT.I.5.j']) ? 1 : 0) . (in_array($kpiCode, ['PGB.I.5.6', 'PGB.I.7.9', 'PGB.I.1.1', 'PGB.I.7.4', 'IKT.I.5.g', 'IKT.I.5.h', 'IKT.I.5.j']) ? '%' : ''),
+            'target_format' => number_format($target, in_array($kpiCode, ['PGB.I.5.6', 'PGB.I.7.9', 'PGB.I.1.1', 'PGB.I.7.4', 'IKT.I.5.g', 'IKT.I.5.h', 'IKT.I.5.j']) ? 1 : 0) . (in_array($kpiCode, ['PGB.I.5.6', 'PGB.I.7.9', 'PGB.I.1.1', 'PGB.I.7.4', 'IKT.I.5.g', 'IKT.I.5.h', 'IKT.I.5.j']) ? '%' : ''),
+            'context' => 'Prodi: ' . $prodiFilter
+        ];
+
+        if ($kpiCode === 'IKT.I.5.i') {
+            $hki = $this->calculateHkiCountForProdi($filterYear, $prodiFilter);
+            $detail['context'] .= " | HKI: {$hki}";
+        }
+
+        return $detail;
     }
 
     /**

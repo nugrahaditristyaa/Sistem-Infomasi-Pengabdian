@@ -1,4 +1,4 @@
-@extends('inqa.layouts.main')
+@extends('dekan.layouts.main')
 
 @section('title', 'Data KPI')
 
@@ -383,7 +383,7 @@
         // Function to open edit modal
         function editKpi(kode, indikator, target, satuan) {
             // Set form action URL using the route
-            var actionUrl = "{{ route('inqa.kpi.updateByCode', ':kode') }}".replace(':kode', kode);
+            var actionUrl = "{{ route('dekan.kpi.updateByCode', ':kode') }}".replace(':kode', kode);
 
             // Populate form fields
             $('#editKpiForm').attr('action', actionUrl);
@@ -491,3 +491,4 @@
         });
     </script>
 @endpush
+

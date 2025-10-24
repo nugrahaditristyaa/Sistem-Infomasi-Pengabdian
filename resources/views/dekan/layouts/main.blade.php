@@ -8,7 +8,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>@yield('title', 'InQA Dashboard')</title>
+    <title>@yield('title', 'Dekan Dashboard')</title>
 
     <!-- Custom fonts for this template-->
     <link href="{{ asset('assets/vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet" type="text/css">
@@ -63,6 +63,22 @@
             background: rgba(255, 255, 255, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
+
+        /* Footer styling (samakan dengan halaman dashboard Kaprodi / SB Admin 2 default) */
+        footer.sticky-footer {
+            background-color: #fff !important;
+            padding: 1.25rem 0 !important;
+            border-top: 1px solid #e3e6f0 !important;
+        }
+
+        footer.sticky-footer .container {
+            padding: 0 1.5rem !important;
+        }
+
+        footer.sticky-footer .copyright {
+            font-size: 0.8rem !important;
+            color: #5a5c69 !important;
+        }
     </style>
 
     @stack('styles')
@@ -73,7 +89,7 @@
     <!-- Page Wrapper -->
     <div id="wrapper">
 
-        @include('inqa.layouts.sidebar')
+        @include('Dekan.layouts.sidebar')
 
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
@@ -81,7 +97,7 @@
             <!-- Main Content -->
             <div id="content">
 
-                @include('inqa.layouts.header')
+                @include('Dekan.layouts.header')
 
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
@@ -92,7 +108,7 @@
             </div>
             <!-- End of Main Content -->
 
-            @include('inqa.layouts.footer')
+            @include('Dekan.layouts.footer')
 
         </div>
         <!-- End of Content Wrapper -->
@@ -186,3 +202,4 @@
 </body>
 
 </html>
+
