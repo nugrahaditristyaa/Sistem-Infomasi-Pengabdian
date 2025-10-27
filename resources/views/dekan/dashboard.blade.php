@@ -797,7 +797,7 @@
                                 </div>
 
                                 {{-- RINCIAN SEKUNDER (PER PRODI) --}}
-                                <div class="text-xs text-muted">
+                                <div class="text-xs text-muted mb-2">
                                     <span>Kolaborasi:
                                         <strong>{{ $stats['pengabdian_kolaborasi'] }}</strong></span>
                                     @if ($userRole !== 'Kaprodi SI')
@@ -810,6 +810,12 @@
                                             <strong>{{ $stats['pengabdian_khusus_sistem_informasi'] }}</strong></span>
                                     @endif
                                 </div>
+
+                                {{-- TOMBOL LIHAT DETAIL --}}
+                                <button class="btn btn-sm btn-outline-primary btn-block mt-2"
+                                    onclick="$('#statTotalPengabdian').click()">
+                                    <i class="fas fa-eye mr-1"></i> Lihat Detail
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -872,7 +878,7 @@
                                     @endif
 
                                     {{-- Rincian Per Prodi --}}
-                                    <div>
+                                    <div class="mb-2">
                                         @if ($userRole !== 'Kaprodi SI')
                                             <span> IT:
                                                 <strong>{{ $stats['dosen_informatika'] }}</strong></span>
@@ -886,6 +892,12 @@
                                         @endif
                                     </div>
                                 </div>
+
+                                {{-- TOMBOL LIHAT DETAIL --}}
+                                <button class="btn btn-sm btn-outline-primary btn-block mt-2"
+                                    onclick="$('#statDosenTerlibat').click()">
+                                    <i class="fas fa-eye mr-1"></i> Lihat Detail
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -963,7 +975,7 @@
                                     </div>
 
                                     {{-- Rincian Per Prodi --}}
-                                    <div>
+                                    <div class="mb-2">
                                         @if ($userRole !== 'Kaprodi SI')
                                             <span> IT:
                                                 <strong>{{ $stats['mahasiswa_informatika'] }}</strong></span>
@@ -977,6 +989,12 @@
                                         @endif
                                     </div>
                                 </div>
+
+                                {{-- TOMBOL LIHAT DETAIL --}}
+                                <button class="btn btn-sm btn-outline-primary btn-block mt-2"
+                                    onclick="$('#statDenganMahasiswa').click()">
+                                    <i class="fas fa-eye mr-1"></i> Lihat Detail
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1434,28 +1452,17 @@
                             tooltip: {
                                 callbacks: {
                                     title: function(context) {
-                                        return kpiData[context[0].dataIndex].indikator;
+                                        return ''; // Hide indicator name
                                     },
                                     label: function(context) {
-                                        // --- PERUBAHAN 3: Perbaiki akses data di tooltip ---
                                         if (context.datasetIndex === 1) {
                                             return 'Target Universal: 100%';
                                         }
 
                                         const kpi = kpiData[context.dataIndex];
-                                        let persentaseCapaian = 0;
-                                        if (kpi.target > 0) {
-                                            persentaseCapaian = (kpi.realisasi / kpi.target) * 100;
-                                        }
-
-                                        let statusLabel = `(${persentaseCapaian.toFixed(1)}% dari Target)`;
-                                        if (kpi.skor_normalisasi >= 100 && persentaseCapaian > 100) {
-                                            statusLabel = `(Terlampaui: ${persentaseCapaian.toFixed(1)}%)`;
-                                        }
-
                                         return [
                                             `Skor Capaian: ${kpi.skor_normalisasi.toFixed(1)}%`,
-                                            `Realisasi: ${kpi.realisasi}${kpi.satuan} ${statusLabel}`,
+                                            `Realisasi: ${kpi.realisasi}${kpi.satuan}`,
                                             `Target: ${kpi.target}${kpi.satuan}`
                                         ];
                                     }
@@ -2625,7 +2632,6 @@
                         <tbody>
                         `;
                         data.details.forEach((item, index) => {
-                            const statusClass = item.dengan_mahasiswa ? 'badge-success' : 'badge-secondary';
                             const statusText = item.dengan_mahasiswa ? 'Dengan Mahasiswa' : 'Tanpa Mahasiswa';
                             const judul = item.judul_pengabdian || item.judul || 'N/A';
                             // Render mahasiswa list: up to 3 entries, show name (nim)
@@ -2644,14 +2650,14 @@
                             <tr>
                                 <td>${index + 1}</td>
                                 <td>
-                                    <div class="font-weight-bold text-primary">${judul}</div>
+                                    <div class="">${judul}</div>
                                     <small class="text-muted">${item.id_pengabdian || 'N/A'}</small>
                                 </td>
                                 <td>${item.tanggal_pengabdian ? new Date(item.tanggal_pengabdian).toLocaleDateString('id-ID') : 'N/A'}</td>
                                 <td>${item.ketua || 'N/A'}</td>
-                                <td><span class="badge badge-info">${item.sumber_dana || 'N/A'}</span></td>
-                                <td><span class="badge badge-secondary">${item.kategori_prodi || 'N/A'}</span></td>
-                                <td><span class="badge ${statusClass}">${statusText}</span></td>
+                                <td>${item.sumber_dana || 'N/A'}</td>
+                                <td>${item.kategori_prodi || 'N/A'}</td>
+                                <td>${statusText}</td>
                                 <td class="small">${mhsHtml}</td>
                             </tr>
                             `;
