@@ -1607,13 +1607,14 @@ class DekanController extends Controller
         // Get dosen data with pengabdian count and details
         $dosenQuery = Dosen::with(['pengabdian' => function ($query) use ($filterYear) {
             if ($filterYear !== 'all') {
-                $query->whereYear('tanggal_pengabdian', $filterYear);
+                $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
             }
-            $query->orderBy('tanggal_pengabdian', 'desc');
+            $query->select('pengabdian.id_pengabdian', 'pengabdian.judul_pengabdian', 'pengabdian.tanggal_pengabdian')
+                ->orderBy('pengabdian.tanggal_pengabdian', 'desc');
         }])
             ->withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
                 if ($filterYear !== 'all') {
-                    $query->whereYear('tanggal_pengabdian', $filterYear);
+                    $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
                 }
             }]);
 
@@ -1656,13 +1657,14 @@ class DekanController extends Controller
         // Get dosen data with pengabdian count and details
         $dosenQuery = Dosen::with(['pengabdian' => function ($query) use ($filterYear) {
             if ($filterYear !== 'all') {
-                $query->whereYear('tanggal_pengabdian', $filterYear);
+                $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
             }
-            $query->orderBy('tanggal_pengabdian', 'desc');
+            $query->select('pengabdian.id_pengabdian', 'pengabdian.judul_pengabdian', 'pengabdian.tanggal_pengabdian')
+                ->orderBy('pengabdian.tanggal_pengabdian', 'desc');
         }])
             ->withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
                 if ($filterYear !== 'all') {
-                    $query->whereYear('tanggal_pengabdian', $filterYear);
+                    $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
                 }
             }]);
 
@@ -1696,7 +1698,8 @@ class DekanController extends Controller
             // Data rows
             $no = 1;
             foreach ($dosenData as $dosen) {
-                $judulTerlibat = $dosen->pengabdian->pluck('judul')->unique()->implode('; ');
+                // Get all unique pengabdian titles
+                $judulTerlibat = $dosen->pengabdian->pluck('judul_pengabdian')->unique()->implode('; ');
 
                 fputcsv($file, [
                     $no++,
@@ -1774,7 +1777,7 @@ class DekanController extends Controller
      */
     private function getPengabdianDetail($filterYear)
     {
-        $query = Pengabdian::with(['sumberDana', 'pengabdianDosen.dosen']);
+        $query = Pengabdian::with(['sumberDana', 'pengabdianDosen.dosen', 'mahasiswa']);
 
         // Apply prodi filter for Kaprodi users
         $prodiFilter = $this->getProdiFilterForCurrentUser();
@@ -1818,12 +1821,19 @@ class DekanController extends Controller
 
             return [
                 'id_pengabdian' => $pengabdian->id_pengabdian,
-                'judul' => $pengabdian->judul,
+                'judul_pengabdian' => $pengabdian->judul_pengabdian,
                 'tanggal_pengabdian' => $pengabdian->tanggal_pengabdian,
                 'ketua' => $ketua ? $ketua->dosen->nama : 'N/A',
-                'sumber_dana' => $pengabdian->sumberDana->nama_sumber ?? 'N/A',
+                'sumber_dana' => $pengabdian->sumberDana->first()->nama_sumber ?? 'N/A',
                 'kategori_prodi' => $kategoriProdi,
-                'dengan_mahasiswa' => $pengabdian->mahasiswa()->exists()
+                'dengan_mahasiswa' => $pengabdian->mahasiswa && $pengabdian->mahasiswa->count() > 0,
+                'mahasiswa_list' => $pengabdian->mahasiswa->map(function ($m) {
+                    return [
+                        'nim' => $m->nim,
+                        'nama' => $m->nama,
+                        'prodi' => $m->prodi ?? null,
+                    ];
+                })->values()
             ];
         });
 
@@ -1897,6 +1907,7 @@ class DekanController extends Controller
      */
     private function getMahasiswaDetail($filterYear)
     {
+        // Use pivot table pengabdian_mahasiswa via relation `mahasiswa`
         $query = Pengabdian::with(['sumberDana', 'pengabdianDosen.dosen', 'mahasiswa'])
             ->whereHas('mahasiswa');
 
@@ -1930,13 +1941,22 @@ class DekanController extends Controller
 
             return [
                 'id_pengabdian' => $pengabdian->id_pengabdian,
-                'judul' => $pengabdian->judul,
+                'judul_pengabdian' => $pengabdian->judul_pengabdian,
                 'tanggal_pengabdian' => $pengabdian->tanggal_pengabdian,
                 'ketua' => $ketua ? $ketua->dosen->nama : 'N/A',
-                'sumber_dana' => $pengabdian->sumberDana->nama_sumber ?? 'N/A',
+                // sumberDana is hasMany; take first available name for display
+                'sumber_dana' => optional($pengabdian->sumberDana->first())->nama_sumber ?? 'N/A',
                 'jumlah_mahasiswa' => $pengabdian->mahasiswa->count(),
                 'mahasiswa_informatika' => $mahasiswaInformatika,
-                'mahasiswa_sistem_informasi' => $mahasiswaSistemInformasi
+                'mahasiswa_sistem_informasi' => $mahasiswaSistemInformasi,
+                // Provide explicit mahasiswa list for UI (nim, nama, prodi)
+                'mahasiswa_list' => $pengabdian->mahasiswa->map(function ($m) {
+                    return [
+                        'nim' => $m->nim,
+                        'nama' => $m->nama,
+                        'prodi' => $m->prodi ?? null,
+                    ];
+                })->values(),
             ];
         });
 

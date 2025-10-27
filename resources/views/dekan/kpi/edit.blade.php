@@ -60,7 +60,7 @@
                                 </label>
                                 <input type="text" class="form-control @error('satuan') is-invalid @enderror"
                                     name="satuan" value="{{ old('satuan', $kpi->satuan) }}"
-                                    placeholder="Contoh: %, buah, orang" required>
+                                    placeholder="Contoh: %, buah, orang" disabled>
                                 @error('satuan')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -74,10 +74,10 @@
                         </label>
                         <input type="text" class="form-control @error('nama_indikator') is-invalid @enderror"
                             name="nama_indikator" value="{{ old('nama_indikator', $kpi->nama_indikator) }}"
-                            placeholder="Masukkan nama indikator KPI" required>
+                            placeholder="Masukkan nama indikator KPI" disabled>
                         @error('nama_indikator')
                             <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                        @enderror   
                     </div>
 
                     <div class="form-group">
@@ -87,6 +87,7 @@
                         <input type="number" class="form-control @error('target') is-invalid @enderror" name="target"
                             min="0" step="0.01" value="{{ old('target', $kpi->target) }}"
                             placeholder="Masukkan nilai target" required>
+                        <small class="form-text text-muted">Hanya kolom Target (angka) yang dapat diubah.</small>
                         @error('target')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -116,4 +117,3 @@
         }, 5000);
     </script>
 @endpush
-

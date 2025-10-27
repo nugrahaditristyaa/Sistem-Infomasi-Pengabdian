@@ -12,7 +12,7 @@
         }
 
         .table-responsive thead {
-            background-color: #f8f9fc; 
+            background-color: #f8f9fc;
         }
 
         .table-hover tbody tr:hover {
@@ -146,7 +146,7 @@
         <h1 class="h3 mb-0 text-gray-800">Data KPI</h1>
         <div class="text-muted">
             <i class="fas fa-info-circle mr-1"></i>
-            InQA dapat mengedit KPI yang sudah ada
+            Dekan dapat mengedit KPI yang sudah ada
         </div>
     </div>
 
@@ -168,16 +168,25 @@
         </div>
     @endif
 
+    @php
+        $kpisPgb = $kpis->filter(function ($k) {
+            return strtoupper(substr($k->kode, 0, 3)) === 'PGB';
+        });
+        $kpisIkt = $kpis->filter(function ($k) {
+            return strtoupper(substr($k->kode, 0, 3)) === 'IKT';
+        });
+    @endphp
+
     <div class="row">
         <div class="col-12">
             <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Tabel KPI</h6>
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Standar Hasil Pengabdian (KPI - PGB)</h6>
+                    <span class="badge badge-primary">{{ $kpisPgb->count() }} item</span>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover table-striped" id="dataTable" width="100%"
-                            cellspacing="0">
+                        <table class="table table-hover table-striped" id="dataTablePgb" width="100%" cellspacing="0">
                             <thead>
                                 <tr>
                                     <th class="no-column">No</th>
@@ -189,7 +198,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($kpis as $kpi)
+                                @forelse($kpisPgb as $kpi)
                                     <tr>
                                         <td class="no-column">{{ $loop->iteration }}</td>
                                         <td>
@@ -203,29 +212,65 @@
                                         <td class="aksi-column">
                                             <button type="button" class="btn btn-sm btn-warning"
                                                 onclick="editKpi('{{ $kpi->kode }}', {{ json_encode($kpi->indikator) }}, '{{ $kpi->target }}', '{{ $kpi->satuan }}')"
-                                                title="Edit KPI (Indikator, Angka, Satuan)">
+                                                title="Edit KPI (Angka/Target)">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-5">
-                                            <div class="mb-4">
-                                                <i class="fas fa-chart-bar fa-4x text-gray-300"></i>
-                                            </div>
-                                            <h5 class="text-gray-600 mb-3">Belum Ada Data KPI</h5>
-                                            <p class="text-gray-500 mb-4">
-                                                Data KPI (Key Performance Indicator) belum tersedia.<br>
-                                                Hubungi administrator untuk menambahkan data KPI.
-                                            </p>
-                                            <div class="alert alert-info">
-                                                <i class="fas fa-info-circle mr-2"></i>
-                                                <strong>Catatan:</strong> InQA hanya dapat mengedit KPI yang sudah ada,
-                                                tidak dapat menambah
-                                                atau menghapus KPI.
-                                            </div>
+                                        <td colspan="6" class="text-center py-4 text-muted">Tidak ada data PGB.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Standar Hasil Pengabdian (Indikator Tambahan - IKT)</h6>
+                    <span class="badge badge-info">{{ $kpisIkt->count() }} item</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped" id="dataTableIkt" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th class="no-column">No</th>
+                                    <th>Kode SPMI</th>
+                                    <th>Indikator</th>
+                                    <th class="text-center">Angka</th>
+                                    <th class="text-center">Satuan</th>
+                                    <th class="aksi-column">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($kpisIkt as $kpi)
+                                    <tr>
+                                        <td class="no-column">{{ $loop->iteration }}</td>
+                                        <td>
+                                            <span class="kode-badge">{{ $kpi->kode }}</span>
                                         </td>
+                                        <td>{{ $kpi->indikator }}</td>
+                                        <td class="text-center">
+                                            <span class="target-value">{{ number_format($kpi->target, 0) }}</span>
+                                        </td>
+                                        <td class="text-center">{{ $kpi->satuan }}</td>
+                                        <td class="aksi-column">
+                                            <button type="button" class="btn btn-sm btn-warning"
+                                                onclick="editKpi('{{ $kpi->kode }}', {{ json_encode($kpi->indikator) }}, '{{ $kpi->target }}', '{{ $kpi->satuan }}')"
+                                                title="Edit KPI (Angka/Target)">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">Tidak ada data IKT.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -266,11 +311,10 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="form-label font-weight-bold">
-                                        <i class="fas fa-tag mr-1 text-primary"></i>Satuan <span
-                                            class="text-danger">*</span>
+                                        <i class="fas fa-tag mr-1 text-primary"></i>Satuan
                                     </label>
                                     <input type="text" class="form-control" name="satuan" id="edit_satuan"
-                                        placeholder="Contoh: %, buah, orang" required>
+                                        placeholder="Contoh: %, buah, orang" disabled>
                                     <div class="invalid-feedback"></div>
                                 </div>
                             </div>
@@ -278,11 +322,10 @@
 
                         <div class="form-group">
                             <label class="form-label font-weight-bold">
-                                <i class="fas fa-bullseye mr-1 text-primary"></i>Nama Indikator <span
-                                    class="text-danger">*</span>
+                                <i class="fas fa-bullseye mr-1 text-primary"></i>Nama Indikator
                             </label>
                             <textarea class="form-control" name="indikator" id="edit_indikator" rows="4"
-                                placeholder="Masukkan nama indikator KPI" required></textarea>
+                                placeholder="Masukkan nama indikator KPI" disabled></textarea>
                             <div class="invalid-feedback"></div>
                         </div>
 
@@ -294,8 +337,7 @@
                             <input type="number" class="form-control" name="target" id="edit_target" min="0"
                                 step="1" placeholder="Masukkan nilai angka target" required>
                             <div class="invalid-feedback"></div>
-                            <small class="form-text text-muted">Masukkan angka target yang ingin dicapai untuk KPI
-                                ini</small>
+                            <small class="form-text text-muted">Hanya kolom Angka (Target) yang dapat diubah.</small>
                         </div>
 
                         <div class="alert alert-info">
@@ -326,7 +368,7 @@
     <script>
         $(document).ready(function() {
             // Initialize DataTable
-            var table = $('#dataTable').DataTable({
+            var tablePgb = $('#dataTablePgb').DataTable({
                 searching: false,
                 lengthChange: false,
                 info: false,
@@ -349,6 +391,48 @@
                     {
                         "searchable": false,
                         "targets": [0] // No column
+                    }
+                ],
+                "language": {
+                    "processing": "Memproses...",
+                    "lengthMenu": "Tampilkan _MENU_ entri",
+                    "zeroRecords": "Tidak ada data KPI yang ditemukan",
+                    "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                    "infoEmpty": "Menampilkan 0 sampai 0 dari 0 entri",
+                    "infoFiltered": "(disaring dari _MAX_ total entri)",
+                    "search": "Cari:",
+                    "paginate": {
+                        "first": "Pertama",
+                        "last": "Terakhir",
+                        "next": "Selanjutnya",
+                        "previous": "Sebelumnya"
+                    }
+                },
+                "fixedHeader": true,
+                "responsive": true
+            });
+
+            var tableIkt = $('#dataTableIkt').DataTable({
+                searching: false,
+                lengthChange: false,
+                info: false,
+                paging: false,
+                "processing": true,
+                "pageLength": 25,
+                "lengthMenu": [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "Semua"]
+                ],
+                "order": [
+                    [1, "asc"]
+                ],
+                "columnDefs": [{
+                        "orderable": false,
+                        "targets": [0, 5]
+                    },
+                    {
+                        "searchable": false,
+                        "targets": [0]
                     }
                 ],
                 "language": {
@@ -491,4 +575,3 @@
         });
     </script>
 @endpush
-

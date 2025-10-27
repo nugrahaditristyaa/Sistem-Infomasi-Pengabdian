@@ -532,11 +532,6 @@
             color: #4e73df;
         }
 
-        .page-item.active .page-link {
-            background: linear-gradient(135deg, #4e73df 0%, #36b9cc 100%);
-            border: none;
-        }
-
         /* Pulse animation for clickable stats */
         .clickable-stat::before {
             content: '';
@@ -696,10 +691,33 @@
 @endpush
 
 @section('content')
+    @php
+        $currentRole = auth('admin')->check() ? auth('admin')->user()->role : null;
+        $rekapRoute = match ($currentRole) {
+            'Kaprodi TI' => 'kaprodi.ti.dosen.rekap',
+            'Kaprodi SI' => 'kaprodi.si.dosen.rekap',
+            default => 'dekan.dosen.rekap',
+        };
+    @endphp
     <div class="container-fluid">
         <!-- Page Heading -->
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">Dashboard Pengabdian</h1>
+            <h1 class="h3 mb-0 text-gray-800">
+                @auth('admin')
+                    {{-- Pastikan user login dengan guard 'admin' --}}
+                    @php
+                        $userRole = auth('admin')->user()->role; // Ambil role user
+                    @endphp
+
+                    @if ($userRole === 'Dekan')
+                        Dashboard Pengabdian FTI
+                    @elseif($userRole === 'Kaprodi TI')
+                        Dashboard Pengabdian Informatika
+                    @elseif($userRole === 'Kaprodi SI')
+                        Dashboard Pengabdian Sistem Informasi
+                    @endif
+                @endauth
+            </h1>
             <div class="d-flex align-items-center">
                 <!-- Year Filter -->
                 @php
@@ -782,10 +800,15 @@
                                 <div class="text-xs text-muted">
                                     <span>Kolaborasi:
                                         <strong>{{ $stats['pengabdian_kolaborasi'] }}</strong></span>
-                                    <span class="mx-2">•</span>
-                                    <span>IT: <strong>{{ $stats['pengabdian_khusus_informatika'] }}</strong></span>
-                                    <span class="mx-2">•</span>
-                                    <span>SI: <strong>{{ $stats['pengabdian_khusus_sistem_informasi'] }}</strong></span>
+                                    @if ($userRole !== 'Kaprodi SI')
+                                        <span class="mx-2">•</span>
+                                        <span>IT: <strong>{{ $stats['pengabdian_khusus_informatika'] }}</strong></span>
+                                    @endif
+                                    @if ($userRole !== 'Kaprodi TI')
+                                        <span class="mx-2">•</span>
+                                        <span>SI:
+                                            <strong>{{ $stats['pengabdian_khusus_sistem_informasi'] }}</strong></span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -850,11 +873,17 @@
 
                                     {{-- Rincian Per Prodi --}}
                                     <div>
-                                        <span> IT:
-                                            <strong>{{ $stats['dosen_informatika'] }}</strong></span>
-                                        <span class="mx-2">•</span>
-                                        <span> SI:
-                                            <strong>{{ $stats['dosen_sistem_informasi'] }}</strong></span>
+                                        @if ($userRole !== 'Kaprodi SI')
+                                            <span> IT:
+                                                <strong>{{ $stats['dosen_informatika'] }}</strong></span>
+                                            @if ($userRole !== 'Kaprodi TI')
+                                                <span class="mx-2">•</span>
+                                            @endif
+                                        @endif
+                                        @if ($userRole !== 'Kaprodi TI')
+                                            <span> SI:
+                                                <strong>{{ $stats['dosen_sistem_informasi'] }}</strong></span>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -935,11 +964,17 @@
 
                                     {{-- Rincian Per Prodi --}}
                                     <div>
-                                        <span> IT:
-                                            <strong>{{ $stats['mahasiswa_informatika'] }}</strong></span>
-                                        <span class="mx-2">•</span>
-                                        <span> SI:
-                                            <strong>{{ $stats['mahasiswa_sistem_informasi'] }}</strong></span>
+                                        @if ($userRole !== 'Kaprodi SI')
+                                            <span> IT:
+                                                <strong>{{ $stats['mahasiswa_informatika'] }}</strong></span>
+                                            @if ($userRole !== 'Kaprodi TI')
+                                                <span class="mx-2">•</span>
+                                            @endif
+                                        @endif
+                                        @if ($userRole !== 'Kaprodi TI')
+                                            <span> SI:
+                                                <strong>{{ $stats['mahasiswa_sistem_informasi'] }}</strong></span>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -1016,11 +1051,19 @@
                 @endphp
                 <div class="card shadow mb-4 modern-card h-100">
                     <div class="card-header py-3">
+                        @php
+                            $currentRole = auth('admin')->check() ? auth('admin')->user()->role : null;
+                            $rekapRoute = match ($currentRole) {
+                                'Kaprodi TI' => 'kaprodi.ti.dosen.rekap',
+                                'Kaprodi SI' => 'kaprodi.si.dosen.rekap',
+                                default => 'dekan.dosen.rekap',
+                            };
+                        @endphp
                         <div class="row align-items-center">
                             <div class="col-md-6">
                                 <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                     Rekap Pengabdian per Dosen
-                                    <span class="text-primary">{{ $allDosenCount }} Dosen
+                                    <span class="text-primary">
                                         @if ($filterYear !== 'all')
                                             ({{ $filterYear }})
                                         @endif
@@ -1036,16 +1079,17 @@
                                             : 0;
                                 @endphp
                                 <div class="mt-1">
-                                    <span class="badge badge-primary mr-1">Dosen: {{ $allDosenCount }}</span>
-                                    @if (($totalLuaran ?? 0) > 0)
-                                        <span class="badge badge-info mr-1">Luaran: {{ $totalLuaran }}</span>
-                                    @endif
+                                    <span class="badge badge-primary mr-1">Total Dosen: {{ $allDosenCount }}</span>
                                     @if (isset($prodiFilter) && $prodiFilter === 'Sistem Informasi' && ($totalJudulSI ?? 0) > 0)
                                         <span class="badge badge-secondary">Judul: {{ $totalJudulSI }}</span>
                                     @endif
                                 </div>
                             </div>
                             <div class="col-md-6 text-right">
+                                <a href="{{ route($rekapRoute, ['year' => $filterYear]) }}"
+                                    class="btn btn-sm btn-primary mr-2" title="Lihat Detail Lengkap">
+                                    <i class="fas fa-list mr-1"></i>Detail
+                                </a>
                                 <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-secondary"
                                     data-order="desc" title="Urutkan jumlah (tertinggi ke terendah)">
                                     <i class="fas fa-sort-amount-down mr-1"></i>Urutkan
@@ -1080,17 +1124,14 @@
                             @else
                                 <small class="text-muted">(Semua Tahun)</small>
                             @endif
+                            <span class="badge badge-primary"
+                                style="text-transform: none;">{{ array_sum(array_column($jenisLuaranData, 'value')) }}
+                                Luaran</span>
                         </h6>
                     </div>
                     <div class="card-body">
                         @if (count($jenisLuaranData) > 0)
                             <div id="jenisLuaranTreemap" style="height: 350px; width: 100%;"></div>
-                            <div class="mt-3 text-center">
-                                <small class="text-muted">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    <strong>Total:</strong> {{ array_sum(array_column($jenisLuaranData, 'value')) }} luaran
-                                </small>
-                            </div>
                         @else
                             <div class="d-flex align-items-center justify-content-center" style="height: 350px;">
                                 <div class="text-center text-gray-500">
@@ -1150,11 +1191,12 @@
         aria-hidden="true">
         <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
-                <div class="modal-header bg-ligt">
-                    <h5 class="modal-title text-white" id="statisticsModalLabel">
-                        <i class="fas fa-chart-line mr-2"></i>Detail Statistik
+                <div class="modal-header">
+                    <h5 class="modal-title text- d-flex align-items-center mb-0" id="statisticsModalLabel">
+                        <span id="statisticsModalTitle">Detail Statistik</span>
                     </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span id="statisticsModalCount" class="badge badge-primary ml-2 ml-sm-3">0 data</span>
+                    <button type="button" class="close text-white ml-auto" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -2470,8 +2512,9 @@
                 const currentYear = '{{ $filterYear }}';
 
                 // Update modal title
-                $('#statisticsModalLabel').html('<i class="fas fa-chart-line mr-2"></i>Detail ' + title +
-                    (currentYear !== 'all' ? ' - Tahun ' + currentYear : ' - Semua Tahun'));
+                $('#statisticsModalTitle').text('Detail ' + title + (currentYear !== 'all' ? ' - Tahun ' + currentYear :
+                    ' - Semua Tahun'));
+                $('#statisticsModalCount').text('…');
 
                 // Show modal with enhanced loading state
                 $('#statisticsModal').modal('show');
@@ -2502,6 +2545,13 @@
                     },
                     timeout: 30000, // 30 second timeout
                     success: function(response) {
+                        // Update total count badge in header consistently for all types
+                        try {
+                            var total = (response && typeof response.total !== 'undefined') ? response.total : 0;
+                            $('#statisticsModalCount').text(total + ' data');
+                        } catch (e) {
+                            $('#statisticsModalCount').text('0 data');
+                        }
                         renderModalContent(type, response, title);
                     },
                     error: function(xhr, status, error) {
@@ -2534,206 +2584,217 @@
                 });
             }
 
+
             function renderModalContent(type, data, title) {
-                let html = '';
+                let headerHtml = ''; // HTML untuk header
+                let bodyHtml = ''; // HTML untuk body
 
-                // Summary statistics
-                html += `<div class="row mb-4">`;
-                html += `<div class="col-md-12">`;
-                html += `<div class="card border-left-primary">`;
-                html += `<div class="card-body">`;
-                html += `<div class="row">`;
+                // --- 1. PERSIAPKAN KONTEN ---
 
-                if (type === 'pengabdian') {
-                    html += `
-                        <div class="col-md-3 text-center">
-                            <h4 class="text-primary font-weight-bold">${data.total}</h4>
-                            <small class="text-muted">Total Pengabdian</small>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <h4 class="text-success font-weight-bold">${data.kolaborasi}</h4>
-                            <small class="text-muted">Kolaborasi</small>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <h4 class="text-info font-weight-bold">${data.informatika}</h4>
-                            <small class="text-muted">Informatika</small>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <h4 class="text-warning font-weight-bold">${data.sistem_informasi}</h4>
-                            <small class="text-muted">Sistem Informasi</small>
-                        </div>
-                    `;
-                } else if (type === 'dosen') {
-                    html += `
-                        <div class="col-md-4 text-center">
-                            <h4 class="text-primary font-weight-bold">${data.total}</h4>
-                            <small class="text-muted">Total Dosen</small>
-                        </div>
-                        <div class="col-md-4 text-center">
-                            <h4 class="text-info font-weight-bold">${data.informatika}</h4>
-                            <small class="text-muted">Informatika</small>
-                        </div>
-                        <div class="col-md-4 text-center">
-                            <h4 class="text-warning font-weight-bold">${data.sistem_informasi}</h4>
-                            <small class="text-muted">Sistem Informasi</small>
-                        </div>
-                    `;
-                } else if (type === 'mahasiswa') {
-                    html += `
-                        <div class="col-md-4 text-center">
-                            <h4 class="text-primary font-weight-bold">${data.total}</h4>
-                            <small class="text-muted">Total Pengabdian dengan Mahasiswa</small>
-                        </div>
-                        <div class="col-md-4 text-center">
-                            <h4 class="text-info font-weight-bold">${data.informatika}</h4>
-                            <small class="text-muted">Mahasiswa Informatika</small>
-                        </div>
-                        <div class="col-md-4 text-center">
-                            <h4 class="text-warning font-weight-bold">${data.sistem_informasi}</h4>
-                            <small class="text-muted">Mahasiswa Sistem Informasi</small>
-                        </div>
-                    `;
-                }
-
-                html += `</div></div></div></div></div>`;
-
-                // Data table
                 if (data.details && data.details.length > 0) {
-                    html += `<div class="card">`;
-                    html += `<div class="card-header bg-primary text-white">`;
-                    html += `<h6 class="mb-0"><i class="fas fa-table mr-2"></i>Data Detail ${title}</h6>`;
-                    html += `</div>`;
-                    html += `<div class="card-body">`;
-                    html += `<div class="table-responsive">`;
-                    html += `<table class="table table-striped table-hover" id="detailTable">`;
 
-                    // Table headers based on type
+                    // --- KONTEN UNTUK HEADER ---
+                    // Membuat judul dan badge (jumlah data) untuk header
+                    headerHtml = `
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <span class="mb-0"><i class="fas fa-table mr-2"></i>Data Detail ${title}</span>
+                
+                            <span class="badge badge-light" style="font-size: 0.9rem;">${data.details.length} Data</span>
+                        </div>`;
+
+                    // --- KONTEN UNTUK BODY ---
+                    // Body sekarang HANYA berisi tabel
+                    bodyHtml += `<div class="table-responsive">`;
+                    bodyHtml += `<table class="table table-hover table-striped" id="detailTable" width="100%" cellspacing="0">`;
+
+                    // (Semua logika 'if (type === ...)' Anda tetap sama di sini)
                     if (type === 'pengabdian') {
-                        html += `
-                            <thead class="thead-light">
-                                <tr>
-                                    <th>No</th>
-                                    <th>Judul Pengabdian</th>
-                                    <th>Tanggal</th>
-                                    <th>Ketua</th>
-                                    <th>Sumber Dana</th>
-                                    <th>Prodi</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        bodyHtml += `
+                        <thead class="thead-light">
+                            <tr>
+                                <th>No</th>
+                                <th>Judul Pengabdian</th>
+                                <th>Tanggal</th>
+                                <th>Ketua</th>
+                                <th>Sumber Dana</th>
+                                <th>Prodi</th>
+                                <th>Status</th>
+                                <th>Mahasiswa Terlibat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                         `;
-
                         data.details.forEach((item, index) => {
                             const statusClass = item.dengan_mahasiswa ? 'badge-success' : 'badge-secondary';
                             const statusText = item.dengan_mahasiswa ? 'Dengan Mahasiswa' : 'Tanpa Mahasiswa';
-
-                            html += `
-                                <tr>
-                                    <td>${index + 1}</td>
-                                    <td>
-                                        <div class="font-weight-bold text-primary">${item.judul}</div>
-                                        <small class="text-muted">${item.id_pengabdian}</small>
-                                    </td>
-                                    <td>${new Date(item.tanggal_pengabdian).toLocaleDateString('id-ID')}</td>
-                                    <td>${item.ketua}</td>
-                                    <td><span class="badge badge-info">${item.sumber_dana}</span></td>
-                                    <td><span class="badge badge-secondary">${item.kategori_prodi}</span></td>
-                                    <td><span class="badge ${statusClass}">${statusText}</span></td>
-                                </tr>
+                            const judul = item.judul_pengabdian || item.judul || 'N/A';
+                            // Render mahasiswa list: up to 3 entries, show name (nim)
+                            let mhsHtml = '-';
+                            if (item.mahasiswa_list && item.mahasiswa_list.length > 0) {
+                                const shown = item.mahasiswa_list.slice(0, 3)
+                                    .map((m, i) => `${i + 1}. ${m.nama || 'N/A'} (${m.nim || '-'})`).join('<br>');
+                                if (item.mahasiswa_list.length > 3) {
+                                    const sisa = item.mahasiswa_list.length - 3;
+                                    mhsHtml = shown + `<br><small class="text-muted">+${sisa} lainnya</small>`;
+                                } else {
+                                    mhsHtml = shown;
+                                }
+                            }
+                            bodyHtml += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>
+                                    <div class="font-weight-bold text-primary">${judul}</div>
+                                    <small class="text-muted">${item.id_pengabdian || 'N/A'}</small>
+                                </td>
+                                <td>${item.tanggal_pengabdian ? new Date(item.tanggal_pengabdian).toLocaleDateString('id-ID') : 'N/A'}</td>
+                                <td>${item.ketua || 'N/A'}</td>
+                                <td><span class="badge badge-info">${item.sumber_dana || 'N/A'}</span></td>
+                                <td><span class="badge badge-secondary">${item.kategori_prodi || 'N/A'}</span></td>
+                                <td><span class="badge ${statusClass}">${statusText}</span></td>
+                                <td class="small">${mhsHtml}</td>
+                            </tr>
                             `;
                         });
 
                     } else if (type === 'dosen') {
-                        html += `
-                            <thead class="thead-light">
-                                <tr>
-                                    <th>No</th>
-                                    <th>Nama Dosen</th>
-                                    <th>NIK</th>
-                                    <th>Program Studi</th>
-                                    <th>Jumlah Pengabdian</th>
-                                    <th>Jabatan</th>
-                                    <th>Email</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                        `;
-
+                        // Blok 'dosen' yang sudah disederhanakan
+                        bodyHtml += `
+                        <thead class="thead-light">
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Dosen</th>
+                                <th>Prodi</th>
+                                <th class="text-center">Jumlah Pengabdian</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                    `;
                         data.details.forEach((item, index) => {
-                            const prodiClass = item.prodi === 'Informatika' ? 'badge-info' : 'badge-warning';
-
-                            html += `
-                                <tr>
-                                    <td>${index + 1}</td>
-                                    <td>
-                                        <div class="font-weight-bold text-primary">${item.nama}</div>
-                                        <small class="text-muted">NIDN: ${item.nidn || 'N/A'}</small>
-                                    </td>
-                                    <td><span class="badge badge-secondary">${item.nik}</span></td>
-                                    <td><span class="badge ${prodiClass}">${item.prodi}</span></td>
-                                    <td class="text-center">
-                                        <span class="badge badge-primary">${item.jumlah_pengabdian}</span>
-                                    </td>
-                                    <td>${item.jabatan || 'N/A'}</td>
-                                    <td>${item.email || 'N/A'}</td>
-                                </tr>
-                            `;
+                            bodyHtml += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>
+                            <div class="">${item.nama}</div>
+                        </td>
+                        
+                        <td>${item.prodi}</td> 
+                        
+                        <td class="text-center">
+                            ${item.jumlah_pengabdian}
+                        </td>
+                    </tr>
+                `;
                         });
 
                     } else if (type === 'mahasiswa') {
-                        html += `
-                            <thead class="thead-light">
-                                <tr>
-                                    <th>No</th>
-                                    <th>Judul Pengabdian</th>
-                                    <th>Tanggal</th>
-                                    <th>Ketua</th>
-                                    <th>Jumlah Mahasiswa</th>
-                                    <th>Prodi Mahasiswa</th>
-                                    <th>Sumber Dana</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                        `;
-
+                        // Blok 'mahasiswa'
+                        bodyHtml += `
+                <thead class="thead-light">
+                    <tr>
+                        <th>No</th>
+                        <th>Judul Pengabdian</th>
+                        <th>Tanggal</th>
+                        <th>Ketua</th>
+                        <th>Jumlah Mahasiswa</th>
+                        <th>Mahasiswa Terlibat</th>
+                        <th>Prodi Mahasiswa</th>
+                        <th>Sumber Dana</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
                         data.details.forEach((item, index) => {
-                            html += `
-                                <tr>
-                                    <td>${index + 1}</td>
-                                    <td>
-                                        <div class="font-weight-bold text-primary">${item.judul}</div>
-                                        <small class="text-muted">${item.id_pengabdian}</small>
-                                    </td>
-                                    <td>${new Date(item.tanggal_pengabdian).toLocaleDateString('id-ID')}</td>
-                                    <td>${item.ketua}</td>
-                                    <td class="text-center">
-                                        <span class="badge badge-success">${item.jumlah_mahasiswa}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge badge-info">Informatika: ${item.mahasiswa_informatika}</span>
-                                        <span class="badge badge-warning">SI: ${item.mahasiswa_sistem_informasi}</span>
-                                    </td>
-                                    <td><span class="badge badge-secondary">${item.sumber_dana}</span></td>
-                                </tr>
-                            `;
+                            const judul = item.judul_pengabdian || item.judul || 'N/A';
+                            // Render mahasiswa list: up to 3 entries, show name (nim)
+                            let mhsHtml = '-';
+                            if (item.mahasiswa_list && item.mahasiswa_list.length > 0) {
+                                const shown = item.mahasiswa_list.slice(0, 3)
+                                    .map((m, i) => `${i + 1}. ${m.nama || 'N/A'} (${m.nim || '-'})`).join('<br>');
+                                if (item.mahasiswa_list.length > 3) {
+                                    const sisa = item.mahasiswa_list.length - 3;
+                                    mhsHtml = shown + `<br><small class="text-muted">+${sisa} lainnya</small>`;
+                                } else {
+                                    mhsHtml = shown;
+                                }
+                            }
+                            bodyHtml += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>
+                            <div class="font-weight-bold text-primary">${judul}</div>
+                            <small class="text-muted">${item.id_pengabdian || 'N/A'}</small>
+                        </td>
+                        <td>${item.tanggal_pengabdian ? new Date(item.tanggal_pengabdian).toLocaleDateString('id-ID') : 'N/A'}</td>
+                        <td>${item.ketua || 'N/A'}</td>
+                        <td class="text-center">
+                            <span class="badge badge-success">${item.jumlah_mahasiswa || 0}</span>
+                        </td>
+                        <td class="small">${mhsHtml}</td>
+                        <td>
+                            <span class="badge badge-info">Informatika: ${item.mahasiswa_informatika || 0}</span>
+                            <span class="badge badge-warning">SI: ${item.mahasiswa_sistem_informasi || 0}</span>
+                        </td>
+                        <td><span class="badge badge-secondary">${item.sumber_dana || 'N/A'}</span></td>
+                    </tr>
+                `;
+                        });
+
+                    } else if (type === 'prodi') {
+                        // Blok 'prodi'
+                        bodyHtml += `
+                <thead class="thead-light">
+                    <tr>
+                        <th>No</th>
+                        <th>Nama Program Studi</th>
+                        <th class="text-center">Jumlah Pengabdian</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+                        data.details.forEach((item, index) => {
+                            bodyHtml += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>
+                            <div class="font-weight-bold text-primary">${item.nama_prodi}</div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-primary" style="font-size: 0.9rem;">${item.jumlah_pengabdian}</span>
+                        </td>
+                    </tr>
+                `;
                         });
                     }
 
-                    html += `</tbody></table></div></div></div>`;
+                    bodyHtml += `</tbody></table></div>`; // Menutup table-responsive
+
                 } else {
-                    html += `
-                        <div class="text-center py-5">
-                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                            <h5 class="text-muted">Tidak ada data</h5>
-                            <p class="text-muted">Belum ada data detail untuk kategori ini.</p>
-                        </div>
-                    `;
+                    // --- KONTEN JIKA TIDAK ADA DATA ---
+
+                    // Header jika tidak ada data
+                    headerHtml = `<span><i class="fas fa-inbox mr-2"></i>Data Detail ${title}</span>`;
+
+                    // Body jika tidak ada data
+                    bodyHtml = `
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Tidak ada data</h5>
+                <p class="text-muted">Belum ada data detail untuk kategori ini.</p>
+            </div>
+        `;
                 }
 
-                $('#modalBody').html(html);
+                // --- 2. SUNTIKKAN HTML KE TEMPATNYA ---
 
-                // Initialize DataTable if there's data
+                // **Title & badge di header modal sudah diatur di showStatisticsModal**
+                // (headerHtml tidak digunakan lagi untuk header modal)
+
+                // **PERINTAH INI AKAN MENGISI BODY MODAL ANDA**
+                $('#modalBody').html(bodyHtml);
+
+                // --- 3. INISIALISASI DATATABLE & TOMBOL EKSPOR ---
+
                 if (data.details && data.details.length > 0) {
                     setTimeout(() => {
                         $('#detailTable').DataTable({
@@ -2758,7 +2819,7 @@
                     }, 100);
                 }
 
-                // Show export button if there's data
+                // Tampilkan/Sembunyikan tombol Ekspor
                 if (data.details && data.details.length > 0) {
                     $('#exportBtn').show().off('click').on('click', function() {
                         exportModalData(type, data);

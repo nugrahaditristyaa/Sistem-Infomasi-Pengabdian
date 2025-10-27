@@ -515,7 +515,7 @@ API routes ditempatkan di luar middleware role-specific (`role:Staff InQA`, `rol
 >     // Apply filter prodi = 'Informatika'
 > } elseif ($user->role === 'Kaprodi SI') {
 >     // Apply filter prodi = 'Sistem Informasi'
-> }
+> } 
 > ```
 
 ## Summary

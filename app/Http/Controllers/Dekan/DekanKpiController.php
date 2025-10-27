@@ -85,25 +85,19 @@ class DekanKpiController extends Controller
         try {
             $kpi = Kpi::findOrFail($id);
 
+            // Hanya izinkan perubahan pada target (angka)
             $request->validate([
-                'indikator' => 'required|string|max:255',
                 'target' => 'required|numeric|min:0',
-                'satuan' => 'required|string|max:50',
             ], [
-                'indikator.required' => 'Nama indikator wajib diisi.',
-                'indikator.max' => 'Nama indikator maksimal 255 karakter.',
                 'target.required' => 'Target wajib diisi.',
                 'target.numeric' => 'Target harus berupa angka.',
                 'target.min' => 'Target tidak boleh kurang dari 0.',
-                'satuan' => 'Satuan wajib diisi.',
-                'satuan.max' => 'Satuan maksimal 50 karakter.',
             ]);
 
             DB::beginTransaction();
 
-            $kpi->indikator = trim($request->indikator);
+            // Jangan ubah field lain
             $kpi->target = $request->target;
-            $kpi->satuan = trim($request->satuan);
             $kpi->save();
 
             DB::commit();
@@ -133,24 +127,17 @@ class DekanKpiController extends Controller
             $kpi = Kpi::where('kode', $kode)->firstOrFail();
 
             $request->validate([
-                'indikator' => 'required|string|max:500',
                 'target' => 'required|numeric|min:0',
-                'satuan' => 'required|string|max:50',
             ], [
-                'indikator.required' => 'Nama indikator wajib diisi.',
-                'indikator.max' => 'Nama indikator maksimal 500 karakter.',
                 'target.required' => 'Target (Angka) wajib diisi.',
                 'target.numeric' => 'Target (Angka) harus berupa angka.',
                 'target.min' => 'Target (Angka) tidak boleh kurang dari 0.',
-                'satuan.required' => 'Satuan wajib diisi.',
-                'satuan.max' => 'Satuan maksimal 50 karakter.',
             ]);
 
             DB::beginTransaction();
 
-            $kpi->indikator = trim($request->indikator);
+            // Hanya perbarui target dari modal; field lain tidak diubah
             $kpi->target = $request->target;
-            $kpi->satuan = trim($request->satuan);
             $kpi->save();
 
             DB::commit();
