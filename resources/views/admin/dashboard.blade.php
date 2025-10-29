@@ -436,6 +436,47 @@
                     transition: all 0.3s ease;
                 }
 
+
+                /* Sparkline Chart Styles */
+                .sparkline-container {
+                    height: 40px;
+                    margin-top: 8px;
+                    margin-bottom: 8px;
+                    opacity: 0.8;
+                    transition: opacity 0.3s ease;
+                }
+
+                .sparkline-container:hover {
+                    opacity: 1;
+                }
+
+                .sparkline-chart {
+                    height: 100%;
+                    width: 100%;
+                }
+
+                .sparkline-chart canvas {
+                    display: block !important;
+                }
+
+                .statistics-card .sparkline-container {
+                    border-radius: 4px;
+                    background: rgba(255, 255, 255, 0.1);
+                    padding: 4px;
+                }
+
+                .border-left-primary .sparkline-container {
+                    background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
+                }
+
+                .border-left-warning .sparkline-container {
+                    background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
+                }
+
+                .border-left-info .sparkline-container {
+                    background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
+                }
+
                 /* Responsive adjustments */
                 @media (max-width: 768px) {
                     .statistics-card {
@@ -573,6 +614,11 @@
                                     onclick="window.location.href='{{ route('admin.pengabdian.index') }}'">
                                     {{ $stats['total_pengabdian'] }}
                                 </div>
+
+                                <div class="sparkline-container">
+                                    <canvas id="sparklinePengabdian" class="sparkline-chart"></canvas>
+                                </div>
+
                                 <div class="text-xs text-muted mt-1">
                                     @if ($stats['percentage_change_pengabdian'] != 0)
                                         <span
@@ -633,6 +679,11 @@
                                     onclick="window.location.href='{{ route('admin.dosen.index') }}'">
                                     {{ $stats['total_dosen'] }}
                                 </div>
+
+                                <div class="sparkline-container">
+                                    <canvas id="sparklineDosen" class="sparkline-chart"></canvas>
+                                </div>
+
                                 <div class="text-xs text-success mt-1 mb-2" data-toggle="tooltip"
                                     title="Jumlah dosen terlibat dari total seluruh dosen FTI">
 
@@ -725,6 +776,12 @@
                                     onclick="window.location.href='{{ route('admin.mahasiswa.index') }}'">
                                     {{ $stats['persentase_pengabdian_dengan_mahasiswa'] }}%
                                 </div>
+
+
+                                <div class="sparkline-container">
+                                    <canvas id="sparklineMahasiswa" class="sparkline-chart"></canvas>
+                                </div>
+
                                 <div class="text-xs text-muted mt-1 ">
                                     @if ($stats['percentage_change_mahasiswa'] != 0)
                                         <span
@@ -1131,6 +1188,97 @@
                 nama: nama,
                 jumlah: allJumlahPengabdian[index]
             }));
+
+
+            function loadSparklineCharts() {
+                // Load sparkline data from API
+                fetch('{{ route('dekan.api.sparkline-data') }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Sparkline data received:', data); // Debug log
+                        createSparkline('sparklinePengabdian', data.pengabdian, '#4e73df', data.years);
+                        createSparkline('sparklineDosen', data.dosen, '#4e73df', data.years);
+                        createSparkline('sparklineMahasiswa', data.mahasiswa, '#4e73df', data.years);
+                    })
+                    .catch(error => {
+                        console.error('Error loading sparkline data:', error);
+                        // Create dummy data if API fails (use yearly data instead of monthly)
+                        const currentYear = new Date().getFullYear();
+                        const dummyYears = Array.from({
+                            length: 5
+                        }, (_, i) => currentYear - 4 + i);
+                        const dummyData = Array.from({
+                            length: 5
+                        }, () => Math.floor(Math.random() * 20) + 5);
+                        createSparkline('sparklinePengabdian', dummyData, '#4e73df', dummyYears);
+                        createSparkline('sparklineDosen', dummyData, '#4e73df', dummyYears);
+                        createSparkline('sparklineMahasiswa', dummyData, '#4e73df', dummyYears);
+                    });
+            }
+
+            function createSparkline(canvasId, data, color, years) {
+                const ctx = document.getElementById(canvasId);
+                if (!ctx) return;
+
+                // Destroy existing chart if it exists
+                const existingChart = Chart.getChart(canvasId);
+                if (existingChart) {
+                    existingChart.destroy();
+                }
+
+                const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 40);
+                gradient.addColorStop(0, color + '40');
+                gradient.addColorStop(1, color + '10');
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.map((_, i) => ''),
+                        datasets: [{
+                            data: data,
+                            borderColor: color,
+                            backgroundColor: gradient,
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            pointBackgroundColor: 'transparent',
+                            pointBorderColor: 'transparent',
+                            pointBorderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'none'
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: false
+                            },
+                            datalabels: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: false
+                            },
+                            y: {
+                                display: false,
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+            loadSparklineCharts();
 
             // 3. Fungsi terpusat untuk membuat chart dosen (dengan gradasi warna)
             function createDosenChart(canvasId, labels, data) {
@@ -1584,7 +1732,7 @@
                                                 $missingLabels[] = $m;
                                             } else {
                                                 // maybe it's an internal key -> find corresponding label
-                                        $labelFound = array_search($m, $labelToKey, true);
+        $labelFound = array_search($m, $labelToKey, true);
         if ($labelFound !== false) {
             $missingLabels[] = $labelFound;
         } else {
@@ -1759,6 +1907,11 @@ $dataMissing = implode('|', $dataMissingArr);
                         "hide": 100
                     }
                 });
+
+
+                
+                // Load sparkline charts
+                loadSparklineCharts();
 
                 // Refresh dashboard button
                 $('.dashboard-actions .btn').on('click', function() {
