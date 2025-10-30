@@ -1,6 +1,6 @@
 @extends('dekan.layouts.main')
 
-@section('title', 'Dashboard Dekan')
+@section('title', 'Dashboard Pengabdian')
 
 @push('styles')
     <!-- DataTables CSS -->
@@ -100,6 +100,23 @@
         .kpi-progress-item .badge {
             font-size: 0.7rem;
             padding: 3px 8px;
+        }
+
+        body.modal-open {
+            /* Paksa agar tidak ada padding tambahan di body */
+            padding-right: 0 !important;
+
+            /* * Jika Anda menggunakan 'overflow-y: scroll' di body,
+            * pastikan 'overflow' tetap 'hidden' saat modal terbuka.
+            */
+            overflow: hidden !important;
+        }
+
+        /* * Jika navbar atas Anda (yang .fixed-top) juga ikut bergeser,
+        * tambahkan ini juga.
+        */
+        .fixed-top {
+            padding-right: 0 !important;
         }
 
         /* Responsive adjustments */
@@ -596,20 +613,15 @@
             opacity: 1;
         }
 
-        .sparkline-chart {
-            height: 100%;
-            width: 100%;
-        }
-
         .sparkline-chart canvas {
             display: block !important;
         }
 
-        .statistics-card .sparkline-container {
+        /* .statistics-card .sparkline-container {
             border-radius: 4px;
             background: rgba(255, 255, 255, 0.1);
             padding: 4px;
-        }
+        } */
 
         .border-left-primary .sparkline-container {
             background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
@@ -621,55 +633,6 @@
 
         .border-left-info .sparkline-container {
             background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
-        }
-
-        /* Fix sidebar dan footer untuk zoom out */
-        #wrapper {
-            min-height: 100vh !important;
-        }
-
-        /* Sidebar harus meregang penuh ke bawah */
-        .sidebar {
-            min-height: 100vh !important;
-            position: fixed !important;
-            height: 100% !important;
-        }
-
-        /* Content wrapper mengakomodasi sidebar */
-        #content-wrapper {
-            min-height: 100vh !important;
-            margin-left: 224px !important;
-            /* Lebar sidebar default */
-        }
-
-        /* Responsive sidebar untuk mobile */
-        @media (max-width: 768px) {
-            #content-wrapper {
-                margin-left: 0 !important;
-            }
-        }
-
-        /* Footer styling moved to layout (inqa/layouts/main.blade.php) */
-
-        /* Fix overflow */
-        html,
-        body {
-            overflow-x: hidden !important;
-        }
-
-        #content-wrapper {
-            min-height: unset !important;
-        }
-
-        #content-wrapper {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        /* 2. Ini adalah perintah kuncinya: perintahkan area konten untuk tumbuh */
-        #content {
-            flex-grow: 1;
         }
 
         /* Word Cloud Styles */

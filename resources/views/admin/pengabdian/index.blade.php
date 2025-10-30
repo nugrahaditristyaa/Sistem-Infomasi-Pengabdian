@@ -295,7 +295,7 @@
                                                 <div class="d-flex flex-column align-items-start">
                                                     @foreach ($item->jumlah_luaran_direncanakan as $jenis)
                                                         {{-- Menggunakan badge untuk tampilan yang rapi --}}
-                                                        <span class="badge badge-info mb-1">{{ $jenis }}</span>
+                                                        <span class="badge badge-secondary mb-1">{{ $jenis }}</span>
                                                     @endforeach
                                                 </div>
                                             @else

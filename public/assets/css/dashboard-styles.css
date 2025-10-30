@@ -1,0 +1,446 @@
+/* ========================================= */
+/* ==       SHARED DASHBOARD STYLES       == */
+/* ========================================= */
+
+/* --- Card Styling (Modern & Statistics) --- */
+.card,
+.modern-card,
+.statistics-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; /* Force transition */
+    border-radius: 12px !important; /* Force border-radius */
+    border: none !important; /* Force no border */
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06) !important; /* Consistent shadow */
+}
+
+/* Specific border for statistics cards */
+.statistics-card {
+    border-left-width: 0.25rem !important;
+}
+
+.card:hover:not(.no-hover),
+.modern-card:hover:not(.no-hover),
+.statistics-card:hover:not(.no-hover) {
+    transform: translateY(-4px) !important; /* Consistent hover lift */
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12) !important; /* Consistent hover shadow */
+}
+
+.modern-card .card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px 12px 0 0; /* Match card radius */
+}
+
+.modern-card .card-header h6 {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.card .card-body,
+.modern-card .card-body,
+.statistics-card .card-body {
+    padding: 1.5rem !important; /* Consistent padding */
+}
+
+/* Specific padding for KPI cards */
+.statistics-card .card-body {
+    padding: 1.2rem 1.5rem !important;
+}
+
+
+/* --- Equal Height Cards (Flexbox) --- */
+.row .col-xl-4 .card.h-100,
+.row .col-lg-6 .card.h-100,
+.row .col-md-6 .card.h-100,
+.row .col-md-12 .card.h-100 {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.row .col-xl-4 .card.h-100 .card-body,
+.row .col-lg-6 .card.h-100 .card-body,
+.row .col-md-6 .card.h-100 .card-body,
+.row .col-md-12 .card.h-100 .card-body {
+    flex: 1 !important; /* Make card body grow to fill space */
+}
+
+/* Minimum Heights (Optional, adjust if needed) */
+.statistics-row .card.h-100 {
+    min-height: 140px; /* Min height for top KPI cards */
+}
+.main-content-row .card.h-100 {
+    min-height: 400px; /* Min height for main content cards */
+}
+
+
+/* --- Sparkline Chart Styling --- */
+.sparkline-container {
+    height: 40px !important; /* Force height */
+    position: relative;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+    border-radius: 4px; /* Added subtle radius */
+    padding: 4px; /* Added subtle padding */
+}
+
+.sparkline-container:hover {
+    opacity: 1;
+}
+
+.sparkline-container canvas,
+.sparkline-chart { /* Target both potential elements */
+    height: 40px !important; /* Force height */
+    width: 100% !important; /* Force width */
+    display: block !important;
+}
+
+/* Background Gradients for Sparklines */
+.border-left-primary .sparkline-container {
+    background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
+}
+.border-left-success .sparkline-container {
+    background: linear-gradient(135deg, rgba(28, 200, 138, 0.1) 0%, rgba(28, 200, 138, 0.05) 100%);
+}
+.border-left-info .sparkline-container {
+    background: linear-gradient(135deg, rgba(54, 185, 204, 0.1) 0%, rgba(54, 185, 204, 0.05) 100%);
+}
+.border-left-warning .sparkline-container {
+    background: linear-gradient(135deg, rgba(246, 194, 62, 0.1) 0%, rgba(246, 194, 62, 0.05) 100%);
+}
+.border-left-danger .sparkline-container {
+    background: linear-gradient(135deg, rgba(231, 74, 59, 0.1) 0%, rgba(231, 74, 59, 0.05) 100%);
+}
+.border-left-secondary .sparkline-container {
+     background: linear-gradient(135deg, rgba(133, 135, 150, 0.1) 0%, rgba(133, 135, 150, 0.05) 100%);
+}
+
+
+/* --- Typography & Elements inside Cards --- */
+.statistics-card .text-xs,
+.modern-card .text-xs {
+    font-size: 0.8rem !important;
+    line-height: 1.4 !important;
+    font-weight: 600 !important;
+}
+
+.statistics-card .h5,
+.modern-card .h5 {
+    font-size: 1.6rem !important;
+    margin-bottom: 0.5rem !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+}
+
+/* Ensure consistent hero number size */
+#statTotalPengabdian,
+#statDosenTerlibat,
+#statDenganMahasiswa {
+    font-size: 1.6rem !important; /* Match .h5 size */
+}
+
+.statistics-card .text-muted,
+.modern-card .text-muted {
+    font-size: 0.75rem !important;
+    line-height: 1.5 !important;
+}
+
+.statistics-card .badge,
+.modern-card .badge {
+    font-size: 0.75rem !important;
+    padding: 0.3rem 0.6rem !important;
+    font-weight: 600 !important;
+}
+
+.statistics-card .font-weight-bold,
+.modern-card .font-weight-bold {
+    font-size: 0.8rem !important;
+    font-weight: 700 !important; /* Ensure boldness */
+}
+
+/* Tooltip Icons */
+.tooltip-icon {
+    opacity: 0.7;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer; /* Add pointer cursor */
+}
+
+.tooltip-icon:hover {
+    opacity: 1;
+    color: #4e73df !important;
+    transform: scale(1.15);
+    filter: drop-shadow(0 2px 4px rgba(78, 115, 223, 0.3));
+}
+
+/* Clickable Stats */
+.clickable-stat,
+.clickable-stat-number {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    position: relative; /* Needed for pulse */
+    overflow: hidden; /* Needed for pulse */
+    display: inline-block; /* Adjust display */
+    padding: 4px 8px; /* Add some padding */
+    margin: -4px -8px; /* Offset padding */
+    border-radius: 6px;
+}
+
+.clickable-stat:hover,
+.clickable-stat-number:hover {
+    color: #4e73df !important;
+    text-shadow: 0 2px 8px rgba(78, 115, 223, 0.2);
+    background: rgba(78, 115, 223, 0.08); /* Subtle background on hover */
+    transform: scale(1.03); /* Subtle scale */
+}
+
+.clickable-stat:active,
+.clickable-stat-number:active {
+    transform: scale(0.98); /* Click feedback */
+}
+
+/* --- List Group Styling --- */
+.list-group-item-action {
+    color: #5a5c69;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    border-radius: 8px; /* Add subtle radius */
+}
+
+.list-group-item-action:hover {
+    border-left-color: #4e73df;
+    background-color: #f8f9fc;
+    transform: translateX(4px);
+    box-shadow: 0 4px 15px rgba(78, 115, 223, 0.1);
+}
+
+/* --- Chart Containers & Toggles --- */
+.chart-bar,
+.chart-area,
+.chart-pie,
+.chart-radar {
+    position: relative;
+    height: 350px; /* Default height */
+}
+
+.chart-bar-scrollable {
+    background: #f8f9fc;
+    border: 1px solid #e3e6f0;
+    border-radius: 8px;
+    padding: 15px;
+    max-height: 400px; /* Default max height */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.chart-bar-scrollable::-webkit-scrollbar { width: 8px; }
+.chart-bar-scrollable::-webkit-scrollbar-track { background: #e3e6f0; border-radius: 4px; }
+.chart-bar-scrollable::-webkit-scrollbar-thumb { background: #4e73df; border-radius: 4px; }
+.chart-bar-scrollable::-webkit-scrollbar-thumb:hover { background: #2e59d9; }
+
+.chart-container {
+    transition: all 0.4s ease-in-out;
+    opacity: 1;
+}
+
+.chart-container.d-none {
+    opacity: 0;
+    transform: translateY(-20px);
+    height: 0; /* Help transition */
+    overflow: hidden; /* Help transition */
+}
+
+/* Button Group Toggles */
+.btn-group .btn {
+    transition: all 0.2s ease;
+    border-radius: 0.375rem !important;
+}
+.btn-group .btn:first-child { border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; }
+.btn-group .btn:last-child { border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
+
+.btn-group .btn.active {
+    transform: scale(1.05) translateY(-1px);
+    box-shadow: 0 4px 15px rgba(78, 115, 223, 0.25);
+    z-index: 1; /* Ensure active is on top */
+}
+.btn-group .btn:hover:not(.active) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 2; /* Ensure hover is on top */
+}
+
+/* --- Modal Fixes --- */
+body.modal-open {
+    padding-right: 0 !important;
+    overflow: hidden !important;
+}
+
+.fixed-top { /* Also apply to fixed navbar */
+    padding-right: 0 !important;
+}
+
+.modal { pointer-events: auto !important; }
+.modal-backdrop { pointer-events: auto !important; }
+.modal-dialog {
+    pointer-events: auto !important;
+    transition: transform 0.3s ease-out !important;
+}
+.modal.fade .modal-dialog {
+    transform: translate(0, -25px) !important; /* Slightly less dramatic entry */
+}
+.modal.show .modal-dialog {
+    transform: none !important;
+}
+
+/* Prevent card hover effects when modal is open */
+body.modal-open .card:hover:not(.no-hover),
+body.modal-open .modern-card:hover:not(.no-hover),
+body.modal-open .statistics-card:hover:not(.no-hover) {
+    transform: none !important;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06) !important; /* Revert to base shadow */
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+    .statistics-card, .modern-card { margin-bottom: 1rem; }
+    .statistics-card .card-body, .modern-card .card-body { padding: 1rem 1.25rem !important; }
+    .statistics-card .text-xs, .modern-card .text-xs { font-size: 0.75rem !important; }
+    .statistics-card .h5, .modern-card .h5, #statTotalPengabdian, #statDosenTerlibat, #statDenganMahasiswa { font-size: 1.4rem !important; }
+    .statistics-card .text-muted, .modern-card .text-muted { font-size: 0.7rem !important; }
+    .statistics-card .font-weight-bold, .modern-card .font-weight-bold { font-size: 0.75rem !important; }
+    .chart-bar, .chart-area, .chart-pie, .chart-radar { height: 300px; }
+    .chart-bar-scrollable { max-height: 350px !important; }
+}
+
+@media (max-width: 576px) {
+    .statistics-card .card-body, .modern-card .card-body { padding: 0.75rem 1rem !important; }
+    .statistics-card .text-xs, .modern-card .text-xs { font-size: 0.7rem !important; }
+    .statistics-card .h5, .modern-card .h5, #statTotalPengabdian, #statDosenTerlibat, #statDenganMahasiswa { font-size: 1.2rem !important; }
+    .statistics-card .text-muted, .modern-card .text-muted, .statistics-card .font-weight-bold, .modern-card .font-weight-bold { font-size: 0.7rem !important; }
+    .statistics-card .badge, .modern-card .badge { font-size: 0.65rem !important; padding: 0.25rem 0.5rem !important; }
+    .chart-bar-scrollable { max-height: 300px !important; padding: 10px !important; }
+}
+
+/* --- Utility (Keep if needed) --- */
+.icon-circle {
+    width: 40px; height: 40px; border-radius: 100%; display: inline-flex;
+    align-items: center; justify-content: center; margin-right: 15px;
+    background-color: rgba(255, 255, 255, 0.2); color: #fff;
+}
+.icon-circle.bg-primary { background-color: #4e73df !important; }
+.icon-circle.bg-success { background-color: #1cc88a !important; }
+.icon-circle.bg-info { background-color: #36b9cc !important; }
+
+
+/* ========================================= */
+/* ==   SIDEBAR TOGGLE CONTENT WRAPPER FIX  == */
+/* ========================================= */
+
+/* --- Default state (Sidebar Expanded) --- */
+#content-wrapper {
+    margin-left: 224px; /* Lebar sidebar default */
+    transition: margin-left 0.3s ease; /* Transisi halus */
+}
+
+/* --- Toggled state (Sidebar Collapsed) --- */
+body.sidebar-toggled #wrapper #content-wrapper {
+    margin-left: 104px; /* Lebar sidebar saat diciutkan */
+}
+
+/* --- Responsive: No margin on small screens --- */
+@media (max-width: 768px) {
+    #content-wrapper,
+    body.sidebar-toggled #wrapper #content-wrapper {
+        margin-left: 0 !important; /* Hapus margin di layar kecil */
+    }
+}
+
+
+/* ========================================= */
+/* ==   STICKY FOOTER & LAYOUT BASE FIX   == */
+/* ========================================= */
+
+html, body {
+    height: 100%; /* Penting agar 100vh berfungsi */
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden !important; /* Cegah scroll horizontal paksa */
+}
+
+/* Wrapper utama halaman */
+#wrapper {
+    display: flex;
+    min-height: 100vh; /* Pastikan wrapper minimal setinggi layar */
+}
+
+/* Pembungkus konten + footer */
+#content-wrapper {
+    display: flex;
+    flex-direction: column; /* Konten di atas, footer di bawah */
+    min-height: 100vh;      /* Pastikan pembungkus ini juga minimal setinggi layar */
+    width: 100%;            /* Ambil sisa lebar */
+    overflow-x: clip;       /* Cegah konten meluber */
+}
+
+/* Area konten utama (di atas footer) */
+#content {
+    flex-grow: 1; /* KUNCI: Paksa konten mengisi ruang kosong */
+}
+
+/* Footer (Pastikan flex-shrink ada) */
+.sticky-footer {
+    padding: 1.25rem 1.5rem;
+    background-color: #ffffff;
+    color: #858796;
+    font-size: 0.8rem;
+    border-top: 1px solid #e3e6f0;
+    flex-shrink: 0; /* Mencegah footer menyusut */
+}
+
+.sticky-footer .copyright {
+    text-align: center;
+    line-height: 1;
+    margin: auto;
+}
+
+/* ========================================= */
+/* ==   SIDEBAR TOGGLE & MODAL LAYOUT FIX  == */
+/* ========================================= */
+
+/* --- Penyesuaian margin saat sidebar toggle --- */
+#content-wrapper {
+    margin-left: 224px; /* Lebar sidebar default (sesuaikan jika perlu) */
+    transition: margin-left 0.3s ease;
+}
+
+body.sidebar-toggled #wrapper #content-wrapper {
+    margin-left: 104px; /* Lebar sidebar diciutkan (sesuaikan jika perlu) */
+}
+
+/* Hapus margin di layar kecil */
+@media (max-width: 768px) {
+    #content-wrapper,
+    body.sidebar-toggled #wrapper #content-wrapper {
+        margin-left: 0 !important;
+    }
+}
+
+/* --- Perbaikan Layout Shift Saat Modal Muncul --- */
+body.modal-open {
+    padding-right: 0 !important; /* Paksa TIDAK ADA padding tambahan di body */
+    overflow: hidden !important; /* Pastikan body tidak bisa discroll */
+}
+
+/* Jika navbar atas (.fixed-top) ikut bergeser, tambahkan ini */
+.fixed-top {
+    padding-right: 0 !important;
+}
+
+/* Cegah hover card saat modal terbuka (sudah ada sebelumnya, pastikan tetap ada) */
+body.modal-open .card:hover:not(.no-hover),
+body.modal-open .modern-card:hover:not(.no-hover),
+body.modal-open .statistics-card:hover:not(.no-hover) {
+    transform: none !important;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06) !important;
+}

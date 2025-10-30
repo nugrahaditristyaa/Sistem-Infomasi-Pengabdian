@@ -34,14 +34,8 @@
             </div>
         </li>
 
-        <!-- Nav Item - Alerts -->
-
-        <!-- Nav Item - Messages -->
-
-        <div class="topbar-divider d-none d-sm-block"></div>
-
         <!-- Nav Item - User Information -->
-        <li class="nav-item dropdown no-arrow">
+        {{-- <li class="nav-item dropdown no-arrow">
             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span
@@ -68,6 +62,14 @@
                     Logout
                 </a>
             </div>
+        </li> --}}
+
+        <li class="nav-item">
+            <a href="#" class="btn btn-primary btn-sm shadow-sm" data-toggle="modal" data-target="#logoutModal"
+                style="padding: 8px 20px; border-radius: 6px;">
+                <i class="fas fa-sign-out-alt mr-2"></i>
+                <span>Logout</span>
+            </a>
         </li>
 
     </ul>

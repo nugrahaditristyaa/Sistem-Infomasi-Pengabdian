@@ -81,6 +81,8 @@
         }
     </style>
 
+    <link href="{{ asset('css/dashboard-styles.css') }}" rel="stylesheet">
+
     @stack('styles')
 </head>
 

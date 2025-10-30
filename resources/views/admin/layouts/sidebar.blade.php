@@ -3,10 +3,14 @@
 
     <!-- Sidebar - Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url('admin/dashboard') }}">
+        
+        <div class="sidebar-brand-icon ">
+            <img src="{{ asset('assets/img/logo-ukdw.png') }}" alt="Logo FTI" style="width: 60px; height: 50px;">
+        </div>
         <div class="sidebar-brand-icon ">
             <img src="{{ asset('assets/img/fti-ukdw.png') }}" alt="Logo FTI" style="width: 60px; height: 50px;">
         </div>
-        <div class="sidebar-brand-text mx-3">Admin FTI</div>
+        
     </a>
 
     <!-- Divider -->
