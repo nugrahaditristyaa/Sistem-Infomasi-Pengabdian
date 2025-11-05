@@ -17,7 +17,7 @@ class AdminController extends Controller
     {
         if (!$request->has('year')) {
             // Redirect ke route ini lagi DENGAN parameter TAHUN 2024
-            return redirect()->route('admin.dashboard', ['year' => '2024']); // <-- UBAH DI SINI
+            return redirect()->route('admin.dashboard', ['year' => '2025']); // <-- UBAH DI SINI
         }
 
         // Get year filter parameter - default to current year

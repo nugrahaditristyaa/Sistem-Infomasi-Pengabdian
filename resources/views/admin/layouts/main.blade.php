@@ -20,8 +20,6 @@
     <!-- Custom styles for this template-->
     <link href="{{ asset('assets/css/sb-admin-2.css') }}" rel="stylesheet">
 
-    <!-- Chart.js v3 CSS (if needed) -->
-
     <style>
         /* Modern UI Styles */
         .modern-card {

@@ -677,14 +677,14 @@
                 padding-right: 0 !important;
 
                 /* * Jika Anda menggunakan 'overflow-y: scroll' di body,
-                        * pastikan 'overflow' tetap 'hidden' saat modal terbuka.
-                        */
+                                                        * pastikan 'overflow' tetap 'hidden' saat modal terbuka.
+                                                        */
                 overflow: hidden !important;
             }
 
             /* * Jika navbar atas Anda (yang .fixed-top) juga ikut bergeser,
-                    * tambahkan ini juga.
-                    */
+                                                    * tambahkan ini juga.
+                                                    */
             .fixed-top {
                 padding-right: 0 !important;
             }
@@ -1188,10 +1188,10 @@
             }
 
             /* .statistics-card .sparkline-container {
-                        border-radius: 4px;
-                        background: rgba(255, 255, 255, 0.1);
-                        padding: 4px;
-                    } */
+                                                        border-radius: 4px;
+                                                        background: rgba(255, 255, 255, 0.1);
+                                                        padding: 4px;
+                                                    } */
 
             .border-left-primary .sparkline-container {
                 background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
@@ -1270,9 +1270,7 @@
                                         style="cursor: pointer;"></i>
                                 </div>
                                 <div id="statTotalPengabdian"
-                                    class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat-number"
-                                    style="cursor: pointer;"
-                                    onclick="window.location.href='{{ route('admin.pengabdian.index') }}'">
+                                    class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat-number">
                                     {{ $stats['total_pengabdian'] }}
                                 </div>
 
@@ -1303,7 +1301,7 @@
                                 </div>
 
                                 <button class="btn btn-sm btn-outline-primary btn-block mt-2"
-                                    onclick="$('#statTotalPengabdian').click()">
+                                    onclick="showStatisticsModal('pengabdian', 'Total Pengabdian')">
                                     <i class="fas fa-eye mr-1"></i> Lihat Detail
                                 </button>
                             </div>
@@ -1329,9 +1327,7 @@
                                 </div>
                                 <div id="statDosenTerlibat"
                                     class="h5 mb-0 font-weight-bold text-gray-800
-                                    clickable-stat-number"
-                                    style="cursor: pointer;"
-                                    onclick="window.location.href='{{ route('admin.dosen.index') }}'">
+                                    clickable-stat-number">
                                     {{ $stats['total_dosen'] }}
                                 </div>
 
@@ -1379,7 +1375,7 @@
                                 </div>
 
                                 <button class="btn btn-sm btn-outline-primary btn-block mt-2"
-                                    onclick="$('#statDosenTerlibat').click()">
+                                    onclick="showStatisticsModal('dosen', 'Dosen Terlibat')">
                                     <i class="fas fa-eye mr-1"></i> Lihat Detail
                                 </button>
 
@@ -1405,9 +1401,7 @@
                                         style="cursor: pointer;"></i>
                                 </div>
                                 <div id="statDenganMahasiswa"
-                                    class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat-number"
-                                    style="cursor: pointer;"
-                                    onclick="window.location.href='{{ route('admin.mahasiswa.index') }}'">
+                                    class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat-number">
                                     {{ $stats['persentase_pengabdian_dengan_mahasiswa'] }}%
                                 </div>
 
@@ -1473,7 +1467,7 @@
                                     </div>
 
                                     <button class="btn btn-sm btn-outline-primary btn-block mt-2"
-                                        onclick="$('#statDenganMahasiswa').click()">
+                                        onclick="showStatisticsModal('mahasiswa', 'Pengabdian dengan Mahasiswa')">
                                         <i class="fas fa-eye mr-1"></i> Lihat Detail
                                     </button>
                                 </div>
@@ -1830,9 +1824,46 @@
                 </div>
             </div>
         </div>
+
+
+        <div class="modal fade" id="statisticsModal" tabindex="-1" role="dialog"
+            aria-labelledby="statisticsModalLabel" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text- d-flex align-items-center mb-0" id="statisticsModalLabel">
+                            <span id="statisticsModalTitle">Detail Statistik</span>
+                        </h5>
+                        <span id="statisticsModalCount" class="badge badge-primary ml-2 ml-sm-3">0
+                            data</span>
+                        <button type="button" class="close text-white ml-auto" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" id="modalBody">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="mt-2">Memuat data...</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fas fa-times mr-1"></i>Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     @endsection
 
     @push('scripts')
+
+        <!-- DataTables JS -->
+        <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
 
         <script>
             // --- KODE LENGKAP DAN TERBARU DIMULAI DARI SINI ---
@@ -1854,6 +1885,363 @@
                 nama: nama,
                 jumlah: allJumlahPengabdian[index]
             }));
+
+
+
+            // Statistics Modal Functions
+            function showStatisticsModal(type, title) {
+                const currentYear = '{{ $filterYear }}';
+
+                // Update modal title
+                $('#statisticsModalTitle').text('Detail ' + title + (currentYear !== 'all' ? ' - Tahun ' + currentYear :
+                    ' - Semua Tahun'));
+                $('#statisticsModalCount').text('…');
+
+                // Show modal with enhanced loading state
+                $('#statisticsModal').modal('show');
+                $('#modalBody').html(`
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                        <h5 class="text-primary">Memuat Data ${title}</h5>
+                        <p class="text-muted">Sedang mengumpulkan informasi detail...</p>
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 style="width: 100%; background: linear-gradient(90deg, #4e73df, #36b9cc);"></div>
+                        </div>
+                    </div>
+                `);
+                $('#exportBtn').hide();
+
+                // Make AJAX request to get detailed data
+                $.ajax({
+                    url: '{{ route('dekan.api.statistics-detail') }}',
+                    method: 'GET',
+                    data: {
+                        type: type,
+                        year: currentYear
+                    },
+                    timeout: 30000, // 30 second timeout
+                    success: function(response) {
+                        // Update total count badge in header consistently for all types
+                        try {
+                            var total = (response && typeof response.total !== 'undefined') ? response.total : 0;
+                            $('#statisticsModalCount').text(total + ' data');
+                        } catch (e) {
+                            $('#statisticsModalCount').text('0 data');
+                        }
+                        renderModalContent(type, response, title);
+                    },
+                    error: function(xhr, status, error) {
+                        let errorMessage = 'Terjadi kesalahan saat mengambil data detail.';
+
+                        if (status === 'timeout') {
+                            errorMessage = 'Permintaan timeout. Server membutuhkan waktu terlalu lama.';
+                        } else if (xhr.status === 404) {
+                            errorMessage = 'Endpoint tidak ditemukan. Silakan hubungi administrator.';
+                        } else if (xhr.status === 500) {
+                            errorMessage = 'Kesalahan server internal. Silakan coba lagi nanti.';
+                        }
+
+                        $('#modalBody').html(`
+                            <div class="text-center py-5">
+                                <i class="fas fa-exclamation-triangle fa-4x text-warning mb-4"></i>
+                                <h5 class="text-warning mb-3">Gagal Memuat Data</h5>
+                                <p class="text-muted mb-4">${errorMessage}</p>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button class="btn btn-primary" onclick="showStatisticsModal('${type}', '${title}')">
+                                        <i class="fas fa-redo mr-2"></i>Coba Lagi
+                                    </button>
+                                    <button class="btn btn-secondary" data-dismiss="modal">
+                                        <i class="fas fa-times mr-2"></i>Tutup
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                    }
+                });
+            }
+
+
+            function renderModalContent(type, data, title) {
+                let headerHtml = ''; // HTML untuk header
+                let bodyHtml = ''; // HTML untuk body
+
+                // --- 1. PERSIAPKAN KONTEN ---
+
+                if (data.details && data.details.length > 0) {
+
+                    // --- KONTEN UNTUK HEADER ---
+                    // Membuat judul dan badge (jumlah data) untuk header
+                    headerHtml = `
+                        <div class="d-flex justify-content-between align-items-center w-100">
+                            <span class="mb-0"><i class="fas fa-table mr-2"></i>Data Detail ${title}</span>
+                
+                            <span class="badge badge-light" style="font-size: 0.9rem;">${data.details.length} Data</span>
+                        </div>`;
+
+                    // --- KONTEN UNTUK BODY ---
+                    // Body sekarang HANYA berisi tabel
+                    bodyHtml += `<div class="table-responsive">`;
+                    bodyHtml += `<table class="table table-hover table-striped" id="detailTable" width="100%" cellspacing="0">`;
+
+                    // (Semua logika 'if (type === ...)' Anda tetap sama di sini)
+                    if (type === 'pengabdian') {
+                        bodyHtml += `
+                        <thead class="thead-light">
+                            <tr>
+                                <th>No</th>
+                                <th>Judul Pengabdian</th>
+                                <th>Tanggal</th>
+                                <th>Ketua</th>
+                                <th>Sumber Dana</th>
+                                <th>Prodi</th>
+                                <th>Status</th>
+                                <th>Mahasiswa Terlibat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        `;
+                        data.details.forEach((item, index) => {
+                            const statusText = item.dengan_mahasiswa ? 'Dengan Mahasiswa' : 'Tanpa Mahasiswa';
+                            const judul = item.judul_pengabdian || item.judul || 'N/A';
+                            // Render mahasiswa list: up to 3 entries, show name (nim)
+                            let mhsHtml = '-';
+                            if (item.mahasiswa_list && item.mahasiswa_list.length > 0) {
+                                const shown = item.mahasiswa_list.slice(0, 3)
+                                    .map((m, i) => `${i + 1}. ${m.nama || 'N/A'} (${m.nim || '-'})`).join('<br>');
+                                if (item.mahasiswa_list.length > 3) {
+                                    const sisa = item.mahasiswa_list.length - 3;
+                                    mhsHtml = shown + `<br><small class="text-muted">+${sisa} lainnya</small>`;
+                                } else {
+                                    mhsHtml = shown;
+                                }
+                            }
+                            bodyHtml += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>
+                                    <div class="">${judul}</div>
+                                    <small class="text-muted">${item.id_pengabdian || 'N/A'}</small>
+                                </td>
+                                <td>${item.tanggal_pengabdian ? new Date(item.tanggal_pengabdian).toLocaleDateString('id-ID') : 'N/A'}</td>
+                                <td>${item.ketua || 'N/A'}</td>
+                                <td>${item.sumber_dana || 'N/A'}</td>
+                                <td>${item.kategori_prodi || 'N/A'}</td>
+                                <td>${statusText}</td>
+                                <td class="small">${mhsHtml}</td>
+                            </tr>
+                            `;
+                        });
+
+                    } else if (type === 'dosen') {
+                        // Blok 'dosen' yang sudah disederhanakan
+                        bodyHtml += `
+                        <thead class="thead-light">
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Dosen</th>
+                                <th>Prodi</th>
+                                <th class="text-center">Jumlah Pengabdian</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                    `;
+                        data.details.forEach((item, index) => {
+                            bodyHtml += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>
+                            <div class="">${item.nama}</div>
+                        </td>
+                        
+                        <td>${item.prodi}</td> 
+                        
+                        <td class="text-center">
+                            ${item.jumlah_pengabdian}
+                        </td>
+                    </tr>
+                `;
+                        });
+
+                    } else if (type === 'mahasiswa') {
+                        // Blok 'mahasiswa'
+                        bodyHtml += `
+                <thead class="thead-light">
+                    <tr>
+                        <th>No</th>
+                        <th>Judul Pengabdian</th>
+                        <th>Tanggal</th>
+                        <th>Ketua</th>
+                        <th>Jumlah Mahasiswa</th>
+                        <th>Mahasiswa Terlibat</th>
+                        <th>Prodi Mahasiswa</th>
+                        <th>Sumber Dana</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+                        data.details.forEach((item, index) => {
+                            const judul = item.judul_pengabdian || item.judul || 'N/A';
+                            // Render mahasiswa list: up to 3 entries, show name (nim)
+                            let mhsHtml = '-';
+                            if (item.mahasiswa_list && item.mahasiswa_list.length > 0) {
+                                const shown = item.mahasiswa_list.slice(0, 3)
+                                    .map((m, i) => `${i + 1}. ${m.nama || 'N/A'} (${m.nim || '-'})`).join('<br>');
+                                if (item.mahasiswa_list.length > 3) {
+                                    const sisa = item.mahasiswa_list.length - 3;
+                                    mhsHtml = shown + `<br><small class="text-muted">+${sisa} lainnya</small>`;
+                                } else {
+                                    mhsHtml = shown;
+                                }
+                            }
+                            bodyHtml += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>
+                            <div class="font-weight-bold text-primary">${judul}</div>
+                            <small class="text-muted">${item.id_pengabdian || 'N/A'}</small>
+                        </td>
+                        <td>${item.tanggal_pengabdian ? new Date(item.tanggal_pengabdian).toLocaleDateString('id-ID') : 'N/A'}</td>
+                        <td>${item.ketua || 'N/A'}</td>
+                        <td class="text-center">
+                            <span class="badge badge-success">${item.jumlah_mahasiswa || 0}</span>
+                        </td>
+                        <td class="small">${mhsHtml}</td>
+                        <td>
+                            <span class="badge badge-info">Informatika: ${item.mahasiswa_informatika || 0}</span>
+                            <span class="badge badge-warning">SI: ${item.mahasiswa_sistem_informasi || 0}</span>
+                        </td>
+                        <td><span class="badge badge-secondary">${item.sumber_dana || 'N/A'}</span></td>
+                    </tr>
+                `;
+                        });
+
+                    } else if (type === 'prodi') {
+                        // Blok 'prodi'
+                        bodyHtml += `
+                <thead class="thead-light">
+                    <tr>
+                        <th>No</th>
+                        <th>Nama Program Studi</th>
+                        <th class="text-center">Jumlah Pengabdian</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+                        data.details.forEach((item, index) => {
+                            bodyHtml += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>
+                            <div class="font-weight-bold text-primary">${item.nama_prodi}</div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-primary" style="font-size: 0.9rem;">${item.jumlah_pengabdian}</span>
+                        </td>
+                    </tr>
+                `;
+                        });
+                    }
+
+                    bodyHtml += `</tbody></table></div>`; // Menutup table-responsive
+
+                } else {
+                    // --- KONTEN JIKA TIDAK ADA DATA ---
+
+                    // Header jika tidak ada data
+                    headerHtml = `<span><i class="fas fa-inbox mr-2"></i>Data Detail ${title}</span>`;
+
+                    // Body jika tidak ada data
+                    bodyHtml = `
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Tidak ada data</h5>
+                <p class="text-muted">Belum ada data detail untuk kategori ini.</p>
+            </div>
+        `;
+                }
+
+                // --- 2. SUNTIKKAN HTML KE TEMPATNYA ---
+
+                // **Title & badge di header modal sudah diatur di showStatisticsModal**
+                // (headerHtml tidak digunakan lagi untuk header modal)
+
+                // **PERINTAH INI AKAN MENGISI BODY MODAL ANDA**
+                $('#modalBody').html(bodyHtml);
+
+                // --- 3. INISIALISASI DATATABLE & TOMBOL EKSPOR ---
+
+                if (data.details && data.details.length > 0) {
+                    setTimeout(() => {
+                        $('#detailTable').DataTable({
+                            "pageLength": 10,
+                            "order": [
+                                [0, "asc"]
+                            ],
+                            "language": {
+                                "search": "Cari:",
+                                "lengthMenu": "Tampilkan _MENU_ data per halaman",
+                                "zeroRecords": "Tidak ada data yang sesuai",
+                                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                                "infoEmpty": "Tidak ada data",
+                                "paginate": {
+                                    "first": "Pertama",
+                                    "last": "Terakhir",
+                                    "next": "Selanjutnya",
+                                    "previous": "Sebelumnya"
+                                }
+                            }
+                        });
+                    }, 100);
+                }
+
+                // Tampilkan/Sembunyikan tombol Ekspor
+                if (data.details && data.details.length > 0) {
+                    $('#exportBtn').show().off('click').on('click', function() {
+                        exportModalData(type, data);
+                    });
+                } else {
+                    $('#exportBtn').hide();
+                }
+            }
+
+            function exportModalData(type, data) {
+                // Simple CSV export functionality
+                let csvContent = "data:text/csv;charset=utf-8,";
+
+                if (type === 'pengabdian') {
+                    csvContent += "No,Judul Pengabdian,ID Pengabdian,Tanggal,Ketua,Sumber Dana,Prodi,Dengan Mahasiswa\n";
+                    data.details.forEach((item, index) => {
+                        csvContent +=
+                            `${index + 1},"${item.judul}","${item.id_pengabdian}","${item.tanggal_pengabdian}","${item.ketua}","${item.sumber_dana}","${item.kategori_prodi}","${item.dengan_mahasiswa ? 'Ya' : 'Tidak'}"\n`;
+                    });
+                } else if (type === 'dosen') {
+                    csvContent += "No,Nama Dosen,NIK,NIDN,Program Studi,Jumlah Pengabdian,Jabatan,Email\n";
+                    data.details.forEach((item, index) => {
+                        csvContent +=
+                            `${index + 1},"${item.nama}","${item.nik}","${item.nidn || ''}","${item.prodi}","${item.jumlah_pengabdian}","${item.jabatan || ''}","${item.email || ''}"\n`;
+                    });
+                } else if (type === 'mahasiswa') {
+                    csvContent +=
+                        "No,Judul Pengabdian,ID Pengabdian,Tanggal,Ketua,Jumlah Mahasiswa,Mahasiswa Informatika,Mahasiswa SI,Sumber Dana\n";
+                    data.details.forEach((item, index) => {
+                        csvContent +=
+                            `${index + 1},"${item.judul}","${item.id_pengabdian}","${item.tanggal_pengabdian}","${item.ketua}","${item.jumlah_mahasiswa}","${item.mahasiswa_informatika}","${item.mahasiswa_sistem_informasi}","${item.sumber_dana}"\n`;
+                    });
+                }
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `detail_${type}_{{ $filterYear }}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
 
 
             function loadSparklineCharts() {

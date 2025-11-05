@@ -107,14 +107,14 @@
             padding-right: 0 !important;
 
             /* * Jika Anda menggunakan 'overflow-y: scroll' di body,
-            * pastikan 'overflow' tetap 'hidden' saat modal terbuka.
-            */
+                * pastikan 'overflow' tetap 'hidden' saat modal terbuka.
+                */
             overflow: hidden !important;
         }
 
         /* * Jika navbar atas Anda (yang .fixed-top) juga ikut bergeser,
-        * tambahkan ini juga.
-        */
+            * tambahkan ini juga.
+            */
         .fixed-top {
             padding-right: 0 !important;
         }
@@ -618,10 +618,10 @@
         }
 
         /* .statistics-card .sparkline-container {
-            border-radius: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 4px;
-        } */
+                border-radius: 4px;
+                background: rgba(255, 255, 255, 0.1);
+                padding: 4px;
+            } */
 
         .border-left-primary .sparkline-container {
             background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
@@ -2831,6 +2831,6 @@
                 link.click();
                 document.body.removeChild(link);
             }
-        </script>
+        </script>   
     @endpush
 @endsection

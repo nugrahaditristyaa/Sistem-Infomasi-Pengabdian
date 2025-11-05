@@ -147,12 +147,12 @@
                 </div>
                 <div class="card-body">
                     {{-- Controls row: place action buttons and table controls here --}}
-                    <div class="d-flex justify-content-end mb-3">
+                    {{-- <div class="d-flex justify-content-end mb-3">
                         <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="modal"
                             data-target="#pengabdianFilterModal">
                             <i class="fas fa-filter mr-1"></i> Filter
                         </button>
-                    </div>
+                    </div> --}}
 
                     <div class="table-responsive">
                         <table class="table table-hover table-striped" id="dataTable" width="100%" cellspacing="0">
