@@ -1,0 +1,152 @@
+@startuml
+' ERD untuk modul Pengabdian berdasarkan model Laravel di app/Models
+' Dibuat otomatis dari analisis model pada repository
+
+hide circle
+skinparam linetype ortho
+
+entity "pengabdian" as Pengabdian {
+  * id_pengabdian : PK
+  --
+  judul_pengabdian
+  tanggal_pengabdian
+  ketua_pengabdian : FK -> dosen.nik
+  id_luaran_wajib : FK -> luaran_wajib.id_luaran_wajib
+}
+
+entity "pengabdian_dosen" as PengabdianDosen {
+  * id : PK (optional)
+  --
+  id_pengabdian : FK -> pengabdian.id_pengabdian
+  nik : FK -> dosen.nik
+  status_anggota
+}
+
+entity "pengabdian_mahasiswa" as PengabdianMahasiswa {
+  * id_pengabdian_mahasiswa : PK
+  --
+  id_pengabdian : FK -> pengabdian.id_pengabdian
+  nim : FK -> mahasiswa.nim
+}
+
+entity "dosen" as Dosen {
+  * nik : PK
+  --
+  nama
+  nidn
+  prodi
+}
+
+entity "mahasiswa" as Mahasiswa {
+  * nim : PK
+  --
+  nama
+  prodi
+}
+
+entity "mitra" as Mitra {
+  * id_mitra : PK
+  --
+  id_pengabdian : FK -> pengabdian.id_pengabdian
+  nama_mitra
+}
+
+entity "dokumen" as Dokumen {
+  * id_dokumen : PK
+  --
+  id_pengabdian : FK -> pengabdian.id_pengabdian
+  id_jenis_dokumen : FK -> jenis_dokumen.id_jenis_dokumen
+  id_detail_hki : FK -> detail_hki.id_detail_hki
+  nama_file
+}
+
+entity "jenis_dokumen" as JenisDokumen {
+  * id_jenis_dokumen : PK
+  --
+  nama_jenis_dokumen
+}
+
+entity "luaran" as Luaran {
+  * id_luaran : PK
+  --
+  id_pengabdian : FK -> pengabdian.id_pengabdian
+  id_jenis_luaran : FK -> jenis_luaran.id_jenis_luaran
+}
+
+entity "jenis_luaran" as JenisLuaran {
+  * id_jenis_luaran : PK
+}
+
+entity "detail_hki" as DetailHki {
+  * id_detail_hki : PK
+  --
+  id_luaran : FK -> luaran.id_luaran
+  judul_ciptaan
+}
+
+entity "anggota_hki" as AnggotaHki {
+  * id_anggota_hki : PK
+  --
+  id_detail_hki : FK -> detail_hki.id_detail_hki
+  nik : FK -> dosen.nik
+}
+
+entity "luaran_wajib" as LuaranWajib {
+  * id_luaran_wajib : PK
+  --
+  nama_luaran
+}
+
+entity "sumber_dana" as SumberDana {
+  * id_sumber_dana : PK
+  --
+  id_pengabdian : FK -> pengabdian.id_pengabdian
+  jenis
+  nama_sumber
+}
+
+entity "kpi" as Kpi {
+  * id_kpi : PK
+}
+
+entity "monitoring_kpi" as MonitoringKpi {
+  * id_monitoring : PK
+  --
+  id_kpi : FK -> kpi.id_kpi
+  id_pengabdian : FK -> pengabdian.id_pengabdian
+}
+
+entity "kategori_spmi" as KategoriSpmi {
+  * id_kategori_spmi : PK
+}
+
+' Relasi
+Pengabdian ||--o{ PengabdianDosen : "has"
+Pengabdian ||--o{ PengabdianMahasiswa : "has"
+Dosen ||--o{ PengabdianDosen : "member"
+Mahasiswa ||--o{ PengabdianMahasiswa : "member"
+
+' Many-to-many via pivot tables
+Pengabdian }o--o{ Dosen : "pengabdian_dosen (anggota)"
+Pengabdian }o--o{ Mahasiswa : "pengabdian_mahasiswa"
+
+' Other relationships
+Pengabdian ||--o{ Mitra : "has"
+Pengabdian ||--o{ Dokumen : "has"
+Dokumen }o--|| JenisDokumen : "jenis"
+Dokumen }o--|| DetailHki : "detail_hki"
+DetailHki }o--|| Luaran : "luaran"
+Luaran ||--o{ DetailHki : "has detail_hki"
+Luaran ||--o{ Pengabdian : "belongsTo"
+Luaran }o--|| JenisLuaran : "jenis"
+DetailHki }o--o{ Dosen : "anggota_hki (pivot)"
+AnggotaHki }o--|| Dosen : "dosen"
+Pengabdian }o--|| LuaranWajib : "luaran_wajib"
+Pengabdian ||--o{ SumberDana : "has"
+Pengabdian ||--o{ MonitoringKpi : "has"
+MonitoringKpi }o--|| Kpi : "kpi"
+
+' Many-to-many Luaran <-> KategoriSpmi via luaran_kategori_spmi
+Luaran }o--o{ KategoriSpmi : "luaran_kategori_spmi"
+
+@enduml
