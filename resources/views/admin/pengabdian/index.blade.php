@@ -176,7 +176,9 @@
                                     <tr>
                                         <td class="no-column">{{ $loop->iteration }}</td>
                                         <td class="judul-pengabdian">{{ $item->judul_pengabdian }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($item->tanggal_pengabdian)->format('d/m/Y') }}</td>
+                                        <td
+                                            data-order="{{ \Carbon\Carbon::parse($item->tanggal_pengabdian)->format('Y-m-d') }}">
+                                            {{ \Carbon\Carbon::parse($item->tanggal_pengabdian)->format('d/m/Y') }}</td>
                                         <td>{{ $item->ketua->nama ?? '-' }}</td>
                                         <td class="td-list">
                                             @php
@@ -295,7 +297,8 @@
                                                 <div class="d-flex flex-column align-items-start">
                                                     @foreach ($item->jumlah_luaran_direncanakan as $jenis)
                                                         {{-- Menggunakan badge untuk tampilan yang rapi --}}
-                                                        <span class="badge badge-secondary mb-1">{{ $jenis }}</span>
+                                                        <span
+                                                            class="badge badge-secondary mb-1">{{ $jenis }}</span>
                                                     @endforeach
                                                 </div>
                                             @else

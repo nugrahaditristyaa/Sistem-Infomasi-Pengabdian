@@ -89,7 +89,7 @@
                         <small class="text-muted d-block">Jenis Luaran yang Direncanakan</small>
                         @if (is_array($pengabdian->jumlah_luaran_direncanakan) && count($pengabdian->jumlah_luaran_direncanakan) > 0)
                             @foreach ($pengabdian->jumlah_luaran_direncanakan as $jenis)
-                                <span class="badge badge-info mr-1">{{ $jenis }}</span>
+                                <span class="badge badge-secondary mr-1">{{ $jenis }}</span>
                             @endforeach
                             <small class="text-muted d-block mt-1">Total:
                                 {{ count($pengabdian->jumlah_luaran_direncanakan) }} jenis</small>
@@ -97,21 +97,16 @@
                             <span class="text-muted">Belum ditentukan</span>
                         @endif
                     </div>
-                    <div class="mb-3">
-                        <small class="text-muted d-block">Luaran Wajib</small>
-                        <span
-                            class="font-weight-bold">{{ $pengabdian->luaranWajib->nama_luaran ?? 'Tidak ada data' }}</span>
-                    </div>
 
                     @if ($pengabdian->luaran->isNotEmpty())
                         <div>
-                            <small class="text-muted d-block">Luaran Tambahan</small>
+                            <small class="text-muted d-block">Hasil Luaran Kegiatan</small>
                             <ul class="list-group list-group-flush mt-1">
                                 @foreach ($pengabdian->luaran as $luaran)
                                     <li class="list-group-item">
-                                        <i class="fas fa-check-circle text-success mr-2"></i>
+
                                         <span
-                                            class="font-weight-bold">{{ $luaran->jenisLuaran->nama_jenis_luaran ?? '-' }}</span>
+                                            class="badge badge-secondary">{{ $luaran->jenisLuaran->nama_jenis_luaran ?? '-' }}</span>
 
                                         @if ($luaran->jenisLuaran->nama_jenis_luaran === 'HKI' && $luaran->detailHki)
                                             <div class="sub-section-hki">

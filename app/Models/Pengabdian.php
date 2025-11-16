@@ -16,7 +16,6 @@ class Pengabdian extends Model
         'judul_pengabdian',
         'tanggal_pengabdian',
         'ketua_pengabdian',
-        'id_luaran_wajib',
         'jumlah_luaran_direncanakan',
     ];
 
@@ -87,6 +86,7 @@ class Pengabdian extends Model
 
     public function luaranWajib()
     {
-        return $this->belongsTo(LuaranWajib::class, 'id_luaran_wajib', 'id_luaran_wajib');
+        // luaranWajib relation removed: luaran_wajib table/column is being deprecated.
+        return null;
     }
 }

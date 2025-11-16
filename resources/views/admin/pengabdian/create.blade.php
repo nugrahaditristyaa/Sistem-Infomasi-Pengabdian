@@ -323,11 +323,6 @@
                 @error('sumber_dana')
                     <div class="alert alert-danger">{{ $message }}</div>
                 @enderror
-
-                <p class="small text-muted">
-                    Untuk pendanaan internal, catat pencairan dana Tahap I (70%) dan Tahap II (30%) sebagai dua baris
-                    terpisah dengan <strong>Nama Sumber</strong> yang sama.
-                </p>
                 <div id="sumber-dana-container">
                     @forelse (old('sumber_dana', []) as $index => $dana)
                         <div class="row sumber-dana-item mb-3">
@@ -406,21 +401,7 @@
                 <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-tasks fa-fw mr-2"></i>Luaran Kegiatan</h6>
             </div>
             <div class="card-body">
-                <div class="form-group">
-                    <label for="id_luaran_wajib">Luaran Wajib <span class="text-danger">*</span></label>
-                    <select id="id_luaran_wajib" name="id_luaran_wajib"
-                        class="form-control @error('id_luaran_wajib') is-invalid @enderror" required>
-                        <option value="" disabled selected>— Pilih Luaran Wajib —</option>
-                        @foreach ($luaranWajib as $lw)
-                            <option value="{{ $lw->id_luaran_wajib }}"
-                                {{ old('id_luaran_wajib') == $lw->id_luaran_wajib ? 'selected' : '' }}>
-                                {{ $lw->nama_luaran }}</option>
-                        @endforeach
-                    </select>
-                    @error('id_luaran_wajib')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+                {{-- Luaran Wajib removed: field deprecated. --}}
                 <hr>
                 <div class="form-group">
                     <label>Luaran Tambahan (Opsional)</label>
@@ -705,7 +686,7 @@
 
                 initPlugins: function() {
 
-                    $('#ketua_nik, #id_luaran_wajib').select2({
+                    $('#ketua_nik').select2({
                         width: '100%'
                     });
 
@@ -771,7 +752,7 @@
                         anggotaHkiSelect.find('option').each(function() {
                             const option = $(this);
                             option.prop('disabled',
-                            false); // Semua option tersedia tanpa pembatasan
+                                false); // Semua option tersedia tanpa pembatasan
                         });
 
                         anggotaHkiSelect.trigger('change.select2');

@@ -11,7 +11,6 @@ entity "pengabdian" as Pengabdian {
   judul_pengabdian
   tanggal_pengabdian
   ketua_pengabdian : FK -> dosen.nik
-  id_luaran_wajib : FK -> luaran_wajib.id_luaran_wajib
 }
 
 entity "pengabdian_dosen" as PengabdianDosen {
@@ -91,11 +90,6 @@ entity "anggota_hki" as AnggotaHki {
   nik : FK -> dosen.nik
 }
 
-entity "luaran_wajib" as LuaranWajib {
-  * id_luaran_wajib : PK
-  --
-  nama_luaran
-}
 
 entity "sumber_dana" as SumberDana {
   * id_sumber_dana : PK
@@ -141,7 +135,7 @@ Luaran ||--o{ Pengabdian : "belongsTo"
 Luaran }o--|| JenisLuaran : "jenis"
 DetailHki }o--o{ Dosen : "anggota_hki (pivot)"
 AnggotaHki }o--|| Dosen : "dosen"
-Pengabdian }o--|| LuaranWajib : "luaran_wajib"
+}
 Pengabdian ||--o{ SumberDana : "has"
 Pengabdian ||--o{ MonitoringKpi : "has"
 MonitoringKpi }o--|| Kpi : "kpi"

@@ -7,7 +7,6 @@ use App\Models\Pengabdian;
 use App\Models\Dosen;
 use App\Models\Mahasiswa;
 use App\Models\JenisDokumen;
-use App\Models\LuaranWajib;
 use App\Models\JenisLuaran;
 use App\Models\Luaran;
 use App\Models\DetailHki;
@@ -51,10 +50,9 @@ class PengabdianController extends Controller
     {
         $dosen = Dosen::orderBy('nama')->get();
         $mahasiswa = Mahasiswa::orderBy('nama')->get();
-        $luaranWajib = LuaranWajib::orderBy('id_luaran_wajib')->get();
         $jenisLuaran = JenisLuaran::orderBy('id_jenis_luaran')->get();
 
-        return view('admin.pengabdian.create', compact('dosen', 'mahasiswa', 'luaranWajib', 'jenisLuaran'));
+        return view('admin.pengabdian.create', compact('dosen', 'mahasiswa', 'jenisLuaran'));
     }
 
     /**
@@ -96,7 +94,7 @@ class PengabdianController extends Controller
             'sumber_dana.*.jenis'       => 'required|string',
             'sumber_dana.*.nama_sumber' => 'required|string',
             'sumber_dana.*.jumlah_dana' => 'required|numeric|min:0',
-            'id_luaran_wajib' => 'required|exists:luaran_wajib,id_luaran_wajib',
+            // id_luaran_wajib removed: no longer required/validated
             'luaran_jenis'    => 'nullable|array',
             'luaran_data.HKI.no_pendaftaran'    => ['nullable', 'string', 'max:255', 'unique:detail_hki,no_pendaftaran', Rule::requiredIf(fn() => in_array('HKI', $request->luaran_jenis ?? []))],
             'luaran_data.HKI.tanggal_permohonan' => [
@@ -153,7 +151,7 @@ class PengabdianController extends Controller
             'sumber_dana.*.jenis'   => 'Jenis Sumber Dana',
             'sumber_dana.*.nama_sumber' => 'Nama Sumber Dana',
             'sumber_dana.*.jumlah_dana' => 'Jumlah Dana',
-            'id_luaran_wajib'       => 'Luaran Wajib',
+            // 'id_luaran_wajib' => 'Luaran Wajib', // removed attribute mapping
             'luaran_data.HKI.no_pendaftaran'    => 'Nomor Pendaftaran HKI',
             'luaran_data.HKI.tanggal_permohonan' => 'Tanggal Permohonan HKI',
             'luaran_data.HKI.judul_ciptaan'     => 'Judul Ciptaan HKI',
@@ -173,7 +171,6 @@ class PengabdianController extends Controller
         try {
             $pengabdian = Pengabdian::create([
                 'judul_pengabdian' => $request->judul_pengabdian,
-                'id_luaran_wajib' => $request->id_luaran_wajib,
                 'tanggal_pengabdian' => $request->tanggal_pengabdian,
                 'ketua_pengabdian' => $request->ketua_nik,
                 'jumlah_luaran_direncanakan' => $request->jumlah_luaran_direncanakan,
@@ -239,7 +236,6 @@ class PengabdianController extends Controller
             'mahasiswa',
             'mitra',
             'sumberDana',
-            'luaranWajib',
             'luaran.jenisLuaran',
             'luaran.detailHki.dosen',
             'luaran.detailHki.dokumen',
@@ -266,14 +262,12 @@ class PengabdianController extends Controller
 
         $dosen = Dosen::orderBy('nama')->get();
         $mahasiswa = Mahasiswa::orderBy('nama')->get();
-        $luaranWajib = LuaranWajib::orderBy('id_luaran_wajib')->get();
         $jenisLuaran = JenisLuaran::orderBy('id_jenis_luaran')->get();
 
         return view('admin.pengabdian.edit', compact(
             'pengabdian',
             'dosen',
             'mahasiswa',
-            'luaranWajib',
             'jenisLuaran'
         ));
     }
@@ -356,7 +350,7 @@ class PengabdianController extends Controller
             'sumber_dana.*.jenis'       => 'required|string',
             'sumber_dana.*.nama_sumber' => 'required|string',
             'sumber_dana.*.jumlah_dana' => 'required|numeric|min:0',
-            'id_luaran_wajib' => 'required|exists:luaran_wajib,id_luaran_wajib',
+            // id_luaran_wajib removed: no longer required/validated
             'luaran_jenis'    => 'nullable|array',
             'luaran_data.HKI.no_pendaftaran'    => ['nullable', 'string', 'max:255', Rule::unique('detail_hki', 'no_pendaftaran')->ignore($hkiId, 'id_detail_hki'), Rule::requiredIf(fn() => in_array('HKI', $request->luaran_jenis ?? []))],
             'luaran_data.HKI.tanggal_permohonan' => [
@@ -429,7 +423,7 @@ class PengabdianController extends Controller
             'sumber_dana.*.jenis'   => 'Jenis Sumber Dana',
             'sumber_dana.*.nama_sumber' => 'Nama Sumber Dana',
             'sumber_dana.*.jumlah_dana' => 'Jumlah Dana',
-            'id_luaran_wajib'       => 'Luaran Wajib',
+            // 'id_luaran_wajib' => 'Luaran Wajib', // removed attribute mapping
             'luaran_data.HKI.no_pendaftaran'    => 'Nomor Pendaftaran HKI',
             'luaran_data.HKI.tanggal_permohonan' => 'Tanggal Permohonan HKI',
             'luaran_data.HKI.judul_ciptaan'     => 'Judul Ciptaan HKI',
@@ -449,7 +443,6 @@ class PengabdianController extends Controller
         try {
             $pengabdian->update([
                 'judul_pengabdian' => $request->judul_pengabdian,
-                'id_luaran_wajib' => $request->id_luaran_wajib,
                 'tanggal_pengabdian' => $request->tanggal_pengabdian,
                 'ketua_pengabdian' => $request->ketua_nik,
                 'jumlah_luaran_direncanakan' => $request->jumlah_luaran_direncanakan,

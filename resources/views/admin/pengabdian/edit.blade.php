@@ -51,8 +51,7 @@
             color: #4e73df;
         }
 
-        #select2-ketua_nik-container,
-        #select2-id_luaran_wajib-container {
+        #select2-ketua_nik-container {
             color: #858796;
         }
     </style>
@@ -361,21 +360,7 @@
                 <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-tasks fa-fw mr-2"></i>Luaran Kegiatan</h6>
             </div>
             <div class="card-body">
-                <div class="form-group">
-                    <label for="id_luaran_wajib">Luaran Wajib <span class="text-danger">*</span></label>
-                    <select id="id_luaran_wajib" name="id_luaran_wajib"
-                        class="form-control @error('id_luaran_wajib') is-invalid @enderror" required>
-                        @foreach ($luaranWajib as $lw)
-                            <option value="{{ $lw->id_luaran_wajib }}"
-                                {{ old('id_luaran_wajib', $pengabdian->id_luaran_wajib) == $lw->id_luaran_wajib ? 'selected' : '' }}>
-                                {{ $lw->nama_luaran }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('id_luaran_wajib')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+                {{-- Luaran Wajib removed: field deprecated. --}}
                 <hr>
 
                 {{-- FIELD JENIS LUARAN YANG DIRENCANAKAN --}}
@@ -607,7 +592,7 @@
                         altFormat: "d/m/Y",
                         allowInput: true
                     });
-                    $('#ketua_nik, #id_luaran_wajib').select2({
+                    $('#ketua_nik').select2({
                         width: '100%'
                     });
                     $('#dosen_ids, #mahasiswa_ids, #hki_anggota_dosen').select2({
