@@ -116,6 +116,10 @@
                 class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm mr-2">
                 <i class="fas fa-plus fa-sm text-white-50"></i> Tambah Data Pengabdian
             </a>
+            <button type="button" class="btn btn-sm btn-outline-primary shadow-sm" data-toggle="modal"
+                data-target="#pengabdianFilterModal" title="Filter Pengabdian">
+                <i class="fas fa-filter mr-1"></i> Filter
+            </button>
         </div>
     </div>
 
@@ -460,13 +464,35 @@
                 table.column(3).search(val ? '^' + val + '$' : '', true, false).draw();
             });
 
-            $('#filterMitra').on('change', function() {
-                var val = this.value;
-                table.column(6).search(val ? '^' + val + '$' : '', true, false).draw();
-            });
+            // Mitra filter removed — no handler required
 
             // Aktifkan tooltip Bootstrap
             $('[data-toggle="tooltip"]').tooltip();
+
+            // Reset filter modal inputs to defaults when Reset button clicked
+            $('#filterResetBtn').on('click', function(e) {
+                e.preventDefault();
+                var $modal = $('#pengabdianFilterModal');
+                var form = $modal.find('form')[0];
+                if (form) {
+                    form.reset();
+                }
+
+                // Explicit defaults
+                $modal.find('#filter_year').val('all').trigger('change');
+                $modal.find('#filter_sumber_dana').val('').trigger('change');
+                $modal.find('#filter_luaran').val('').trigger('change');
+
+                // If Select2 is used, ensure UI updates
+                if ($.fn.select2) {
+                    $modal.find('#filter_year').trigger('change.select2');
+                    $modal.find('#filter_sumber_dana').trigger('change.select2');
+                    $modal.find('#filter_luaran').trigger('change.select2');
+                }
+
+                // Keep modal open so user can reapply filters; focus first input
+                $modal.find('#filter_year').focus();
+            });
         });
     </script>
     <!-- Filter Modal -->
@@ -485,71 +511,88 @@
                     <div class="modal-body">
                         <div class="form-row">
                             <div class="form-group col-md-6">
-                                <label for="start_date">Start Date</label>
-                                <input type="date" id="start_date" name="start_date" class="form-control"
-                                    value="{{ request('start_date') }}">
-                            </div>
-                            <div class="form-group col-md-6">
-                                <label for="end_date">End Date</label>
-                                <input type="date" id="end_date" name="end_date" class="form-control"
-                                    value="{{ request('end_date') }}">
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group col-md-6">
-                                <label for="mitra">Mitra</label>
-                                <select id="mitra" name="mitra" class="form-control">
-                                    <option value="">Semua Mitra</option>
-                                    @if (isset($mitraList) && count($mitraList) > 0)
-                                        @foreach ($mitraList as $mitra)
-                                            <option value="{{ $mitra->id_mitra }}"
-                                                {{ request('mitra') == $mitra->id_mitra ? 'selected' : '' }}>
-                                                {{ $mitra->nama_mitra }}</option>
+                                <label for="filter_year">Tahun</label>
+                                <select id="filter_year" name="year" class="form-control">
+                                    <option value="all" {{ request('year') == 'all' ? 'selected' : '' }}>Semua Tahun
+                                    </option>
+                                    @if (isset($availableYears) && count($availableYears) > 0)
+                                        @foreach ($availableYears as $y)
+                                            <option value="{{ $y }}"
+                                                {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
                                         @endforeach
                                     @else
-                                        <option value="mitra_a" {{ request('mitra') == 'mitra_a' ? 'selected' : '' }}>
-                                            Mitra
-                                            A (contoh)</option>
-                                        <option value="mitra_b" {{ request('mitra') == 'mitra_b' ? 'selected' : '' }}>
-                                            Mitra
-                                            B (contoh)</option>
+                                        @php
+                                            $cy = date('Y');
+                                        @endphp
+                                        @for ($i = 0; $i < 6; $i++)
+                                            <option value="{{ $cy - $i }}"
+                                                {{ request('year') == $cy - $i ? 'selected' : '' }}>{{ $cy - $i }}
+                                            </option>
+                                        @endfor
                                     @endif
                                 </select>
                             </div>
 
                             <div class="form-group col-md-6">
-                                <label for="prodi">Program Studi</label>
-                                <select id="prodi" name="prodi" class="form-control">
-                                    <option value="">Semua Prodi</option>
-                                    @if (isset($prodiList) && count($prodiList) > 0)
-                                        @foreach ($prodiList as $prodi)
-                                            <option value="{{ $prodi->kode_prodi ?? $prodi->id }}"
-                                                {{ request('prodi') == ($prodi->kode_prodi ?? $prodi->id) ? 'selected' : '' }}>
-                                                {{ $prodi->nama_prodi ?? $prodi->nama }}</option>
+                                <label for="filter_sumber_dana">Sumber Dana</label>
+                                <select id="filter_sumber_dana" name="sumber_dana" class="form-control">
+                                    <option value="">Semua Sumber</option>
+                                    {{-- Always offer type-based filters first --}}
+                                    <option value="internal" {{ request('sumber_dana') == 'internal' ? 'selected' : '' }}>
+                                        Internal</option>
+                                    <option value="eksternal"
+                                        {{ request('sumber_dana') == 'eksternal' ? 'selected' : '' }}>Eksternal</option>
+                                    {{-- Specific sumber dana list removed from filter per request --}}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="filter_luaran">Luaran Kegiatan</label>
+                                <select id="filter_luaran" name="luaran" class="form-control">
+                                    <option value="">Semua Luaran</option>
+                                    @if (isset($jenisLuaran) && (is_countable($jenisLuaran) ? count($jenisLuaran) : $jenisLuaran->count() ?? 0) > 0)
+                                        @foreach ($jenisLuaran as $jl)
+                                            <option value="{{ $jl->id_jenis_luaran }}"
+                                                {{ request('luaran') == $jl->id_jenis_luaran ? 'selected' : '' }}>
+                                                {{ $jl->nama_jenis_luaran }}</option>
+                                        @endforeach
+                                    @elseif (isset($jenisLuaranList) && count($jenisLuaranList) > 0)
+                                        @foreach ($jenisLuaranList as $jl)
+                                            <option value="{{ $jl->id ?? ($jl->kode ?? $jl->nama) }}"
+                                                {{ request('luaran') == ($jl->id ?? ($jl->kode ?? $jl->nama)) ? 'selected' : '' }}>
+                                                {{ $jl->nama_jenis_luaran ?? ($jl->nama ?? ($jl->label ?? $jl)) }}</option>
+                                        @endforeach
+                                    @elseif (isset($jenisLuaranData) && is_array($jenisLuaranData))
+                                        @foreach ($jenisLuaranData as $jl)
+                                            @php
+                                                $label =
+                                                    $jl['name'] ??
+                                                    ($jl['label'] ?? ($jl['key'] ?? ($jl['jenis'] ?? null)));
+                                                $value = $label ?? ($jl['value'] ?? null);
+                                                if (!$label) {
+                                                    continue;
+                                                }
+                                            @endphp
+                                            <option value="{{ $value }}"
+                                                {{ request('luaran') == $value ? 'selected' : '' }}>{{ $label }}
+                                            </option>
                                         @endforeach
                                     @else
-                                        <option value="informatika"
-                                            {{ request('prodi') == 'informatika' ? 'selected' : '' }}>Informatika</option>
-                                        <option value="sistem_informasi"
-                                            {{ request('prodi') == 'sistem_informasi' ? 'selected' : '' }}>Sistem Informasi
+                                        <option value="hki" {{ request('luaran') == 'hki' ? 'selected' : '' }}>HKI
+                                        </option>
+                                        <option value="publikasi"
+                                            {{ request('luaran') == 'publikasi' ? 'selected' : '' }}>Publikasi</option>
+                                        <option value="buku" {{ request('luaran') == 'buku' ? 'selected' : '' }}>Buku
                                         </option>
                                     @endif
                                 </select>
                             </div>
                         </div>
-
-                        <div class="form-row">
-                            <div class="form-group col-md-12">
-                                <label for="total_dana">Total Dana Minimal (IDR)</label>
-                                <input type="number" id="total_dana" name="total_dana" class="form-control"
-                                    min="0" step="1000" value="{{ request('total_dana') }}"
-                                    placeholder="Masukkan nilai minimal total dana">
-                            </div>
-                        </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        <button type="button" id="filterResetBtn" class="btn btn-secondary">Reset</button>
                         <button type="submit" class="btn btn-primary">Terapkan Filter</button>
                     </div>
                 </form>

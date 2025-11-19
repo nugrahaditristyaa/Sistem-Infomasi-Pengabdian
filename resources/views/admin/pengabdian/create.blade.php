@@ -157,8 +157,7 @@
                 <div class="form-group">
                     <label>Jenis Luaran yang Direncanakan <span class="text-danger">*</span></label>
                     <small class="form-text text-muted mb-2">
-                        Pilih jenis-jenis luaran yang akan dicapai sesuai proposal (termasuk luaran wajib yang sudah dipilih
-                        di atas).
+                        Pilih jenis-jenis luaran yang akan dicapai sesuai proposal.
                     </small>
                     <div class="checkbox-group @error('jumlah_luaran_direncanakan') is-invalid @enderror">
                         @foreach ($jenisLuaran as $jl)
@@ -266,9 +265,11 @@
                                 <div class="col-md-4">
                                     <div class="form-group mb-md-0">
                                         <label>NIM</label>
-                                        <input type="text" name="mahasiswa_baru[{{ $index }}][nim]"
-                                            class="form-control @error('mahasiswa_baru.' . $index . '.nim') is-invalid @enderror"
-                                            placeholder="NIM" value="{{ $mhs['nim'] ?? '' }}">
+                                        <input type="text" inputmode="numeric" pattern="\d*" maxlength="8"
+                                            name="mahasiswa_baru[{{ $index }}][nim]"
+                                            class="form-control nim-input @error('mahasiswa_baru.' . $index . '.nim') is-invalid @enderror"
+                                            placeholder="NIM (hanya angka, 8 digit)" value="{{ $mhs['nim'] ?? '' }}"
+                                            oninput="this.value = this.value.replace(/\D/g, '')">
                                         @error('mahasiswa_baru.' . $index . '.nim')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -402,9 +403,8 @@
             </div>
             <div class="card-body">
                 {{-- Luaran Wajib removed: field deprecated. --}}
-                <hr>
                 <div class="form-group">
-                    <label>Luaran Tambahan (Opsional)</label>
+                    <label>Hasil Luaran Kegiatan</label>
                     <div class="checkbox-group @error('luaran_jenis') is-invalid @enderror">
                         @foreach ($jenisLuaran as $jl)
                             <div class="custom-control custom-checkbox">
@@ -424,7 +424,6 @@
                 {{-- Detail HKI Container --}}
                 <div id="detail-hki" class="luaran-detail"
                     style="{{ in_array('HKI', old('luaran_jenis', [])) ? '' : 'display:none;' }}">
-                    <hr>
                     <h6 class="font-weight-bold text-secondary mb-3"><i class="fas fa-copyright fa-fw mr-1"></i>Detail HKI
                     </h6>
                     <div class="row">

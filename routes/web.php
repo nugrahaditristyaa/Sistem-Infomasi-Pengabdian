@@ -53,6 +53,10 @@ Route::middleware(['auth:admin'])->group(function () {
         // HKI Routes (tetap sama)
         Route::get('hki', [HkiController::class, 'index'])->name('hki.index');
         Route::get('hki/{id}', [HkiController::class, 'show'])->name('hki.show');
+
+        // Rekap Dosen (accessible to Admin)
+        Route::get('dosen/rekap', [App\Http\Controllers\Admin\DosenAdminController::class, 'rekap'])->name('dosen.rekap');
+        Route::get('dosen/rekap/export', [App\Http\Controllers\Admin\DosenAdminController::class, 'exportRekap'])->name('dosen.rekap.export');
     });
 });
 // ==========================================================

@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
@@ -20,16 +19,7 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        // Rate limiting key
-        $key = Str::transliterate(Str::lower($request->input('username')) . '|' . $request->ip());
-
-        // Check if too many attempts
-        if (RateLimiter::tooManyAttempts($key, 5)) {
-            $seconds = RateLimiter::availableIn($key);
-            return back()
-                ->withInput($request->only('username'))
-                ->with('login_error', 'Terlalu banyak percobaan login. Silakan coba lagi dalam ' . gmdate('i:s', $seconds) . ' menit.');
-        }
+        // NOTE: Login throttling removed as requested.
 
         // Validasi input
         $credentials = $request->validate([
@@ -59,7 +49,6 @@ class AuthController extends Controller
             $user = User::where('username', $credentials['username'])->first();
 
             if (!$user) {
-                RateLimiter::hit($key, 60); // Increment failed attempts
                 return back()
                     ->withInput($request->only('username'))
                     ->with('login_error', 'Username "' . $credentials['username'] . '" tidak ditemukan. Silakan periksa kembali username Anda atau hubungi administrator.');
@@ -67,7 +56,6 @@ class AuthController extends Controller
 
             // Cek apakah password benar
             if (!Hash::check($credentials['password'], $user->password)) {
-                RateLimiter::hit($key, 60); // Increment failed attempts
                 return back()
                     ->withInput($request->only('username'))
                     ->with('login_error', 'Password yang Anda masukkan salah. Silakan coba lagi.');
@@ -76,9 +64,6 @@ class AuthController extends Controller
             // Attempt login dengan guard admin
             if (Auth::guard('admin')->attempt($credentials)) {
                 $user = Auth::guard('admin')->user();
-
-                // Clear rate limiting setelah login berhasil
-                RateLimiter::clear($key);
 
                 // Regenerate session untuk keamanan
                 $request->session()->regenerate();
@@ -108,14 +93,13 @@ class AuthController extends Controller
             }
 
             // Jika attempt gagal (kondisi edge case)
-            RateLimiter::hit($key, 60); // Increment failed attempts
             return back()
                 ->withInput($request->only('username'))
                 ->with('login_error', 'Terjadi kesalahan saat melakukan login. Silakan coba lagi.');
         } catch (\Exception $e) {
             // Log error untuk debugging
             Log::error('Login error: ' . $e->getMessage(), [
-                'username' => $credentials['username'],
+                'username' => $credentials['username'] ?? null,
                 'ip' => $request->ip(),
                 'user_agent' => $request->userAgent()
             ]);

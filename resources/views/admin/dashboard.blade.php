@@ -677,14 +677,14 @@
                 padding-right: 0 !important;
 
                 /* * Jika Anda menggunakan 'overflow-y: scroll' di body,
-                                                        * pastikan 'overflow' tetap 'hidden' saat modal terbuka.
-                                                        */
+                                                                            * pastikan 'overflow' tetap 'hidden' saat modal terbuka.
+                                                                            */
                 overflow: hidden !important;
             }
 
             /* * Jika navbar atas Anda (yang .fixed-top) juga ikut bergeser,
-                                                    * tambahkan ini juga.
-                                                    */
+                                                                        * tambahkan ini juga.
+                                                                        */
             .fixed-top {
                 padding-right: 0 !important;
             }
@@ -972,16 +972,13 @@
                 transform: translateX(2px);
             }
 
-            #dosenSortBtn {
-                border: 1px solid #e3e6f0;
-                transition: all 0.2s ease;
-            }
-
             #dosenSortBtn:hover {
                 background-color: #4e73df;
                 color: white;
                 border-color: #4e73df;
             }
+
+
 
             .chart-bar-scrollable {
                 background: #f8f9fc;
@@ -1188,10 +1185,10 @@
             }
 
             /* .statistics-card .sparkline-container {
-                                                        border-radius: 4px;
-                                                        background: rgba(255, 255, 255, 0.1);
-                                                        padding: 4px;
-                                                    } */
+                                                                            border-radius: 4px;
+                                                                            background: rgba(255, 255, 255, 0.1);
+                                                                            padding: 4px;
+                                                                        } */
 
             .border-left-primary .sparkline-container {
                 background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
@@ -1227,7 +1224,7 @@
         <!-- H1: Dashboard Header -->
         <div class="mb-3">
             <h1 class="h3 mb-0 text-gray-800">
-                Dashboard Pengabdian Admin FTI
+                Dashboard Pengabdian Staf FTI
             </h1>
         </div>
 
@@ -1242,9 +1239,6 @@
                         @foreach ($availableYears as $year)
                             <option value="{{ $year }}" {{ $filterYear == $year ? 'selected' : '' }}>
                                 {{ $year }}
-                                @if ($year == $currentYear)
-                                    (Tahun Ini)
-                                @endif
                             </option>
                         @endforeach
                     </select>
@@ -1558,36 +1552,23 @@
                             <div class="col-md-6">
                                 <h6 class="m-0 font-weight-bold text-primary">
                                     <i class="fas fa-chart-bar mr-2"></i>Rekap Pengabdian per Dosen
-                                    <span id="currentViewBadge" class="badge badge-info ml-2">Top 5</span>
                                 </h6>
-                                @if ($filterYear !== 'all')
-                                    <small class="text-muted">
-                                        <i class="fas fa-filter mr-1"></i>Tahun: {{ $filterYear }}
-                                    </small>
-                                @endif
                             </div>
                             <div class="col-md-6 text-right">
                                 <div class="btn-group mr-2" role="group" aria-label="View Toggle">
-                                    <button id="viewTop5Btn" type="button" class="btn btn-sm btn-primary active"
-                                        title="Tampilkan 5 dosen teratas">
-                                        <i class="fas fa-trophy mr-1"></i>Top 5
-                                    </button>
-                                    <button id="viewAllBtn" type="button" class="btn btn-sm btn-outline-primary"
+                                    <button id="viewAllBtn" type="button"
+                                        class="btn btn-sm {{ $filterYear !== 'all' ? 'btn-primary active' : 'btn-outline-primary' }}"
                                         title="Tampilkan semua dosen">
                                         <i class="fas fa-list mr-1"></i>Semua
                                     </button>
                                 </div>
-                                <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-secondary"
-                                    data-order="desc" title="Urutkan jumlah (tertinggi)">
-                                    <i class="fas fa-sort-amount-down"></i>
+                                <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-primary mt-2"
+                                    data-order="desc" title="Urutkan jumlah (tertinggi ke terendah)">
+                                    <i class="fas fa-sort-amount-down mr-1"></i>Urutkan
                                 </button>
                             </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-12">
-                                <small id="chartInfoText" class="text-muted">
-                                    <i class="fas fa-info-circle mr-1"></i>Menampilkan 5 dosen dengan pengabdian terbanyak
-                                </small>
+                            <div class="mt-1">
+                                <span class="badge badge-primary mr-1">Total Dosen: {{ count($namaDosen ?? []) }}</span>
                             </div>
                         </div>
                     </div>
@@ -1599,7 +1580,7 @@
                         @endphp
 
                         <!-- Top 5 Chart Container -->
-                        <div id="top5ChartContainer" class="chart-container">
+                        <div id="top5ChartContainer" class="chart-container {{ $filterYear !== 'all' ? 'd-none' : '' }}">
                             <div class="chart-bar" style="height: {{ max(400, $top5DosenCount * 80) }}px;">
                                 <canvas id="dosenChart" width="100%"
                                     height="{{ max(400, $top5DosenCount * 80) }}"></canvas>
@@ -1607,7 +1588,7 @@
                         </div>
 
                         <!-- All Data Chart Container -->
-                        <div id="allChartContainer" class="chart-container d-none">
+                        <div id="allChartContainer" class="chart-container {{ $filterYear !== 'all' ? '' : 'd-none' }}">
                             <div class="chart-bar-scrollable"
                                 style="max-height: 600px; overflow-y: auto; overflow-x: hidden; border: 1px solid #e3e6f0; border-radius: 8px; padding: 20px; background-color: #f8f9fc;">
                                 <div style="height: {{ $maxCanvasHeight }}px; min-width: 900px;">
@@ -2449,6 +2430,7 @@
                 // --- Chart Rekap Pengabdian per Dosen ---
                 updateDosenCharts(originalData);
 
+                // Top5/All toggles removed — always show all dosen for current filter
                 const viewTop5Btn = document.getElementById('viewTop5Btn');
                 const viewAllBtn = document.getElementById('viewAllBtn');
                 const dosenSortBtn = document.getElementById('dosenSortBtn');
@@ -2457,40 +2439,34 @@
                 const badge = document.getElementById('currentViewBadge');
                 const infoText = document.getElementById('chartInfoText');
 
-                viewTop5Btn.addEventListener('click', function() {
-                    this.classList.add('active', 'btn-primary');
-                    this.classList.remove('btn-outline-primary');
-                    viewAllBtn.classList.remove('active', 'btn-primary');
-                    viewAllBtn.classList.add('btn-outline-primary');
-                    top5Container.classList.remove('d-none');
-                    allContainer.classList.add('d-none');
-                    badge.textContent = 'Top 5';
-                    infoText.innerHTML =
-                        '<i class="fas fa-info-circle mr-1"></i>Menampilkan 5 dosen dengan pengabdian terbanyak';
-                });
-
-                viewAllBtn.addEventListener('click', function() {
-                    this.classList.add('active', 'btn-primary');
-                    this.classList.remove('btn-outline-primary');
-                    viewTop5Btn.classList.remove('active', 'btn-primary');
-                    viewTop5Btn.classList.add('btn-outline-primary');
-                    top5Container.classList.add('d-none');
-                    allContainer.classList.remove('d-none');
-                    badge.textContent = 'Semua';
-                    infoText.innerHTML =
-                        '<i class="fas fa-info-circle mr-1"></i>Menampilkan semua dosen yang tercatat';
-                });
+                // Remove event listeners for viewTop5/viewAll: default behavior is to show all
+                if (viewTop5Btn) {
+                    viewTop5Btn.style.display = 'none';
+                }
+                if (viewAllBtn) {
+                    viewAllBtn.style.display = 'none';
+                }
+                // Ensure containers default to show 'all' view
+                if (top5Container) top5Container.classList.add('d-none');
+                if (allContainer) allContainer.classList.remove('d-none');
+                if (badge) badge.textContent = 'Semua';
+                if (infoText) infoText.innerHTML =
+                    '<i class="fas fa-info-circle mr-1"></i>Menampilkan semua dosen yang tercatat untuk filter saat ini';
 
                 dosenSortBtn.addEventListener('click', function() {
                     const currentOrder = this.dataset.order;
                     const newOrder = currentOrder === 'desc' ? 'asc' : 'desc';
+
                     originalData.sort((a, b) => (newOrder === 'asc' ? a.jumlah - b.jumlah : b.jumlah - a
                         .jumlah));
+
                     this.dataset.order = newOrder;
-                    this.innerHTML = newOrder === 'asc' ? '<i class="fas fa-sort-amount-up"></i>' :
-                        '<i class="fas fa-sort-amount-down"></i>';
-                    this.title = newOrder === 'asc' ? 'Urutkan jumlah (terendah)' :
-                        'Urutkan jumlah (tertinggi)';
+                    this.innerHTML = newOrder === 'asc' ?
+                        '<i class="fas fa-sort-amount-up mr-1"></i>Urutkan' :
+                        '<i class="fas fa-sort-amount-down mr-1"></i>Urutkan';
+                    this.title = newOrder === 'asc' ? 'Urutkan jumlah (terendah ke tertinggi)' :
+                        'Urutkan jumlah (tertinggi ke terendah)';
+
                     updateDosenCharts(originalData);
                 });
 

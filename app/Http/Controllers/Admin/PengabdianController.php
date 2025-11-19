@@ -9,6 +9,7 @@ use App\Models\Mahasiswa;
 use App\Models\JenisDokumen;
 use App\Models\JenisLuaran;
 use App\Models\Luaran;
+use App\Models\SumberDana;
 use App\Models\DetailHki;
 use App\Models\Dokumen;
 use Illuminate\Http\Request;
@@ -31,16 +32,57 @@ class PengabdianController extends Controller
      */
     public function index(Request $request)
     {
-        // Include luaran relations and a computed hki_count to quickly know which pengabdian has HKI
-        $pengabdian = Pengabdian::with(['ketua', 'dosen', 'mahasiswa', 'mitra', 'luaran.jenisLuaran', 'luaran.detailHki'])
+        // Build base query with necessary relations and aggregates
+        $query = Pengabdian::with(['ketua', 'dosen', 'mahasiswa', 'mitra', 'luaran.jenisLuaran', 'luaran.detailHki'])
             ->withSum('sumberDana', 'jumlah_dana')
             ->withCount(['luaran as hki_count' => function ($q) {
                 $q->whereHas('detailHki');
-            }])
-            ->latest('tanggal_pengabdian')
-            ->get();
+            }]);
 
-        return view('admin.pengabdian.index', compact('pengabdian'));
+        // Filter by year (GET param: year). 'all' means no year filter.
+        if ($request->filled('year') && $request->get('year') !== 'all') {
+            $year = (int) $request->get('year');
+            $query->whereYear('tanggal_pengabdian', $year);
+        }
+
+        // Filter by sumber_dana (GET param: sumber_dana). Accepts id or textual values.
+        if ($request->filled('sumber_dana')) {
+            $sd = $request->get('sumber_dana');
+            $query->whereHas('sumberDana', function ($q) use ($sd) {
+                $q->where(function ($sub) use ($sd) {
+                    $sub->where('id_sumber_dana', $sd)
+                        ->orWhere('jenis', $sd)
+                        ->orWhere('nama_sumber', 'like', "%{$sd}%");
+                });
+            });
+        }
+
+        // Filter by luaran (GET param: luaran). Accepts jenis id, kode or name.
+        if ($request->filled('luaran')) {
+            $lu = $request->get('luaran');
+            $query->whereHas('luaran', function ($q) use ($lu) {
+                $q->where('id_jenis_luaran', $lu)
+                    ->orWhereHas('jenisLuaran', function ($jq) use ($lu) {
+                        $jq->where('id_jenis_luaran', $lu)
+                            ->orWhere('nama_jenis_luaran', 'like', "%{$lu}%");
+                    });
+            });
+        }
+
+        // Finalize query ordering and fetch
+        $pengabdian = $query->orderBy('tanggal_pengabdian', 'desc')->get();
+
+        // Prepare filter lists for the modal (fall back to reasonable defaults)
+        $availableYears = Pengabdian::selectRaw('YEAR(tanggal_pengabdian) as year')
+            ->distinct()
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->toArray();
+
+        $sumberDanaList = SumberDana::orderBy('nama_sumber')->get();
+        $jenisLuaran = JenisLuaran::orderBy('nama_jenis_luaran')->get();
+
+        return view('admin.pengabdian.index', compact('pengabdian', 'availableYears', 'sumberDanaList', 'jenisLuaran'));
     }
 
     /**
@@ -73,7 +115,8 @@ class PengabdianController extends Controller
 
         $request->validate([
             // --- Aturan Validasi ---
-            'judul_pengabdian'      => 'required|string|max:255',
+            // Judul pengabdian harus unik di tabel pengabdian
+            'judul_pengabdian'      => ['required', 'string', 'max:255', Rule::unique('pengabdian', 'judul_pengabdian')],
             'nama_mitra'            => 'nullable|string|max:255',
             // 'nama_mitra'            => 'required|string|max:255',
             // 'lokasi_kegiatan'       => 'required|string|max:255',
@@ -87,7 +130,8 @@ class PengabdianController extends Controller
             'mahasiswa_ids'         => 'nullable|array',
             'mahasiswa_ids.*'       => 'nullable|exists:mahasiswa,nim',
             'mahasiswa_baru'        => ['nullable', 'array', new UniqueNimsInArray, new AllNimsMustHaveCorrectDigits, new NimsMustNotExist, new AllMahasiswaRowsMustBeComplete], // <-- SAYA MENAMBAHKAN ATURAN INI
-            'mahasiswa_baru.*.nim'  => 'nullable|numeric',
+            // NIM Mahasiswa Baru: hanya angka, 8 digit, unik dan tidak duplikat di array
+            'mahasiswa_baru.*.nim'  => 'required_with:mahasiswa_baru.*.nama|nullable|numeric|digits:8|distinct|unique:mahasiswa,nim',
             'mahasiswa_baru.*.nama' => 'nullable|string|max:255',
             'mahasiswa_baru.*.prodi' => 'nullable|string|max:255',
             'sumber_dana'               => 'required|array|min:1',
@@ -126,7 +170,9 @@ class PengabdianController extends Controller
                 'file'   => 'Ukuran file :attribute tidak boleh lebih dari :max KB.',
             ],
             'exists'        => ':attribute yang dipilih tidak valid.',
+            'judul_pengabdian.unique' => 'judul pengabdian sudah digunakan',
             'distinct'      => 'Terdapat duplikasi :attribute pada baris yang ditambahkan.',
+            'jumlah_luaran_direncanakan.required' => 'Jenis Luaran Yang Direncanakan wajib diisi',
             'mahasiswa_baru.*.nim.unique' => 'NIM Mahasiswa Baru sudah digunakan.',
             'different'     => ':attribute tidak boleh sama dengan Ketua Pengabdian.',
             'array'         => ':attribute harus berupa array.',
@@ -329,7 +375,8 @@ class PengabdianController extends Controller
 
         $request->validate([
             // --- Aturan Validasi ---
-            'judul_pengabdian'      => 'required|string|max:255',
+            // Judul pengabdian harus unik, kecuali untuk record yang sedang diupdate
+            'judul_pengabdian'      => ['required', 'string', 'max:255', Rule::unique('pengabdian', 'judul_pengabdian')->ignore($pengabdian->id_pengabdian, 'id_pengabdian')],
             'nama_mitra'            => 'nullable|string|max:255',
             // 'nama_mitra'            => 'required|string|max:255',
             // 'lokasi_kegiatan'       => 'required|string|max:255',
@@ -399,7 +446,9 @@ class PengabdianController extends Controller
             'max'           => ':attribute tidak boleh lebih dari :max karakter.',
             'file.max'      => 'Ukuran file :attribute tidak boleh lebih dari :max KB.',
             'exists'        => ':attribute yang dipilih tidak valid.',
+            'judul_pengabdian.unique' => 'judul pengabdian sudah digunakan',
             'unique'        => ':attribute ini sudah terdaftar.',
+            'jumlah_luaran_direncanakan.required' => 'Jenis Luaran Yang Direncanakan wajib diisi',
             'distinct'      => 'Terdapat duplikasi :attribute pada baris yang ditambahkan.',
             'different'     => ':attribute tidak boleh sama dengan Ketua Pengabdian.',
             'array'         => ':attribute harus berupa array.',

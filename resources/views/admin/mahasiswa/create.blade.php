@@ -12,7 +12,7 @@
     </div>
 
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-lg-12">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">Form Tambah Mahasiswa</h6>
@@ -22,8 +22,7 @@
                         @csrf
 
                         <div class="form-group">
-                            <label for="nim" class="form-label font-weight-bold">NIM <span
-                                    class="text-danger">*</span></label>
+                            <label for="nim" class="form-label">NIM <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('nim') is-invalid @enderror" id="nim"
                                 name="nim" value="{{ old('nim') }}" placeholder="Masukkan NIM mahasiswa" required>
                             @error('nim')
@@ -34,8 +33,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="nama" class="form-label font-weight-bold">Nama Lengkap <span
-                                    class="text-danger">*</span></label>
+                            <label for="nama" class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
                             <input type="text" class="form-control @error('nama') is-invalid @enderror" id="nama"
                                 name="nama" value="{{ old('nama') }}" placeholder="Masukkan nama lengkap mahasiswa"
                                 required>
@@ -45,24 +43,10 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="prodi" class="form-label font-weight-bold">Program Studi <span
+                            <label for="prodi" class="form-label ">Program Studi <span
                                     class="text-danger">*</span></label>
-                            <select class="form-control @error('prodi') is-invalid @enderror" id="prodi" name="prodi"
-                                required>
-                                <option value="">-- Pilih Program Studi --</option>
-                                <option value="Informatika" {{ old('prodi') == 'Informatika' ? 'selected' : '' }}>
-                                    Informatika</option>
-                                <option value="Sistem Informasi" {{ old('prodi') == 'Sistem Informasi' ? 'selected' : '' }}>
-                                    Sistem Informasi</option>
-                                <option value="Teknik Komputer" {{ old('prodi') == 'Teknik Komputer' ? 'selected' : '' }}>
-                                    Teknik Komputer</option>
-                                <option value="Manajemen Informatika"
-                                    {{ old('prodi') == 'Manajemen Informatika' ? 'selected' : '' }}>Manajemen Informatika
-                                </option>
-                                <option value="Teknologi Informasi"
-                                    {{ old('prodi') == 'Teknologi Informasi' ? 'selected' : '' }}>Teknologi Informasi
-                                </option>
-                            </select>
+                            <input type="text" class="form-control @error('prodi') is-invalid @enderror" id="prodi"
+                                name="prodi" value="{{ old('prodi') }}" placeholder="Masukkan program studi" required>
                             @error('prodi')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -81,26 +65,6 @@
             </div>
         </div>
 
-        <!-- Info Card -->
-        <div class="col-lg-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-info">Informasi</h6>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
-                        <strong>Petunjuk Pengisian:</strong>
-                        <ul class="mt-2 mb-0">
-                            <li>NIM harus unik dan belum terdaftar</li>
-                            <li>Nama lengkap sesuai identitas resmi</li>
-                            <li>Pilih program studi yang sesuai</li>
-                            <li>Semua field bertanda (*) wajib diisi</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 @endsection
 

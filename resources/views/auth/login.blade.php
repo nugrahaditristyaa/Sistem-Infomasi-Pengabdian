@@ -32,7 +32,9 @@
                     <div class="card-body p-0">
                         <!-- Nested Row within Card Body -->
                         <div class="row">
-                            <div class="col-lg-6 d-none d-lg-block bg-login-image"></div>
+                            <div class="col-lg-6 d-none d-lg-block bg-login-image text-center p-5 mt-4">
+                                <img src="{{ asset('assets/img/fti-ukdw.png') }}" alt="Deskripsi Gambar">
+                            </div>
                             <div class="col-lg-6">
                                 <div class="p-5">
                                     <div class="text-center">
@@ -113,11 +115,7 @@
                                             Login
                                         </button>
 
-                                        <div class="security-info">
-                                            <i class="fas fa-shield-alt mr-2"></i>
-                                            <strong>Keamanan:</strong> Maksimal 5 percobaan login dalam 1 menit.
-                                            Akun akan dikunci sementara jika melebihi batas.
-                                        </div>
+                                        {{-- Security info removed as login throttling is disabled --}}
 
                                         <hr>
                                     </form>

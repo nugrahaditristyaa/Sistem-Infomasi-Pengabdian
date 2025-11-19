@@ -3,14 +3,14 @@
 
     <!-- Sidebar - Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url('admin/dashboard') }}">
-        
+
         <div class="sidebar-brand-icon ">
             <img src="{{ asset('assets/img/logo-ukdw.png') }}" alt="Logo FTI" style="width: 60px; height: 50px;">
         </div>
         <div class="sidebar-brand-icon ">
             <img src="{{ asset('assets/img/fti-ukdw.png') }}" alt="Logo FTI" style="width: 60px; height: 50px;">
         </div>
-        
+
     </a>
 
     <!-- Divider -->
@@ -48,12 +48,26 @@
         </a>
     </li>
 
-    <!-- Nav Item - Data Dosen -->
-    <li class="nav-item {{ request()->is('admin/dosen*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ url('admin/dosen') }}">
+    <!-- Nav Item - Data Dosen (with Collapse for Rekap) -->
+    @php
+        $dosenActive =
+            request()->is('admin/dosen*') || request()->is('dekan/dosen*') || request()->is('kaprodi*/dosen*');
+    @endphp
+    <li class="nav-item {{ $dosenActive ? 'active' : '' }}">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseDosenAdmin"
+            aria-expanded="{{ $dosenActive ? 'true' : 'false' }}" aria-controls="collapseDosenAdmin">
             <i class="fas fa-user-tie"></i>
             <span>Data Dosen</span>
         </a>
+        <div id="collapseDosenAdmin" class="collapse {{ $dosenActive ? 'show' : '' }}" aria-labelledby="headingDosen"
+            data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item {{ request()->routeIs('admin.dosen.index') ? 'active' : '' }}"
+                    href="{{ route('admin.dosen.index') }}">Daftar Dosen</a>
+                <a class="collapse-item {{ request()->routeIs('admin.dosen.rekap') ? 'active' : '' }}"
+                    href="{{ route('admin.dosen.rekap') }}">Rekap Pengabdian Dosen</a>
+            </div>
+        </div>
     </li>
 
     <!-- Nav Item - Data Mahasiswa -->

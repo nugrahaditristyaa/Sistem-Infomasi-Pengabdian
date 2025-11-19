@@ -107,14 +107,14 @@
             padding-right: 0 !important;
 
             /* * Jika Anda menggunakan 'overflow-y: scroll' di body,
-                * pastikan 'overflow' tetap 'hidden' saat modal terbuka.
-                */
+                                                    * pastikan 'overflow' tetap 'hidden' saat modal terbuka.
+                                                    */
             overflow: hidden !important;
         }
 
         /* * Jika navbar atas Anda (yang .fixed-top) juga ikut bergeser,
-            * tambahkan ini juga.
-            */
+                                                * tambahkan ini juga.
+                                                */
         .fixed-top {
             padding-right: 0 !important;
         }
@@ -402,11 +402,6 @@
             transform: translateX(2px);
         }
 
-        #dosenSortBtn {
-            border: 1px solid #e3e6f0;
-            transition: all 0.2s ease;
-        }
-
         #dosenSortBtn:hover {
             background-color: #4e73df;
             color: white;
@@ -618,10 +613,10 @@
         }
 
         /* .statistics-card .sparkline-container {
-                border-radius: 4px;
-                background: rgba(255, 255, 255, 0.1);
-                padding: 4px;
-            } */
+                                                    border-radius: 4px;
+                                                    background: rgba(255, 255, 255, 0.1);
+                                                    padding: 4px;
+                                                } */
 
         .border-left-primary .sparkline-container {
             background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
@@ -696,9 +691,13 @@
                         }
                     }
                 @endphp
-                <form method="GET" action="{{ route($dashboardRoute) }}" class="mr-3">
+                <form method="GET" action="{{ route($dashboardRoute) }}" class="mr-3 d-flex align-items-center">
+                    <div class="mr-2 d-flex align-items-center">
+                        <i class="fas fa-filter mr-1"></i>
+                        <span class="small text-muted mb-0">Tahun</span>
+                        <span class="small text-muted ml-1">:</span>
+                    </div>
                     <select name="year" class="form-control form-control-sm" onchange="this.form.submit()">
-                        <option value="all" {{ $filterYear == 'all' ? 'selected' : '' }}>Semua Tahun</option>
                         @foreach ($availableYears as $year)
                             <option value="{{ $year }}" {{ $filterYear == $year ? 'selected' : '' }}>
                                 {{ $year }}
@@ -1067,14 +1066,16 @@
                                 </div>
                             </div>
                             <div class="col-md-6 text-right">
-                                <a href="{{ route($rekapRoute, ['year' => $filterYear]) }}"
-                                    class="btn btn-sm btn-primary mr-2" title="Lihat Detail Lengkap">
-                                    <i class="fas fa-list mr-1"></i>Detail
-                                </a>
-                                <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-secondary"
+                                <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-primary mt-2"
                                     data-order="desc" title="Urutkan jumlah (tertinggi ke terendah)">
                                     <i class="fas fa-sort-amount-down mr-1"></i>Urutkan
                                 </button>
+
+                                <a href="{{ route($rekapRoute, ['year' => $filterYear]) }}"
+                                    class="btn btn-sm btn-outline-primary mt-2" title="Lihat Detail Lengkap">
+                                    <i class="fas fa-list mr-1"></i>Detail
+                                </a>
+
                             </div>
                         </div>
                     </div>
@@ -2614,7 +2615,6 @@
                                 <td>${index + 1}</td>
                                 <td>
                                     <div class="">${judul}</div>
-                                    <small class="text-muted">${item.id_pengabdian || 'N/A'}</small>
                                 </td>
                                 <td>${item.tanggal_pengabdian ? new Date(item.tanggal_pengabdian).toLocaleDateString('id-ID') : 'N/A'}</td>
                                 <td>${item.ketua || 'N/A'}</td>
@@ -2691,20 +2691,20 @@
                     <tr>
                         <td>${index + 1}</td>
                         <td>
-                            <div class="font-weight-bold text-primary">${judul}</div>
+                            <div class="">${judul}</div>
                             <small class="text-muted">${item.id_pengabdian || 'N/A'}</small>
                         </td>
                         <td>${item.tanggal_pengabdian ? new Date(item.tanggal_pengabdian).toLocaleDateString('id-ID') : 'N/A'}</td>
                         <td>${item.ketua || 'N/A'}</td>
                         <td class="text-center">
-                            <span class="badge badge-success">${item.jumlah_mahasiswa || 0}</span>
+                            <span class="">${item.jumlah_mahasiswa || 0}</span>
                         </td>
                         <td class="small">${mhsHtml}</td>
                         <td>
-                            <span class="badge badge-info">Informatika: ${item.mahasiswa_informatika || 0}</span>
-                            <span class="badge badge-warning">SI: ${item.mahasiswa_sistem_informasi || 0}</span>
+                            <span class="">Informatika: ${item.mahasiswa_informatika || 0}</span>
+                            <span class="">SI: ${item.mahasiswa_sistem_informasi || 0}</span>
                         </td>
-                        <td><span class="badge badge-secondary">${item.sumber_dana || 'N/A'}</span></td>
+                        <td><span class="">${item.sumber_dana || 'N/A'}</span></td>
                     </tr>
                 `;
                         });
@@ -2831,6 +2831,6 @@
                 link.click();
                 document.body.removeChild(link);
             }
-        </script>   
+        </script>
     @endpush
 @endsection

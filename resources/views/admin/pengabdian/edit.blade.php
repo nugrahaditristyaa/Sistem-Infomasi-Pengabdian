@@ -70,21 +70,6 @@
         @csrf
         @method('PUT')
 
-        {{-- Display All Validation Errors --}}
-        @if ($errors->any())
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <h6><i class="fas fa-exclamation-triangle mr-2"></i>Terdapat kesalahan pada form:</h6>
-                <ul class="mb-0">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-                <button type="button" class="close" data-dismiss="alert">
-                    <span>&times;</span>
-                </button>
-            </div>
-        @endif
-
         {{-- Informasi Utama --}}
         <div class="card shadow mb-4">
             <div class="card-header py-3">
@@ -259,18 +244,21 @@
                             <div class="row mahasiswa-baru-item mb-3">
                                 <div class="col-md-4">
                                     <div class="form-group mb-md-0"><label>NIM</label><input type="text"
-                                            name="mahasiswa_baru[{{ $index }}][nim]" class="form-control"
-                                            placeholder="NIM" value="{{ $mhs['nim'] ?? '' }}"></div>
+                                            inputmode="numeric" pattern="\d*" maxlength="8"
+                                            name="mahasiswa_baru[{{ $index }}][nim]"
+                                            class="form-control nim-input" placeholder="Masukkan NIM"
+                                            value="{{ $mhs['nim'] ?? '' }}"
+                                            oninput="this.value = this.value.replace(/\D/g, '')"></div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group mb-md-0"><label>Nama</label><input type="text"
                                             name="mahasiswa_baru[{{ $index }}][nama]" class="form-control"
-                                            placeholder="Nama" value="{{ $mhs['nama'] ?? '' }}"></div>
+                                            placeholder="Masukkan Nama" value="{{ $mhs['nama'] ?? '' }}"></div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group mb-md-0"><label>Prodi</label><input type="text"
                                             name="mahasiswa_baru[{{ $index }}][prodi]" class="form-control"
-                                            placeholder="Prodi" value="{{ $mhs['prodi'] ?? '' }}"></div>
+                                            placeholder="Masukkan Prodi" value="{{ $mhs['prodi'] ?? '' }}"></div>
                                 </div>
                                 <div class="col-md-1 d-flex align-items-end"><button type="button"
                                         class="btn btn-danger btn-sm btn-hapus-mhs-baru"><i
@@ -361,14 +349,11 @@
             </div>
             <div class="card-body">
                 {{-- Luaran Wajib removed: field deprecated. --}}
-                <hr>
 
                 {{-- FIELD JENIS LUARAN YANG DIRENCANAKAN --}}
 
-                <hr>
-
                 <div class="form-group">
-                    <label>Luaran Tambahan (Opsional)</label>
+                    <label>Hasil Luaran Kegiatan</label>
                     @php
                         $selectedLuaran = old(
                             'luaran_jenis',
@@ -574,6 +559,34 @@
 
 
         $(document).ready(function() {
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: "{{ session('success') }}",
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+            @elseif (session('error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Terjadi Kesalahan!',
+                    text: "{{ session('error') }}",
+                });
+            @elseif ($errors->any())
+                const errorMessages = @json($errors->all());
+                let formattedErrors = '<ul class="text-left mb-0" style="padding-left: 1.2em;">';
+                errorMessages.forEach(function(message) {
+                    formattedErrors += '<li>' + message + '</li>';
+                });
+                formattedErrors += '</ul>';
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Input Tidak Valid',
+                    html: formattedErrors,
+                });
+            @endif
             const PengabdianForm = {
                 init: function() {
                     this.initPlugins();
