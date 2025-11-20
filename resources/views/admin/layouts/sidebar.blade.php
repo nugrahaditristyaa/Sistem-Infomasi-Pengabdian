@@ -19,7 +19,7 @@
     <!-- Nav Item - Dashboard -->
     <li class="nav-item {{ request()->is('admin/dashboard') ? 'active' : '' }}">
         <a class="nav-link" href="{{ url('admin/dashboard') }}">
-            <i class="fas fa-home"></i>
+            <i class="fas fa-home fa-fw"></i>
             <span>Dashboard</span>
         </a>
     </li>
@@ -35,7 +35,7 @@
     <!-- Nav Item - Pengabdian -->
     <li class="nav-item {{ request()->is('admin/pengabdian*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ url('admin/pengabdian') }}">
-            <i class="fas fa-hand-holding-heart"></i>
+            <i class="fas fa-hand-holding-heart fa-fw"></i>
             <span>Data Pengabdian</span>
         </a>
     </li>
@@ -43,7 +43,7 @@
     <!-- Nav Item - Data HKI -->
     <li class="nav-item {{ request()->is('admin/hki') ? 'active' : '' }}">
         <a class="nav-link" href="{{ url('admin/hki') }}">
-            <i class="fas fa-lightbulb"></i>
+            <i class="fas fa-lightbulb fa-fw"></i>
             <span>Data Luaran HKI</span>
         </a>
     </li>
@@ -56,7 +56,7 @@
     <li class="nav-item {{ $dosenActive ? 'active' : '' }}">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseDosenAdmin"
             aria-expanded="{{ $dosenActive ? 'true' : 'false' }}" aria-controls="collapseDosenAdmin">
-            <i class="fas fa-user-tie"></i>
+            <i class="fas fa-user-tie fa-fw"></i>
             <span>Data Dosen</span>
         </a>
         <div id="collapseDosenAdmin" class="collapse {{ $dosenActive ? 'show' : '' }}" aria-labelledby="headingDosen"
@@ -73,7 +73,7 @@
     <!-- Nav Item - Data Mahasiswa -->
     <li class="nav-item {{ request()->is('admin/mahasiswa*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ url('admin/mahasiswa') }}">
-            <i class="fas fa-user-graduate"></i>
+            <i class="fas fa-user-graduate fa-fw"></i>
             <span>Data Mahasiswa</span>
         </a>
     </li>
@@ -85,7 +85,7 @@
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseKPI"
                 aria-expanded="{{ request()->is('dekan/kpi*') || request()->is('dekan/kpi-monitoring') ? 'true' : 'false' }}"
                 aria-controls="collapseKPI">
-                <i class="fas fa-chart-line"></i>
+                <i class="fas fa-chart-line fa-fw"></i>
                 <span>KPI</span>
             </a>
             <div id="collapseKPI"

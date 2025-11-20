@@ -116,6 +116,10 @@
                 class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm mr-2">
                 <i class="fas fa-plus fa-sm text-white-50"></i> Tambah Data Pengabdian
             </a>
+            <a href="{{ url('admin/pengabdian/export') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}"
+                class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm mr-2" title="Ekspor Excel">
+                <i class="fas fa-file-excel fa-sm text-white-50"></i> Ekspor Excel
+            </a>
             <button type="button" class="btn btn-sm btn-outline-primary shadow-sm" data-toggle="modal"
                 data-target="#pengabdianFilterModal" title="Filter Pengabdian">
                 <i class="fas fa-filter mr-1"></i> Filter

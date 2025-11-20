@@ -1,4 +1,4 @@
-@extends('dekan.layouts.main')
+@extends('admin.layouts.main')
 
 @section('title', 'Rekap Pengabdian Dosen')
 
@@ -6,6 +6,7 @@
     <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/fixedheader/3.2.2/css/fixedHeader.bootstrap4.min.css" rel="stylesheet">
     <style>
+        /* Keep same styles as Dekan rekap for visual parity */
         .table td,
         .table th {
             vertical-align: middle;
@@ -47,12 +48,10 @@
             width: 120px;
         }
 
-        /* Card padding more roomy */
         .card .card-body {
             padding: 1.5rem;
         }
 
-        /* Badge styling */
         .badge-prodi {
             font-size: 0.75rem;
             padding: 0.35rem 0.65rem;
@@ -77,7 +76,6 @@
             font-weight: 600;
         }
 
-        /* Modal styling */
         .modal-header.bg-primary {
             background: linear-gradient(135deg, #4e73df 0%, #36b9cc 100%) !important;
             border-bottom: none;
@@ -164,7 +162,6 @@
             color: white;
         }
 
-        /* Align DataTables search label and input inline */
         #dtSearchContainer .dataTables_filter label {
             display: flex;
             align-items: center;
@@ -173,7 +170,7 @@
         }
 
         #dtSearchContainer .dataTables_filter input[type="search"] {
-            width: 100%;
+            width: 30%;
             max-width: 380px;
         }
     </style>
@@ -181,45 +178,32 @@
 
 @section('content')
     <div class="container-fluid">
-        <!-- Page Heading -->
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
             <div>
                 <h1 class="h3 mb-0 text-gray-800">Rekap Pengabdian Dosen</h1>
-                <p class="mb-0 text-muted">Daftar dosen dan aktivitas pengabdian mereka</p>
             </div>
         </div>
 
-        <!-- Alert Success -->
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 {{ session('success') }}
-                <button type="button" class="close" data-dismiss="alert">
-                    <span>&times;</span>
-                </button>
+                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
             </div>
         @endif
 
-        <!-- Data Table Card -->
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-users mr-2"></i>Data Rekap Pengabdian Dosen
+                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-users mr-2"></i>Data Rekap Pengabdian Dosen
                 </h6>
             </div>
             <div class="card-body">
-                <!-- Controls row: place DataTables search on the left, custom buttons on the right -->
                 <div class="row align-items-center mb-3">
                     <div class="col-sm-12 col-md-6" id="dtSearchContainer"></div>
                     <div class="col-sm-12 col-md-6 d-flex justify-content-md-end mt-2 mt-md-0">
-                        <button type="button" class="btn btn-sm btn-outline-secondary mr-2" data-toggle="modal"
+                        <button type="button" class="btn btn-sm btn-outline-primary  mr-2" data-toggle="modal"
                             data-target="#dosenFilterModal">
                             <i class="fas fa-filter mr-1"></i> Filter
                         </button>
-                        <!-- Export Button -->
-                        <a href="{{ route($routeBase . '.dosen.rekap.export', array_filter(['year' => request('year'), 'prodi' => request('prodi')])) }}"
-                            class="btn btn-success btn-sm shadow-sm">
-                            <i class="fas fa-file-excel mr-1"></i> Ekspor CSV
-                        </a>
                     </div>
                 </div>
 
@@ -230,10 +214,8 @@
                                 <tr>
                                     <th class="no-column">No</th>
                                     <th>Nama Dosen</th>
-                                    @if ($userRole === 'Dekan')
-                                        <th>Program Studi</th>
-                                    @endif
-                                    <th class="text-center">Jumlah Kegiatan ▼</th>
+                                    <th>Prodi</th>
+                                    <th class="text-center">Jumlah Kegiatan </th>
                                     <th>Judul Terlibat</th>
                                 </tr>
                             </thead>
@@ -243,31 +225,19 @@
                                         <td class="no-column">{{ $dosenData->firstItem() + $index }}</td>
                                         <td>
                                             <div class="d-flex flex-column">
-                                                <span class="">{{ $dosen->nama }}</span>
-                                                @if ($userRole !== 'Dekan')
-                                                    <small class="text-muted">{{ $dosen->prodi }}</small>
-                                                @endif
+                                                <span>{{ $dosen->nama }}</span>
                                             </div>
                                         </td>
-                                        @if ($userRole === 'Dekan')
-                                            <td>
-                                                {{ $dosen->prodi }}
-                                            </td>
-                                        @endif
-                                        <td class="text-center">
-                                            {{ $dosen->jumlah_pengabdian }}
-                                        </td>
+                                        <td>{{ $dosen->prodi }}</td>
+                                        <td class="text-center">{{ $dosen->jumlah_pengabdian }}</td>
                                         <td>
                                             @if ($dosen->pengabdian->count() > 0)
-                                                <div class="small">
-                                                    @foreach ($dosen->pengabdian->unique('judul_pengabdian') as $idx => $p)
-                                                        @if ($idx > 0)
-                                                            <br>
-                                                        @endif
-                                                        <span style="font-size: 0.85rem;">{{ $idx + 1 }}.
-                                                            {{ $p->judul_pengabdian }}</span>
+                                                <ul class="mb-0 small pl-3">
+                                                    @foreach ($dosen->pengabdian->unique('judul_pengabdian') as $p)
+                                                        <li style="font-size:0.9rem; line-height:1.35;">
+                                                            {{ $p->judul_pengabdian }}</li>
                                                     @endforeach
-                                                </div>
+                                                </ul>
                                             @else
                                                 <span class="text-muted font-italic">-</span>
                                             @endif
@@ -278,11 +248,10 @@
                         </table>
                     </div>
 
-                    <!-- Pagination -->
                     <div class="d-flex justify-content-between align-items-center mt-4">
                         <div class="text-muted small">
-                            Menampilkan {{ $dosenData->firstItem() }} sampai {{ $dosenData->lastItem() }}
-                            dari {{ $dosenData->total() }} dosen
+                            Menampilkan {{ $dosenData->firstItem() }} sampai {{ $dosenData->lastItem() }} dari
+                            {{ $dosenData->total() }} dosen
                         </div>
                         <div>
                             {{ $dosenData->appends(request()->query())->links('pagination::bootstrap-4') }}
@@ -299,32 +268,26 @@
         </div>
     </div>
 
-    <!-- Detail Modal -->
+    <!-- Detail Modal (same as Dekan) -->
     <div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="detailModalLabel"
         aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-primary">
-                    <h5 class="modal-title text-white" id="detailModalLabel">
-                        <i class="fas fa-user-circle mr-2"></i>Detail Pengabdian Dosen
-                    </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <h5 class="modal-title text-white" id="detailModalLabel"><i class="fas fa-user-circle mr-2"></i>Detail
+                        Pengabdian Dosen</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
                 </div>
                 <div class="modal-body" id="modalBody">
                     <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">Loading...</span>
+                        <div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span>
                         </div>
                         <p class="mt-2">Memuat data...</p>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        <i class="fas fa-times mr-1"></i>Tutup
-                    </button>
-                </div>
+                <div class="modal-footer bg-light"><button type="button" class="btn btn-secondary" data-dismiss="modal"><i
+                            class="fas fa-times mr-1"></i>Tutup</button></div>
             </div>
         </div>
     </div>
@@ -335,52 +298,39 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="dosenFilterModalLabel">
-                        <i class="fas fa-filter mr-2"></i>Filter Rekap Dosen
+                    <h5 class="modal-title" id="dosenFilterModalLabel"><i class="fas fa-filter mr-2"></i>Filter Rekap Dosen
                     </h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
                 </div>
                 <form method="GET" action="{{ route($routeBase . '.dosen.rekap') }}">
                     <div class="modal-body">
-                        <!-- Year Filter -->
                         <div class="form-group">
                             <label for="yearFilterModal">Tahun</label>
                             <select name="year" id="yearFilterModal" class="form-control">
                                 <option value="all" {{ $filterYear == 'all' ? 'selected' : '' }}>Semua Tahun</option>
                                 @foreach ($availableYears as $year)
                                     <option value="{{ $year }}" {{ $filterYear == $year ? 'selected' : '' }}>
-                                        {{ $year }}
-                                    </option>
+                                        {{ $year }}</option>
                                 @endforeach
                             </select>
                         </div>
 
-                        @if ($userRole === 'Dekan')
-                            <!-- Prodi Filter (Only for Dekan) -->
-                            <div class="form-group">
-                                <label for="prodiFilterModal">Program Studi</label>
-                                <select name="prodi" id="prodiFilterModal" class="form-control">
-                                    <option value="all" {{ $filterProdi == 'all' ? 'selected' : '' }}>Semua Prodi
-                                    </option>
-                                    @foreach ($prodiOptions as $prodi)
-                                        <option value="{{ $prodi }}"
-                                            {{ $filterProdi == $prodi ? 'selected' : '' }}>
-                                            {{ $prodi }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        @endif
+                        <div class="form-group">
+                            <label for="prodiFilterModal">Program Studi</label>
+                            <select name="prodi" id="prodiFilterModal" class="form-control">
+                                <option value="all" {{ $filterProdi == 'all' ? 'selected' : '' }}>Semua Prodi</option>
+                                @foreach ($prodiOptions as $prodi)
+                                    <option value="{{ $prodi }}" {{ $filterProdi == $prodi ? 'selected' : '' }}>
+                                        {{ $prodi }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
                     <div class="modal-footer">
-                        <a href="{{ route($routeBase . '.dosen.rekap') }}" class="btn btn-secondary">
-                            <i class="fas fa-redo mr-1"></i> Reset
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-check mr-1"></i> Terapkan Filter
-                        </button>
+                        <a href="{{ route($routeBase . '.dosen.rekap') }}" class="btn btn-secondary"> Reset</a>
+                        <button type="submit" class="btn btn-primary"> Terapkan
+                            Filter</button>
                     </div>
                 </form>
             </div>
@@ -395,17 +345,16 @@
 
     <script>
         $(document).ready(function() {
-            // Determine column configuration based on user role
-            var isDekan = '{{ $userRole }}' === 'Dekan';
+            // For admin view, keep same column config as Dekan
+            var isDekan = true;
 
-            // Configure DataTable columns
-            var nonSortableColumns = isDekan ? [0, 4] : [0, 3]; // No and Judul columns
-            var centerAlignColumns = isDekan ? [0, 3] : [0, 2]; // No and Jumlah Kegiatan columns
-            var sortColumn = isDekan ? 3 : 2; // Jumlah Kegiatan column index
+            // Disable sorting on No, Nama Dosen, Prodi and Judul columns for consistent UX
+            var nonSortableColumns = [0, 1, 2, 4];
+            var centerAlignColumns = isDekan ? [0, 3] : [0, 2];
+            var sortColumn = isDekan ? 3 : 2;
 
-            // Initialize DataTable with custom settings
             var dt = $('#dosenTable').DataTable({
-                paging: false, // We use Laravel pagination
+                paging: false,
                 searching: true,
                 ordering: true,
                 info: false,
@@ -417,46 +366,37 @@
                     emptyTable: 'Tidak ada data tersedia'
                 },
                 columnDefs: [{
-                        orderable: false,
-                        targets: nonSortableColumns
-                    },
-                    {
-                        className: 'text-center',
-                        targets: centerAlignColumns
-                    }
-                ],
+                    orderable: false,
+                    targets: nonSortableColumns
+                }, {
+                    className: 'text-center',
+                    targets: centerAlignColumns
+                }],
                 order: [
                     [sortColumn, 'desc']
-                ] // Sort by jumlah kegiatan descending
+                ]
             });
 
-            // Move DataTables search into our custom container and style it
             var $dtFilter = $('#dosenTable_filter');
             $dtFilter.appendTo('#dtSearchContainer');
             $dtFilter.addClass('mb-0 w-100');
             var $input = $dtFilter.find('input');
             $input.addClass('form-control form-control-sm');
-            // Make search input expand nicely on small screens
             $input.attr('placeholder', 'Nama dosen...');
             $input.css({
                 maxWidth: '100%'
             });
         });
 
-        // Show dosen detail function
         function showDosenDetail(nik, nama) {
-            // Show modal with loading state
             $('#detailModal').modal('show');
             $('#detailModalLabel').html('<i class="fas fa-user-circle mr-2"></i>Detail Pengabdian: ' + nama);
 
-            // Make AJAX request
             $.ajax({
                 url: '{{ route($routeBase . '.dosen.detail', ':nik') }}'.replace(':nik', nik),
                 method: 'GET',
                 success: function(response) {
                     let html = '';
-
-                    // Dosen info header
                     html += '<div class="row mb-4">';
                     html += '<div class="col-md-6">';
                     html +=
@@ -482,17 +422,14 @@
                     html += '</div>';
                     html += '</div>';
 
-                    // Pengabdian list
                     if (response.pengabdian.length > 0) {
                         html +=
                             '<h6 class="text-primary mb-3"><i class="fas fa-list mr-2"></i>Daftar Kegiatan Pengabdian</h6>';
-
                         response.pengabdian.forEach(function(item, index) {
                             const statusClass = item.status_anggota === 'Ketua' ? 'status-ketua' :
                                 'status-anggota';
                             const tanggal = new Date(item.tanggal_pengabdian).toLocaleDateString(
                                 'id-ID');
-
                             html += '<div class="pengabdian-item">';
                             html +=
                                 '<div class="d-flex justify-content-between align-items-start mb-2">';
@@ -502,47 +439,28 @@
                                 .status_anggota + '</span>';
                             html += '</div>';
                             html += '<div class="row">';
-                            html += '<div class="col-sm-6">';
                             html +=
-                                '<small class="text-muted"><i class="fas fa-calendar mr-1"></i>Tanggal: ' +
-                                tanggal + '</small>';
-                            html += '</div>';
-                            html += '<div class="col-sm-6">';
+                                '<div class="col-sm-6"><small class="text-muted"><i class="fas fa-calendar mr-1"></i>Tanggal: ' +
+                                tanggal + '</small></div>';
                             html +=
-                                '<small class="text-muted"><i class="fas fa-money-bill mr-1"></i>Sumber Dana: ' +
-                                item.sumber_dana + '</small>';
-                            html += '</div>';
+                                '<div class="col-sm-6"><small class="text-muted"><i class="fas fa-money-bill mr-1"></i>Sumber Dana: ' +
+                                item.sumber_dana + '</small></div>';
                             html += '</div>';
                             html += '</div>';
                         });
                     } else {
-                        html += '<div class="text-center py-4">';
-                        html += '<i class="fas fa-inbox fa-3x text-muted mb-3"></i>';
-                        html += '<h6 class="text-muted">Tidak ada data pengabdian</h6>';
                         html +=
-                            '<p class="text-muted">Dosen ini belum memiliki kegiatan pengabdian pada periode yang dipilih.</p>';
-                        html += '</div>';
+                            '<div class="text-center py-4"><i class="fas fa-inbox fa-3x text-muted mb-3"></i><h6 class="text-muted">Tidak ada data pengabdian</h6><p class="text-muted">Dosen ini belum memiliki kegiatan pengabdian pada periode yang dipilih.</p></div>';
                     }
 
                     $('#modalBody').html(html);
                 },
                 error: function() {
                     $('#modalBody').html(
-                        '<div class="text-center py-4">' +
-                        '<i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>' +
-                        '<h6 class="text-warning">Gagal memuat data</h6>' +
-                        '<p class="text-muted">Terjadi kesalahan saat memuat detail pengabdian dosen.</p>' +
-                        '</div>'
+                        '<div class="text-center py-4"><i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i><h6 class="text-warning">Gagal memuat data</h6><p class="text-muted">Terjadi kesalahan saat memuat detail pengabdian dosen.</p></div>'
                     );
                 }
             });
-        }
-
-        // Row click handler to open modal when data exists
-        function onRowClick(nik, nama, hasData) {
-            if (hasData) {
-                showDosenDetail(nik, nama);
-            }
         }
     </script>
 @endpush

@@ -45,6 +45,12 @@ Route::middleware(['auth:admin'])->group(function () {
 
         // Resource Routes (tetap sama)
         Route::resource('pengabdian', PengabdianController::class);
+
+        // Rekap Dosen (accessible to Admin) - place before resource('dosen') to avoid wildcard collision
+        Route::get('dosen/rekap', [App\Http\Controllers\Admin\DosenRekapController::class, 'rekap'])->name('dosen.rekap');
+        Route::get('dosen/rekap/export', [App\Http\Controllers\Admin\DosenRekapController::class, 'exportRekap'])->name('dosen.rekap.export');
+        Route::get('dosen/{nik}', [App\Http\Controllers\Admin\DosenRekapController::class, 'dosenDetail'])->name('dosen.detail');
+
         Route::resource('dosen', DosenController::class);
         Route::resource('mahasiswa', MahasiswaController::class);
         Route::resource('dokumen', DokumenController::class);
@@ -55,8 +61,9 @@ Route::middleware(['auth:admin'])->group(function () {
         Route::get('hki/{id}', [HkiController::class, 'show'])->name('hki.show');
 
         // Rekap Dosen (accessible to Admin)
-        Route::get('dosen/rekap', [App\Http\Controllers\Admin\DosenAdminController::class, 'rekap'])->name('dosen.rekap');
-        Route::get('dosen/rekap/export', [App\Http\Controllers\Admin\DosenAdminController::class, 'exportRekap'])->name('dosen.rekap.export');
+        Route::get('dosen/rekap', [App\Http\Controllers\Admin\DosenRekapController::class, 'rekap'])->name('dosen.rekap');
+        Route::get('dosen/rekap/export', [App\Http\Controllers\Admin\DosenRekapController::class, 'exportRekap'])->name('dosen.rekap.export');
+        Route::get('dosen/{nik}', [App\Http\Controllers\Admin\DosenRekapController::class, 'dosenDetail'])->name('dosen.detail');
     });
 });
 // ==========================================================
