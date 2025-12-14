@@ -107,14 +107,14 @@
             padding-right: 0 !important;
 
             /* * Jika Anda menggunakan 'overflow-y: scroll' di body,
-                                                    * pastikan 'overflow' tetap 'hidden' saat modal terbuka.
-                                                    */
+                                                            * pastikan 'overflow' tetap 'hidden' saat modal terbuka.
+                                                            */
             overflow: hidden !important;
         }
 
         /* * Jika navbar atas Anda (yang .fixed-top) juga ikut bergeser,
-                                                * tambahkan ini juga.
-                                                */
+                                                        * tambahkan ini juga.
+                                                        */
         .fixed-top {
             padding-right: 0 !important;
         }
@@ -613,10 +613,10 @@
         }
 
         /* .statistics-card .sparkline-container {
-                                                    border-radius: 4px;
-                                                    background: rgba(255, 255, 255, 0.1);
-                                                    padding: 4px;
-                                                } */
+                                                            border-radius: 4px;
+                                                            background: rgba(255, 255, 255, 0.1);
+                                                            padding: 4px;
+                                                        } */
 
         .border-left-primary .sparkline-container {
             background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
@@ -657,505 +657,476 @@
             default => 'dekan.dosen.rekap',
         };
     @endphp
-    <div class="container-fluid">
-        <!-- Page Heading -->
-        <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">
-                @auth('admin')
-                    {{-- Pastikan user login dengan guard 'admin' --}}
-                    @php
-                        $userRole = auth('admin')->user()->role; // Ambil role user
-                    @endphp
-
-                    @if ($userRole === 'Dekan')
-                        Dashboard Pengabdian FTI
-                    @elseif($userRole === 'Kaprodi TI')
-                        Dashboard Pengabdian Informatika
-                    @elseif($userRole === 'Kaprodi SI')
-                        Dashboard Pengabdian Sistem Informasi
-                    @endif
-                @endauth
-            </h1>
-            <div class="d-flex align-items-center">
-                <!-- Year Filter -->
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            @auth('admin')
+                {{-- Pastikan user login dengan guard 'admin' --}}
                 @php
-                    // Tentukan route berdasarkan role user
-                    $user = auth('admin')->user();
-                    $dashboardRoute = 'dekan.dashboard'; // default
+                    $userRole = auth('admin')->user()->role; // Ambil role user
+                @endphp
 
-                    if ($user) {
-                        if ($user->role === 'Kaprodi TI') {
-                            $dashboardRoute = 'kaprodi.ti.dashboard';
-                        } elseif ($user->role === 'Kaprodi SI') {
-                            $dashboardRoute = 'kaprodi.si.dashboard';
-                        }
+                @if ($userRole === 'Dekan')
+                    Dashboard Pengabdian FTI
+                @elseif($userRole === 'Kaprodi TI')
+                    Dashboard Pengabdian Informatika
+                @elseif($userRole === 'Kaprodi SI')
+                    Dashboard Pengabdian Sistem Informasi
+                @endif
+            @endauth
+        </h1>
+        <div class="d-flex align-items-center">
+            <!-- Year Filter -->
+            @php
+                // Tentukan route berdasarkan role user
+                $user = auth('admin')->user();
+                $dashboardRoute = 'dekan.dashboard'; // default
+
+                if ($user) {
+                    if ($user->role === 'Kaprodi TI') {
+                        $dashboardRoute = 'kaprodi.ti.dashboard';
+                    } elseif ($user->role === 'Kaprodi SI') {
+                        $dashboardRoute = 'kaprodi.si.dashboard';
                     }
-                @endphp
-                <form method="GET" action="{{ route($dashboardRoute) }}" class="mr-3 d-flex align-items-center">
-                    <div class="mr-2 d-flex align-items-center">
-                        <i class="fas fa-filter mr-1"></i>
-                        <span class="small text-muted mb-0">Tahun</span>
-                        <span class="small text-muted ml-1">:</span>
-                    </div>
-                    <select name="year" class="form-control form-control-sm" onchange="this.form.submit()">
-                        @foreach ($availableYears as $year)
-                            <option value="{{ $year }}" {{ $filterYear == $year ? 'selected' : '' }}>
-                                {{ $year }}
-                            </option>
-                        @endforeach
-                    </select>
-                </form>
-            </div>
+                }
+            @endphp
+            <form method="GET" action="{{ route($dashboardRoute) }}" class="mr-3 d-flex align-items-center">
+                <div class="mr-2 d-flex align-items-center">
+                    <i class="fas fa-filter mr-1"></i>
+                    <span class="small text-muted mb-0">Tahun</span>
+                    <span class="small text-muted ml-1">:</span>
+                </div>
+                <select name="year" class="form-control form-control-sm" onchange="this.form.submit()">
+                    @foreach ($availableYears as $year)
+                        <option value="{{ $year }}" {{ $filterYear == $year ? 'selected' : '' }}>
+                            {{ $year }}
+                        </option>
+                    @endforeach
+                </select>
+            </form>
         </div>
+    </div>
 
-        <!-- Alert Success -->
-        @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="close" data-dismiss="alert">
-                    <span>&times;</span>
-                </button>
-            </div>
-        @endif
+    <div class="row">
+        <div class="col-12">
 
-        <!-- Pengabdian Statistics Row -->
-        <div class="row mb-4 statistics-row">
-            <!-- Total Pengabdian Card -->
-            <div class="col-xl-4 col-md-6 mb-4">
-                <div class="card border-left-primary shadow h-100 py-2 modern-card">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                {{-- JUDUL KARTU --}}
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    Total Pengabdian
-                                    @if ($filterYear !== 'all')
-                                        <span class="fs-3">({{ $filterYear }})</span>
-                                    @endif
-                                </div>
-
-                                {{-- ANGKA UTAMA --}}
-                                <div id="statTotalPengabdian" class="h5 mb-2 font-weight-bold text-gray-800 clickable-stat"
-                                    style="cursor: pointer;">
-                                    {{ $stats['total_pengabdian'] }}
-                                </div>
-
-                                {{-- SPARKLINE CHART --}}
-                                <div class="sparkline-container">
-                                    <canvas id="sparklinePengabdian" class="sparkline-chart"></canvas>
-                                </div>
-
-                                {{-- INFORMASI TREN (PERBANDINGAN TAHUN) --}}
-                                <div class="d-flex align-items-center mb-2">
-                                    @if ($stats['percentage_change_pengabdian'] != 0)
-                                        <span
-                                            class="badge badge-{{ $stats['percentage_change_pengabdian'] > 0 ? 'success' : 'danger' }} mr-2">
-                                            <i
-                                                class="fas {{ $stats['percentage_change_pengabdian'] > 0 ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
-                                            {{ $stats['percentage_change_pengabdian'] > 0 ? '+' : '' }}{{ $stats['percentage_change_pengabdian'] }}%
-                                        </span>
-                                    @endif
-                                    <small class="text-muted">{{ $stats['year_label'] }}</small>
-                                </div>
-
-                                {{-- RINCIAN SEKUNDER (PER PRODI) --}}
-                                <div class="text-xs text-muted mb-2">
-                                    <span>Kolaborasi:
-                                        <strong>{{ $stats['pengabdian_kolaborasi'] }}</strong></span>
-                                    @if ($userRole !== 'Kaprodi SI')
-                                        <span class="mx-2">•</span>
-                                        <span>IT: <strong>{{ $stats['pengabdian_khusus_informatika'] }}</strong></span>
-                                    @endif
-                                    @if ($userRole !== 'Kaprodi TI')
-                                        <span class="mx-2">•</span>
-                                        <span>SI:
-                                            <strong>{{ $stats['pengabdian_khusus_sistem_informasi'] }}</strong></span>
-                                    @endif
-                                </div>
-
-                                {{-- TOMBOL LIHAT DETAIL --}}
-                                <button class="btn btn-sm btn-outline-primary btn-block mt-2"
-                                    onclick="$('#statTotalPengabdian').click()">
-                                    <i class="fas fa-eye mr-1"></i> Lihat Detail
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Alert Success -->
+            @if (session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
                 </div>
-            </div>
+            @endif
 
-            <div class="col-xl-4 col-md-6 mb-4">
-                <div class="card border-left-warning shadow h-100 py-2 modern-card">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                {{-- 1. JUDUL KARTU --}}
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    Dosen Terlibat
-                                    @if ($filterYear !== 'all')
-                                        <span class="fs-3">({{ $filterYear }})</span>
-                                    @endif
-                                    <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
-                                        title="Jumlah dosen yang terlibat dalam pengabdian {{ $filterYear !== 'all' ? 'pada tahun ' . $filterYear : 'keseluruhan' }}"></i>
-                                </div>
-
-                                {{-- 2. ANGKA UTAMA (HERO) --}}
-                                <div id="statDosenTerlibat" class="h5 mb-2 font-weight-bold text-gray-800 clickable-stat"
-                                    style="cursor: pointer;">
-                                    {{ $stats['total_dosen'] }}
-                                </div>
-
-                                {{-- SPARKLINE CHART --}}
-                                <div class="sparkline-container">
-                                    <canvas id="sparklineDosen" class="sparkline-chart"></canvas>
-                                </div>
-
-                                {{-- 3. INFORMASI TREN (SUB-JUDUL UTAMA) --}}
-                                <div class="d-flex align-items-center mb-3">
-                                    @if ($stats['percentage_change_dosen'] != 0)
-                                        <span
-                                            class="badge badge-{{ $stats['percentage_change_dosen'] > 0 ? 'success' : 'danger' }} mr-2">
-                                            <i
-                                                class="fas {{ $stats['percentage_change_dosen'] > 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} mr-1"></i>
-                                            {{ $stats['percentage_change_dosen'] > 0 ? '+' : '' }}{{ $stats['percentage_change_dosen'] }}%
-                                        </span>
-                                    @endif
-                                    <small class="text-muted">{{ $stats['year_label'] }}</small>
-                                </div>
-
-                                {{-- 4. DETAIL SEKUNDER (Rincian) --}}
-                                <div class="text-xs text-muted">
-                                    {{-- Rincian dari Total Dosen FTI --}}
-                                    @if (isset($stats['total_dosen_keseluruhan']) && $stats['total_dosen_keseluruhan'] > 0)
-                                        @php
-                                            $participationRate = round(
-                                                ($stats['total_dosen'] / $stats['total_dosen_keseluruhan']) * 100,
-                                                1,
-                                            );
-                                        @endphp
-                                        <div class="mb-2">
-                                            <span class="font-weight-bold">{{ $stats['total_dosen'] }}</span> dari
-                                            {{ $stats['total_dosen_keseluruhan'] }} Dosen FTI ({{ $participationRate }}%)
-                                        </div>
-                                    @endif
-
-                                    {{-- Rincian Per Prodi --}}
-                                    <div class="mb-2">
-                                        @if ($userRole !== 'Kaprodi SI')
-                                            <span> IT:
-                                                <strong>{{ $stats['dosen_informatika'] }}</strong></span>
-                                            @if ($userRole !== 'Kaprodi TI')
-                                                <span class="mx-2">•</span>
-                                            @endif
-                                        @endif
-                                        @if ($userRole !== 'Kaprodi TI')
-                                            <span> SI:
-                                                <strong>{{ $stats['dosen_sistem_informasi'] }}</strong></span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                {{-- TOMBOL LIHAT DETAIL --}}
-                                <button class="btn btn-sm btn-outline-primary btn-block mt-2"
-                                    onclick="$('#statDosenTerlibat').click()">
-                                    <i class="fas fa-eye mr-1"></i> Lihat Detail
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pengabdian dengan Mahasiswa Card -->
-            <div class="col-xl-4 col-md-6 mb-4">
-                <div class="card border-left-info shadow h-100 py-2 modern-card">
-                    <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                {{-- 1. JUDUL KARTU (Warna disesuaikan menjadi text-info) --}}
-                                <div class="text-xs font-weight-bold text-primary mb-1">
-                                    PkM DENGAN MAHASISWA
-                                    @if ($filterYear !== 'all')
-                                        <span class="fs-3">({{ $filterYear }})</span>
-                                    @endif
-                                    <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
-                                        title="Persentase pengabdian yang melibatkan mahasiswa {{ $filterYear !== 'all' ? 'pada tahun ' . $filterYear : 'keseluruhan' }}"></i>
-                                </div>
-
-                                {{-- 2. ANGKA UTAMA (HERO) --}}
-                                <div id="statDenganMahasiswa" class="h5 mb-2 font-weight-bold text-gray-800 clickable-stat"
-                                    style="cursor: pointer;">
-                                    {{ $stats['persentase_pengabdian_dengan_mahasiswa'] }}%
-                                </div>
-
-                                {{-- SPARKLINE CHART --}}
-                                <div class="sparkline-container">
-                                    <canvas id="sparklineMahasiswa" class="sparkline-chart"></canvas>
-                                </div>
-
-                                {{-- 3. INFORMASI TREN (SUB-JUDUL UTAMA) --}}
-                                <div class="d-flex align-items-center mb-3">
-                                    @if (isset($stats['percentage_change_mahasiswa']) && $stats['percentage_change_mahasiswa'] != 0)
-                                        <span
-                                            class="badge badge-{{ $stats['percentage_change_mahasiswa'] > 0 ? 'success' : 'danger' }} mr-2"
-                                            data-toggle="tooltip"
-                                            title="Perubahan persentase keterlibatan mahasiswa dari {{ $stats['previous_year'] }}: {{ $stats['percentage_change_mahasiswa'] > 0 ? 'Peningkatan' : 'Penurunan' }} {{ abs($stats['percentage_change_mahasiswa']) }}%">
-                                            <i
-                                                class="fas {{ $stats['percentage_change_mahasiswa'] > 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} mr-1"></i>
-                                            {{ $stats['percentage_change_mahasiswa'] > 0 ? '+' : '' }}{{ $stats['percentage_change_mahasiswa'] }}%
-                                        </span>
-                                    @elseif (isset($stats['percentage_change_mahasiswa']) && $stats['percentage_change_mahasiswa'] == 0)
-                                        <span class="badge badge-secondary mr-2" data-toggle="tooltip"
-                                            title="Tidak ada perubahan persentase keterlibatan mahasiswa dari tahun sebelumnya">
-                                            <i class="fas fa-minus mr-1"></i>
-                                            0%
-                                        </span>
-                                    @elseif ($filterYear == 'all')
-                                        <span class="badge badge-info mr-2" data-toggle="tooltip"
-                                            title="Menampilkan data keseluruhan tahun">
-                                            <i class="fas fa-calendar mr-1"></i>
-                                            Semua Tahun
-                                        </span>
-                                    @else
-                                        <span class="badge badge-warning mr-2" data-toggle="tooltip"
-                                            title="Data tahun sebelumnya tidak tersedia untuk perbandingan">
-                                            <i class="fas fa-info-circle mr-1"></i>
-                                            Data Baru
-                                        </span>
-                                    @endif
-                                    <small class="text-muted">{{ $stats['year_label'] ?? 'vs tahun sebelumnya' }}</small>
-                                </div>
-
-                                {{-- 4. DETAIL SEKUNDER (Rincian) --}}
-                                <div class="text-xs text-muted">
-                                    {{-- Rincian Jumlah Pengabdian --}}
-                                    <div class="mb-2" data-toggle="tooltip"
-                                        title="{{ $stats['total_mahasiswa'] }} dari {{ $stats['total_pengabdian'] }} pengabdian melibatkan mahasiswa">
-                                        <span class="font-weight-bold">{{ $stats['total_mahasiswa'] }} dari
-                                            {{ $stats['total_pengabdian'] }}</span>
-                                        pengabdian melibatkan mahasiswa
-                                    </div>
-
-                                    {{-- Rincian Per Prodi --}}
-                                    <div class="mb-2">
-                                        @if ($userRole !== 'Kaprodi SI')
-                                            <span> IT:
-                                                <strong>{{ $stats['mahasiswa_informatika'] }}</strong></span>
-                                            @if ($userRole !== 'Kaprodi TI')
-                                                <span class="mx-2">•</span>
-                                            @endif
-                                        @endif
-                                        @if ($userRole !== 'Kaprodi TI')
-                                            <span> SI:
-                                                <strong>{{ $stats['mahasiswa_sistem_informasi'] }}</strong></span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                {{-- TOMBOL LIHAT DETAIL --}}
-                                <button class="btn btn-sm btn-outline-primary btn-block mt-2"
-                                    onclick="$('#statDenganMahasiswa').click()">
-                                    <i class="fas fa-eye mr-1"></i> Lihat Detail
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Jenis Luaran Treemap & KPI Progress Bar Row -->
-        <div class="row mb-4 main-content-row">
-
-            <!-- KPI Radar Chart -->
-            <div class="col-lg-6 col-md-12 mb-4">
-                <div class="card shadow modern-card h-100">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            <i class="fas fa-chart-radar mr-2"></i>Capaian KPI
-                            @if ($filterYear !== 'all')
-                                <span class="text-primary">({{ $filterYear }})</span>
-                            @else
-                                <small class="text-muted">(Semua Tahun)</small>
-                            @endif
-                        </h6>
-                        <div class="d-flex align-items-center">
-                            @php
-                                $totalKpi = count($kpiRadarData);
-                                $tercapai = collect($kpiRadarData)
-                                    ->filter(function ($kpi) {
-                                        return $kpi['skor_normalisasi'] >= 100;
-                                    })
-                                    ->count();
-                            @endphp
-                            <span class="badge badge-success mr-1">{{ $tercapai }} Tercapai</span>
-                            <span class="badge badge-warning">{{ $totalKpi - $tercapai }} Belum Tercapai</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <!-- Radar Chart Canvas -->
-                        <div class="chart-container mb-3" style="height: 350px;">
-                            <canvas id="kpiRadarChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sumber Dana Chart -->
-            <div class="col-lg-6 col-md-12 mb-4">
-                <div class="card shadow modern-card h-100">
-                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                        <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Sumber Dana Pengabdian
-                            @if ($filterYear != 'all')
-                                <span class="text-primary">({{ $filterYear - 1 }} vs {{ $filterYear }})</span>
-                            @endif
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-bar" style="height: 400px;">
-                            <canvas id="fundingSourcesChart" width="100%" height="400"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Funding Sources Chart Section -->
-        <div class="row mb-4 main-content-row">
-
-            <div class="col-lg-6 col-md-12 mb-4">
-                @php
-                    $allDosenCount = count($namaDosen ?? []);
-                    $maxCanvasHeight = max(100, $allDosenCount * 35); // Reduced height per item
-                @endphp
-                <div class="card shadow mb-4 modern-card h-100">
-                    <div class="card-header py-3">
-                        @php
-                            $currentRole = auth('admin')->check() ? auth('admin')->user()->role : null;
-                            $rekapRoute = match ($currentRole) {
-                                'Kaprodi TI' => 'kaprodi.ti.dosen.rekap',
-                                'Kaprodi SI' => 'kaprodi.si.dosen.rekap',
-                                default => 'dekan.dosen.rekap',
-                            };
-                        @endphp
-                        <div class="row align-items-center">
-                            <div class="col-md-6">
-                                <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    Rekap Pengabdian per Dosen
-                                    <span class="text-primary">
+            <!-- Pengabdian Statistics Row -->
+            <div class="row mb-4 statistics-row">
+                <!-- Total Pengabdian Card -->
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2 modern-card">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    {{-- JUDUL KARTU --}}
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Pengabdian
                                         @if ($filterYear !== 'all')
-                                            ({{ $filterYear }})
+                                            <span class="fs-3">({{ $filterYear }})</span>
                                         @endif
-                                    </span>
-                                </h6>
-                                @php
-                                    $totalLuaran = is_array($jenisLuaranData ?? null)
-                                        ? array_sum(array_column($jenisLuaranData, 'value'))
-                                        : 0;
-                                    $totalJudulSI =
-                                        isset($judulPengabdianSI) && is_array($judulPengabdianSI)
-                                            ? count($judulPengabdianSI)
-                                            : 0;
-                                @endphp
-                                <div class="mt-1">
-                                    <span class="badge badge-primary mr-1">Total Dosen: {{ $allDosenCount }}</span>
-                                    @if (isset($prodiFilter) && $prodiFilter === 'Sistem Informasi' && ($totalJudulSI ?? 0) > 0)
-                                        <span class="badge badge-secondary">Judul: {{ $totalJudulSI }}</span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="col-md-6 text-right">
-                                <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-primary mt-2"
-                                    data-order="desc" title="Urutkan jumlah (tertinggi ke terendah)">
-                                    <i class="fas fa-sort-amount-down mr-1"></i>Urutkan
-                                </button>
+                                    </div>
 
-                                <a href="{{ route($rekapRoute, ['year' => $filterYear]) }}"
-                                    class="btn btn-sm btn-outline-primary mt-2" title="Lihat Detail Lengkap">
-                                    <i class="fas fa-list mr-1"></i>Detail
-                                </a>
+                                    {{-- ANGKA UTAMA --}}
+                                    <div id="statTotalPengabdian"
+                                        class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat"
+                                        style="cursor: pointer;">
+                                        {{ $stats['total_pengabdian'] }}
+                                    </div>
 
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body">
+                                    {{-- SPARKLINE CHART --}}
+                                    <div class="sparkline-container">
+                                        <canvas id="sparklinePengabdian" class="sparkline-chart"></canvas>
+                                    </div>
 
-                        <!-- Dosen Chart Container - 8 Teratas + Lainnya -->
-                        <div id="dosenChartContainer" class="chart-container">
-                            <div class="chart-bar-scrollable"
-                                style="max-height: 310px; overflow-y: auto; overflow-x: hidden; border-radius: 8px; padding: 15px; background-color: transparent;">
+                                    {{-- INFORMASI TREN (PERBANDINGAN TAHUN) --}}
+                                    <div class="d-flex align-items-center mb-2">
+                                        @if ($stats['percentage_change_pengabdian'] != 0)
+                                            <span
+                                                class="badge badge-{{ $stats['percentage_change_pengabdian'] > 0 ? 'success' : 'danger' }} mr-2">
+                                                <i
+                                                    class="fas {{ $stats['percentage_change_pengabdian'] > 0 ? 'fa-arrow-up' : 'fa-arrow-down' }}"></i>
+                                                {{ $stats['percentage_change_pengabdian'] > 0 ? '+' : '' }}{{ $stats['percentage_change_pengabdian'] }}%
+                                            </span>
+                                        @endif
+                                        <small class="text-muted">{{ $stats['year_label'] }}</small>
+                                    </div>
 
-                                <div style="height: {{ $maxCanvasHeight }}px; min-width: 700px;">
-                                    <canvas id="dosenChart" width="100%" height="{{ $maxCanvasHeight }}"></canvas>
+                                    {{-- RINCIAN SEKUNDER (PER PRODI) --}}
+                                    <div class="text-xs text-muted mb-2">
+                                        <span>Kolaborasi:
+                                            <strong>{{ $stats['pengabdian_kolaborasi'] }}</strong></span>
+                                        @if ($userRole !== 'Kaprodi SI')
+                                            <span class="mx-2">•</span>
+                                            <span>IT: <strong>{{ $stats['pengabdian_khusus_informatika'] }}</strong></span>
+                                        @endif
+                                        @if ($userRole !== 'Kaprodi TI')
+                                            <span class="mx-2">•</span>
+                                            <span>SI:
+                                                <strong>{{ $stats['pengabdian_khusus_sistem_informasi'] }}</strong></span>
+                                        @endif
+                                    </div>
+
+                                    {{-- TOMBOL LIHAT DETAIL --}}
+                                    <button class="btn btn-sm btn-outline-primary btn-block mt-2"
+                                        onclick="$('#statTotalPengabdian').click()">
+                                        <i class="fas fa-eye mr-1"></i> Lihat Detail
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-            </div>
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2 modern-card">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    {{-- 1. JUDUL KARTU --}}
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Dosen Terlibat
+                                        @if ($filterYear !== 'all')
+                                            <span class="fs-3">({{ $filterYear }})</span>
+                                        @endif
+                                        <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
+                                            title="Jumlah dosen yang terlibat dalam pengabdian {{ $filterYear !== 'all' ? 'pada tahun ' . $filterYear : 'keseluruhan' }}"></i>
+                                    </div>
 
-            <div class="col-lg-6 col-md-12 mb-4">
-                <div class="card shadow modern-card h-100">
-                    <div class="card-header py-3">
-                        <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            Distribusi Jenis Luaran
-                            @if ($filterYear !== 'all')
-                                <span class="text-primary">({{ $filterYear }})</span>
-                            @else
-                                <small class="text-muted">(Semua Tahun)</small>
-                            @endif
-                            <span class="badge badge-primary"
-                                style="text-transform: none;">{{ array_sum(array_column($jenisLuaranData, 'value')) }}
-                                Luaran</span>
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        @if (count($jenisLuaranData) > 0)
-                            <div id="jenisLuaranTreemap" style="height: 350px; width: 100%;"></div>
-                        @else
-                            <div class="d-flex align-items-center justify-content-center" style="height: 350px;">
-                                <div class="text-center text-gray-500">
-                                    <i class="fas fa-chart-area fa-3x mb-3"></i>
-                                    <div class="h6">Belum ada data luaran</div>
-                                    <p class="text-muted small">Data jenis luaran akan muncul di sini</p>
+                                    {{-- 2. ANGKA UTAMA (HERO) --}}
+                                    <div id="statDosenTerlibat"
+                                        class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat"
+                                        style="cursor: pointer;">
+                                        {{ $stats['total_dosen'] }}
+                                    </div>
+
+                                    {{-- SPARKLINE CHART --}}
+                                    <div class="sparkline-container">
+                                        <canvas id="sparklineDosen" class="sparkline-chart"></canvas>
+                                    </div>
+
+                                    {{-- 3. INFORMASI TREN (SUB-JUDUL UTAMA) --}}
+                                    <div class="d-flex align-items-center mb-3">
+                                        @if ($stats['percentage_change_dosen'] != 0)
+                                            <span
+                                                class="badge badge-{{ $stats['percentage_change_dosen'] > 0 ? 'success' : 'danger' }} mr-2">
+                                                <i
+                                                    class="fas {{ $stats['percentage_change_dosen'] > 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} mr-1"></i>
+                                                {{ $stats['percentage_change_dosen'] > 0 ? '+' : '' }}{{ $stats['percentage_change_dosen'] }}%
+                                            </span>
+                                        @endif
+                                        <small class="text-muted">{{ $stats['year_label'] }}</small>
+                                    </div>
+
+                                    {{-- 4. DETAIL SEKUNDER (Rincian) --}}
+                                    <div class="text-xs text-muted">
+                                        {{-- Rincian dari Total Dosen FTI --}}
+                                        @if (isset($stats['total_dosen_keseluruhan']) && $stats['total_dosen_keseluruhan'] > 0)
+                                            @php
+                                                $participationRate = round(
+                                                    ($stats['total_dosen'] / $stats['total_dosen_keseluruhan']) * 100,
+                                                    1,
+                                                );
+                                            @endphp
+                                            <div class="mb-2">
+                                                <span class="font-weight-bold">{{ $stats['total_dosen'] }}</span> dari
+                                                {{ $stats['total_dosen_keseluruhan'] }} Dosen FTI
+                                                ({{ $participationRate }}%)
+                                            </div>
+                                        @endif
+
+                                        {{-- Rincian Per Prodi --}}
+                                        <div class="mb-2">
+                                            @if ($userRole !== 'Kaprodi SI')
+                                                <span> IT:
+                                                    <strong>{{ $stats['dosen_informatika'] }}</strong></span>
+                                                @if ($userRole !== 'Kaprodi TI')
+                                                    <span class="mx-2">•</span>
+                                                @endif
+                                            @endif
+                                            @if ($userRole !== 'Kaprodi TI')
+                                                <span> SI:
+                                                    <strong>{{ $stats['dosen_sistem_informasi'] }}</strong></span>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    {{-- TOMBOL LIHAT DETAIL --}}
+                                    <button class="btn btn-sm btn-outline-primary btn-block mt-2"
+                                        onclick="$('#statDosenTerlibat').click()">
+                                        <i class="fas fa-eye mr-1"></i> Lihat Detail
+                                    </button>
                                 </div>
                             </div>
-                        @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pengabdian dengan Mahasiswa Card -->
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2 modern-card">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    {{-- 1. JUDUL KARTU (Warna disesuaikan menjadi text-info) --}}
+                                    <div class="text-xs font-weight-bold text-primary mb-1">
+                                        PkM DENGAN MAHASISWA
+                                        @if ($filterYear !== 'all')
+                                            <span class="fs-3">({{ $filterYear }})</span>
+                                        @endif
+                                        <i class="fas fa-info-circle ml-1 tooltip-icon" data-toggle="tooltip"
+                                            title="Persentase pengabdian yang melibatkan mahasiswa {{ $filterYear !== 'all' ? 'pada tahun ' . $filterYear : 'keseluruhan' }}"></i>
+                                    </div>
+
+                                    {{-- 2. ANGKA UTAMA (HERO) --}}
+                                    <div id="statDenganMahasiswa"
+                                        class="h5 mb-0 font-weight-bold text-gray-800 clickable-stat"
+                                        style="cursor: pointer;">
+                                        {{ $stats['persentase_pengabdian_dengan_mahasiswa'] }}%
+                                    </div>
+
+                                    {{-- SPARKLINE CHART --}}
+                                    <div class="sparkline-container">
+                                        <canvas id="sparklineMahasiswa" class="sparkline-chart"></canvas>
+                                    </div>
+
+                                    {{-- 3. INFORMASI TREN (SUB-JUDUL UTAMA) --}}
+                                    <div class="d-flex align-items-center mb-3">
+                                        @if (isset($stats['percentage_change_mahasiswa']) && $stats['percentage_change_mahasiswa'] != 0)
+                                            <span
+                                                class="badge badge-{{ $stats['percentage_change_mahasiswa'] > 0 ? 'success' : 'danger' }} mr-2"
+                                                data-toggle="tooltip"
+                                                title="Perubahan persentase keterlibatan mahasiswa dari {{ $stats['previous_year'] }}: {{ $stats['percentage_change_mahasiswa'] > 0 ? 'Peningkatan' : 'Penurunan' }} {{ abs($stats['percentage_change_mahasiswa']) }}%">
+                                                <i
+                                                    class="fas {{ $stats['percentage_change_mahasiswa'] > 0 ? 'fa-arrow-up' : 'fa-arrow-down' }} mr-1"></i>
+                                                {{ $stats['percentage_change_mahasiswa'] > 0 ? '+' : '' }}{{ $stats['percentage_change_mahasiswa'] }}%
+                                            </span>
+                                        @elseif (isset($stats['percentage_change_mahasiswa']) && $stats['percentage_change_mahasiswa'] == 0)
+                                            <span class="badge badge-secondary mr-2" data-toggle="tooltip"
+                                                title="Tidak ada perubahan persentase keterlibatan mahasiswa dari tahun sebelumnya">
+                                                <i class="fas fa-minus mr-1"></i>
+                                                0%
+                                            </span>
+                                        @elseif ($filterYear == 'all')
+                                            <span class="badge badge-info mr-2" data-toggle="tooltip"
+                                                title="Menampilkan data keseluruhan tahun">
+                                                <i class="fas fa-calendar mr-1"></i>
+                                                Semua Tahun
+                                            </span>
+                                        @else
+                                            <span class="badge badge-warning mr-2" data-toggle="tooltip"
+                                                title="Data tahun sebelumnya tidak tersedia untuk perbandingan">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                Data Baru
+                                            </span>
+                                        @endif
+                                        <small
+                                            class="text-muted">{{ $stats['year_label'] ?? 'vs tahun sebelumnya' }}</small>
+                                    </div>
+
+                                    {{-- 4. DETAIL SEKUNDER (Rincian) --}}
+                                    <div class="text-xs text-muted">
+                                        {{-- Rincian Jumlah Pengabdian --}}
+                                        <div class="mb-2" data-toggle="tooltip"
+                                            title="{{ $stats['total_mahasiswa'] }} dari {{ $stats['total_pengabdian'] }} pengabdian melibatkan mahasiswa">
+                                            <span class="font-weight-bold">{{ $stats['total_mahasiswa'] }} dari
+                                                {{ $stats['total_pengabdian'] }}</span>
+                                            pengabdian melibatkan mahasiswa
+                                        </div>
+
+                                        {{-- Rincian Per Prodi --}}
+                                        <div class="mb-2">
+                                            @if ($userRole !== 'Kaprodi SI')
+                                                <span> IT:
+                                                    <strong>{{ $stats['mahasiswa_informatika'] }}</strong></span>
+                                                @if ($userRole !== 'Kaprodi TI')
+                                                    <span class="mx-2">•</span>
+                                                @endif
+                                            @endif
+                                            @if ($userRole !== 'Kaprodi TI')
+                                                <span> SI:
+                                                    <strong>{{ $stats['mahasiswa_sistem_informasi'] }}</strong></span>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    {{-- TOMBOL LIHAT DETAIL --}}
+                                    <button class="btn btn-sm btn-outline-primary btn-block mt-2"
+                                        onclick="$('#statDenganMahasiswa').click()">
+                                        <i class="fas fa-eye mr-1"></i> Lihat Detail
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        @if (isset($prodiFilter) && $prodiFilter === 'Sistem Informasi')
-            <!-- Word Cloud Section (Only for Kaprodi SI) -->
-            <div class="row">
-                <div class="col-lg-12 mb-4">
-                    <div class="card shadow modern-card">
-                        <div class="card-header py-3">
+            <!-- Jenis Luaran Treemap & KPI Progress Bar Row -->
+            <div class="row mb-4 main-content-row">
+
+                <!-- KPI Radar Chart -->
+                <div class="col-lg-6 col-md-12 mb-4">
+                    <div class="card shadow modern-card h-100">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                             <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Word Cloud - Pengabdian Sistem Informasi
+                                <i class="fas fa-chart-radar mr-2"></i>Capaian KPI
                                 @if ($filterYear !== 'all')
                                     <span class="text-primary">({{ $filterYear }})</span>
+                                @else
+                                    <small class="text-muted">(Semua Tahun)</small>
+                                @endif
+                            </h6>
+                            <div class="d-flex align-items-center">
+                                @php
+                                    $totalKpi = count($kpiRadarData);
+                                    $tercapai = collect($kpiRadarData)
+                                        ->filter(function ($kpi) {
+                                            return $kpi['skor_normalisasi'] >= 100;
+                                        })
+                                        ->count();
+                                @endphp
+                                <span class="badge badge-success mr-1">{{ $tercapai }} Tercapai</span>
+                                <span class="badge badge-warning">{{ $totalKpi - $tercapai }} Belum Tercapai</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Radar Chart Canvas -->
+                            <div class="chart-container mb-3" style="height: 350px;">
+                                <canvas id="kpiRadarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sumber Dana Chart -->
+                <div class="col-lg-6 col-md-12 mb-4">
+                    <div class="card shadow modern-card h-100">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Sumber Dana Pengabdian
+                                @if ($filterYear != 'all')
+                                    <span class="text-primary">({{ $filterYear - 1 }} vs {{ $filterYear }})</span>
                                 @endif
                             </h6>
                         </div>
                         <div class="card-body">
-                            @if (count($judulPengabdianSI) > 0)
-                                <div id="wordCloudContainer"></div>
-                                <div class="mt-3 text-center">
-                                    <small class="text-muted">
-                                        <i class="fas fa-info-circle mr-1"></i>
-                                        <strong>Total:</strong> {{ count($judulPengabdianSI) }} judul pengabdian
-                                    </small>
+                            <div class="chart-bar" style="height: 400px;">
+                                <canvas id="fundingSourcesChart" width="100%" height="400"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Funding Sources Chart Section -->
+            <div class="row mb-4 main-content-row">
+
+                <div class="col-lg-6 col-md-12 mb-4">
+                    @php
+                        $allDosenCount = count($namaDosen ?? []);
+                        $maxCanvasHeight = max(100, $allDosenCount * 35); // Reduced height per item
+                    @endphp
+                    <div class="card shadow mb-4 modern-card h-100">
+                        <div class="card-header py-3">
+                            @php
+                                $currentRole = auth('admin')->check() ? auth('admin')->user()->role : null;
+                                $rekapRoute = match ($currentRole) {
+                                    'Kaprodi TI' => 'kaprodi.ti.dosen.rekap',
+                                    'Kaprodi SI' => 'kaprodi.si.dosen.rekap',
+                                    default => 'dekan.dosen.rekap',
+                                };
+                            @endphp
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Rekap Pengabdian per Dosen
+                                        <span class="text-primary">
+                                            @if ($filterYear !== 'all')
+                                                ({{ $filterYear }})
+                                            @endif
+                                        </span>
+                                    </h6>
+                                    @php
+                                        $totalLuaran = is_array($jenisLuaranData ?? null)
+                                            ? array_sum(array_column($jenisLuaranData, 'value'))
+                                            : 0;
+                                        $totalJudulSI =
+                                            isset($judulPengabdianSI) && is_array($judulPengabdianSI)
+                                                ? count($judulPengabdianSI)
+                                                : 0;
+                                    @endphp
+                                    <div class="mt-1">
+                                        <span class="badge badge-primary mr-1">Total Dosen: {{ $allDosenCount }}</span>
+                                        @if (isset($prodiFilter) && $prodiFilter === 'Sistem Informasi' && ($totalJudulSI ?? 0) > 0)
+                                            <span class="badge badge-secondary">Judul: {{ $totalJudulSI }}</span>
+                                        @endif
+                                    </div>
                                 </div>
+                                <div class="col-md-6 text-right">
+                                    <button id="dosenSortBtn" type="button" class="btn btn-sm btn-outline-primary mt-2"
+                                        data-order="desc" title="Urutkan jumlah (tertinggi ke terendah)">
+                                        <i class="fas fa-sort-amount-down mr-1"></i>Urutkan
+                                    </button>
+
+                                    <a href="{{ route($rekapRoute, ['year' => $filterYear]) }}"
+                                        class="btn btn-sm btn-outline-primary mt-2" title="Lihat Detail Lengkap">
+                                        <i class="fas fa-list mr-1"></i>Detail
+                                    </a>
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+
+                            <!-- Dosen Chart Container - 8 Teratas + Lainnya -->
+                            <div id="dosenChartContainer" class="chart-container">
+                                <div class="chart-bar-scrollable"
+                                    style="max-height: 310px; overflow-y: auto; overflow-x: hidden; border-radius: 8px; padding: 15px; background-color: transparent;">
+
+                                    <div style="height: {{ $maxCanvasHeight }}px; min-width: 700px;">
+                                        <canvas id="dosenChart" width="100%" height="{{ $maxCanvasHeight }}"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="col-lg-6 col-md-12 mb-4">
+                    <div class="card shadow modern-card h-100">
+                        <div class="card-header py-3">
+                            <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Distribusi Jenis Luaran
+                                @if ($filterYear !== 'all')
+                                    <span class="text-primary">({{ $filterYear }})</span>
+                                @else
+                                    <small class="text-muted">(Semua Tahun)</small>
+                                @endif
+                                <span class="badge badge-primary"
+                                    style="text-transform: none;">{{ array_sum(array_column($jenisLuaranData, 'value')) }}
+                                    Luaran</span>
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            @if (count($jenisLuaranData) > 0)
+                                <div id="jenisLuaranTreemap" style="height: 350px; width: 100%;"></div>
                             @else
-                                <div class="wordcloud-empty">
-                                    <div class="text-center">
-                                        <i class="fas fa-cloud fa-3x mb-3"></i>
-                                        <div class="h6">Belum ada data judul pengabdian</div>
-                                        <p class="text-muted small">Word cloud akan muncul di sini ketika ada data</p>
+                                <div class="d-flex align-items-center justify-content-center" style="height: 350px;">
+                                    <div class="text-center text-gray-500">
+                                        <i class="fas fa-chart-area fa-3x mb-3"></i>
+                                        <div class="h6">Belum ada data luaran</div>
+                                        <p class="text-muted small">Data jenis luaran akan muncul di sini</p>
                                     </div>
                                 </div>
                             @endif
@@ -1163,9 +1134,45 @@
                     </div>
                 </div>
             </div>
-        @endif
 
+            @if (isset($prodiFilter) && $prodiFilter === 'Sistem Informasi')
+                <!-- Word Cloud Section (Only for Kaprodi SI) -->
+                <div class="row">
+                    <div class="col-lg-12 mb-4">
+                        <div class="card shadow modern-card">
+                            <div class="card-header py-3">
+                                <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    Word Cloud - Pengabdian Sistem Informasi
+                                    @if ($filterYear !== 'all')
+                                        <span class="text-primary">({{ $filterYear }})</span>
+                                    @endif
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                @if (count($judulPengabdianSI) > 0)
+                                    <div id="wordCloudContainer"></div>
+                                    <div class="mt-3 text-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            <strong>Total:</strong> {{ count($judulPengabdianSI) }} judul pengabdian
+                                        </small>
+                                    </div>
+                                @else
+                                    <div class="wordcloud-empty">
+                                        <div class="text-center">
+                                            <i class="fas fa-cloud fa-3x mb-3"></i>
+                                            <div class="h6">Belum ada data judul pengabdian</div>
+                                            <p class="text-muted small">Word cloud akan muncul di sini ketika ada data</p>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
+        </div>
     </div>
 
     <!-- Statistics Detail Modal -->

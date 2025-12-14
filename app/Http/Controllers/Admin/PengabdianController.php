@@ -23,6 +23,11 @@ use App\Rules\NimsMustNotExist;
 use App\Rules\AllMahasiswaRowsMustBeComplete;
 use Carbon\Carbon;
 use App\Rules\ValidTanggal;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Http\UploadedFile;
 
 
 class PengabdianController extends Controller
@@ -83,6 +88,418 @@ class PengabdianController extends Controller
         $jenisLuaran = JenisLuaran::orderBy('nama_jenis_luaran')->get();
 
         return view('admin.pengabdian.index', compact('pengabdian', 'availableYears', 'sumberDanaList', 'jenisLuaran'));
+    }
+
+    /**
+     * Export pengabdian list as XLSX (fallback CSV if PhpSpreadsheet not installed)
+     */
+    public function export(Request $request)
+    {
+        // Build same base query and filters as index
+        $query = Pengabdian::with(['ketua', 'dosen', 'mahasiswa', 'mitra', 'luaran.jenisLuaran', 'luaran.detailHki'])
+            ->withSum('sumberDana', 'jumlah_dana')
+            ->withCount(['luaran as hki_count' => function ($q) {
+                $q->whereHas('detailHki');
+            }]);
+
+        if ($request->filled('year') && $request->get('year') !== 'all') {
+            $year = (int) $request->get('year');
+            $query->whereYear('tanggal_pengabdian', $year);
+        }
+
+        if ($request->filled('sumber_dana')) {
+            $sd = $request->get('sumber_dana');
+            $query->whereHas('sumberDana', function ($q) use ($sd) {
+                $q->where(function ($sub) use ($sd) {
+                    $sub->where('id_sumber_dana', $sd)
+                        ->orWhere('jenis', $sd)
+                        ->orWhere('nama_sumber', 'like', "%{$sd}%");
+                });
+            });
+        }
+
+        if ($request->filled('luaran')) {
+            $lu = $request->get('luaran');
+            $query->whereHas('luaran', function ($q) use ($lu) {
+                $q->where('id_jenis_luaran', $lu)
+                    ->orWhereHas('jenisLuaran', function ($jq) use ($lu) {
+                        $jq->where('id_jenis_luaran', $lu)
+                            ->orWhere('nama_jenis_luaran', 'like', "%{$lu}%");
+                    });
+            });
+        }
+
+        $items = $query->orderBy('tanggal_pengabdian', 'desc')->get();
+
+        $baseName = 'export_pengabdian_' . date('YmdHis');
+
+        if (class_exists(Spreadsheet::class)) {
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Header
+            $headers = ['No', 'Judul Pengabdian', 'Tanggal Pengabdian', 'Ketua', 'Anggota', 'Mahasiswa', 'Mitra', 'Jenis Sumber Dana', 'Nama Sumber Dana', 'Luaran Kegiatan', 'Total Dana'];
+            $col = 1;
+            foreach ($headers as $h) {
+                $coord = Coordinate::stringFromColumnIndex($col) . '1';
+                $sheet->setCellValue($coord, $h);
+                $col++;
+            }
+
+            $row = 2;
+            $no = 1;
+            foreach ($items as $item) {
+                $col = 1;
+                $coord = Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($coord, $no++);
+                $col++;
+                $coord = Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($coord, $item->judul_pengabdian);
+                $col++;
+                $coord = Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($coord, optional($item->tanggal_pengabdian)->format('Y-m-d'));
+                $col++;
+                $coord = Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($coord, $item->ketua->nama ?? '-');
+                $col++;
+                $coord = Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($coord, $item->dosen->pluck('nama')->implode('; '));
+                $col++;
+                $coord = Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($coord, $item->mahasiswa->pluck('nama')->implode('; '));
+                $col++;
+                $coord = Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($coord, $item->mitra->pluck('nama_mitra')->implode('; '));
+                $col++;
+
+                // Gabungkan jenis dan nama sumber dana yang terkait (pisah dengan '; ')
+                $jenisSumber = $item->sumberDana->pluck('jenis')->filter()->unique()->values()->implode('; ');
+                $namaSumber = $item->sumberDana->pluck('nama_sumber')->filter()->unique()->values()->implode('; ');
+
+                $coord = Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($coord, $jenisSumber ?: '-');
+                $col++;
+
+                $coord = Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($coord, $namaSumber ?: '-');
+                $col++;
+
+                $coord = Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($coord, $item->luaran->pluck('jenisLuaran.nama_jenis_luaran')->implode('; '));
+                $col++;
+
+                $coord = Coordinate::stringFromColumnIndex($col) . $row;
+                $sheet->setCellValue($coord, $item->sumber_dana_sum_jumlah_dana ?? 0);
+                $col++;
+                $row++;
+            }
+
+            $writer = new Xlsx($spreadsheet);
+            $filename = $baseName . '.xlsx';
+
+            return response()->stream(function () use ($writer) {
+                $writer->save('php://output');
+            }, 200, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+            ]);
+        }
+
+        // CSV fallback
+        $filename = $baseName . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+        ];
+
+        $callback = function () use ($items) {
+            $fh = fopen('php://output', 'w');
+            fprintf($fh, chr(0xEF) . chr(0xBB) . chr(0xBF));
+            fputcsv($fh, ['No', 'Judul Pengabdian', 'Tanggal Pengabdian', 'Ketua', 'Anggota', 'Mahasiswa', 'Mitra', 'Jenis Sumber Dana', 'Nama Sumber Dana', 'Luaran Kegiatan', 'Total Dana']);
+            $no = 1;
+            foreach ($items as $item) {
+                // Prepare jenis & nama sumber dana for CSV
+                $jenisSumberCsv = $item->sumberDana->pluck('jenis')->filter()->unique()->values()->implode('; ');
+                $namaSumberCsv = $item->sumberDana->pluck('nama_sumber')->filter()->unique()->values()->implode('; ');
+
+                fputcsv($fh, [
+                    $no++,
+                    $item->judul_pengabdian,
+                    optional($item->tanggal_pengabdian)->format('Y-m-d'),
+                    $item->ketua->nama ?? '-',
+                    $item->dosen->pluck('nama')->implode('; '),
+                    $item->mahasiswa->pluck('nama')->implode('; '),
+                    $item->mitra->pluck('nama_mitra')->implode('; '),
+                    $jenisSumberCsv ?: '-',
+                    $namaSumberCsv ?: '-',
+                    $item->luaran->pluck('jenisLuaran.nama_jenis_luaran')->implode('; '),
+                    $item->sumber_dana_sum_jumlah_dana ?? 0
+                ]);
+            }
+            fclose($fh);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Generate and return a template XLSX for pengabdian import.
+     */
+    public function template()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Use exact import field names as column headers to avoid user confusion
+        // switched ketua_nik->nama_ketua and dosen_niks->nama_anggota to prefer name-based import
+        $headers = [
+            'judul_pengabdian',
+            'tanggal_pengabdian',
+            'nama_ketua',
+            'nama_anggota',
+            'mahasiswa_nims',
+            'nama_mitra',
+            'lokasi_kegiatan',
+            'jenis_sumber_dana',
+            'nama_sumber_dana',
+            'luaran_kegiatan',
+            'total_dana'
+        ];
+
+        $col = 1;
+        foreach ($headers as $h) {
+            $coord = Coordinate::stringFromColumnIndex($col) . '1';
+            $sheet->setCellValue($coord, $h);
+            $col++;
+        }
+
+        // sample row (use example NAMES for ketua/anggota to guide user)
+        $sample = [
+            'Pelatihan Pembuatan Database',
+            date('Y-m-d'),
+            'Dr. Yacob Supranto',
+            'Dr. Budi Santoso;Dr. Ani Putri',
+            '18012345;18054321',
+            'PT Contoh',
+            'Yogyakarta',
+            'internal;eksternal',
+            'LPPM;Prodi',
+            'HKI;Publikasi',
+            '5000000'
+        ];
+        $col = 1;
+        foreach ($sample as $s) {
+            $coord = Coordinate::stringFromColumnIndex($col) . '2';
+            $sheet->setCellValue($coord, $s);
+            $col++;
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'template_pengabdian.xlsx';
+
+        return response()->stream(function () use ($writer) {
+            $writer->save('php://output');
+        }, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+        ]);
+    }
+
+    /**
+     * Import pengabdian from uploaded XLSX/CSV file. Validation rules:
+     * - Required header: judul_pengabdian
+     * - Skip rows with existing judul_pengabdian (report as skipped)
+     * - Attach only existing dosen (by nik or name like) and mahasiswa (by nim)
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv,txt'
+        ]);
+
+        /** @var UploadedFile $file */
+        $file = $request->file('file');
+        $path = $file->getRealPath();
+
+        try {
+            $spreadsheet = IOFactory::load($path);
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray(null, true, true, true);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal membaca file: ' . $e->getMessage());
+        }
+
+        if (empty($rows) || count($rows) < 2) {
+            return back()->with('error', 'File kosong atau tidak ada data baris.');
+        }
+
+        // Build header map (case-insensitive) and normalize to canonical keys
+        $headerRaw = array_values($rows[1]);
+        $headerMap = [];
+        $normalize = function ($h) {
+            $s = strtolower(trim((string)$h));
+            if ($s === '') return '';
+            if (str_contains($s, 'judul')) return 'judul_pengabdian';
+            if (str_contains($s, 'tanggal')) return 'tanggal_pengabdian';
+            if (str_contains($s, 'ketua')) return 'ketua';
+            if (str_contains($s, 'dosen')) return 'dosen';
+            if (str_contains($s, 'anggota')) return 'dosen';
+            if (str_contains($s, 'mahasiswa')) return 'mahasiswa';
+            if (str_contains($s, 'lokasi')) return 'lokasi_kegiatan';
+            if (str_contains($s, 'nama_mitra') || str_contains($s, 'mitra')) return 'nama_mitra';
+            if (str_contains($s, 'jenis_sumber')) return 'jenis_sumber_dana';
+            if (str_contains($s, 'nama_sumber')) return 'nama_sumber_dana';
+            if (str_contains($s, 'luaran')) return 'luaran_kegiatan';
+            if (str_contains($s, 'total') || str_contains($s, 'jumlah')) return 'total_dana';
+            // fallback: keep only alphanum and underscores
+            return preg_replace('/[^a-z0-9_]/', '', str_replace(' ', '_', $s));
+        };
+
+        foreach ($headerRaw as $i => $h) {
+            $headerMap[$i] = $normalize($h);
+        }
+
+        $created = 0;
+        $skipped = 0;
+        $errors = [];
+
+        for ($r = 2; $r <= count($rows); $r++) {
+            $cols = array_values($rows[$r]);
+            if (count(array_filter($cols)) === 0) continue; // empty row
+
+            $rowAssoc = [];
+            foreach ($cols as $i => $val) {
+                $key = $headerMap[$i] ?? ('col' . $i);
+                $rowAssoc[$key] = trim((string)$val);
+            }
+
+            $judul = $rowAssoc['judul_pengabdian'] ?? $rowAssoc['judul'] ?? null;
+            if (!$judul) {
+                $errors[] = "Baris $r: Judul kosong.";
+                $skipped++;
+                continue;
+            }
+            // Skip if already exists
+            if (Pengabdian::where('judul_pengabdian', $judul)->exists()) {
+                $errors[] = "Baris $r: Judul sudah ada (dilewati).";
+                $skipped++;
+                continue;
+            }
+
+            $tanggalRaw = $rowAssoc['tanggal_pengabdian'] ?? $rowAssoc['tanggal'] ?? null;
+            try {
+                $tanggal = $tanggalRaw ? Carbon::parse(str_replace('/', '-', $tanggalRaw)) : null;
+            } catch (\Exception $e) {
+                $tanggal = null;
+            }
+            $ketuaVal = $rowAssoc['ketua'] ?? $rowAssoc['ketua_nik'] ?? null;
+            $ketua = null;
+
+            $findDosen = function ($val) {
+                $val = trim((string)$val);
+                if ($val === '') return null;
+                // 1) try exact name match
+                $d = Dosen::where('nama', $val)->first();
+                if ($d) return $d;
+                // 2) try exact NIK match
+                $d = Dosen::where('nik', $val)->first();
+                if ($d) return $d;
+                // 3) fallback to partial name
+                return Dosen::where('nama', 'like', "%{$val}%")->first();
+            };
+
+            if ($ketuaVal) {
+                $ketua = $findDosen($ketuaVal);
+            }
+
+            $dosenVal = $rowAssoc['dosen'] ?? $rowAssoc['dosen_niks'] ?? $rowAssoc['dosen_niks'] ?? null;
+            $dosenSync = [];
+            if ($ketua) $dosenSync[$ketua->nik] = ['status_anggota' => 'ketua'];
+            if ($dosenVal) {
+                $parts = preg_split('/[;,]+/', $dosenVal);
+                foreach ($parts as $p) {
+                    $p = trim($p);
+                    if (!$p) continue;
+                    $d = $findDosen($p);
+                    if ($d && ($d->nik !== ($ketua->nik ?? null))) $dosenSync[$d->nik] = ['status_anggota' => 'anggota'];
+                }
+            }
+
+            $mhsNims = $rowAssoc['mahasiswa_nims (pisah dengan ; )'] ?? $rowAssoc['mahasiswa_nims'] ?? $rowAssoc['mahasiswa'] ?? null;
+            $mhsAttach = [];
+            if ($mhsNims) {
+                $parts = preg_split('/[;,]+/', $mhsNims);
+                foreach ($parts as $p) {
+                    $p = trim($p);
+                    if (!$p) continue;
+                    $m = Mahasiswa::where('nim', $p)->first();
+                    if ($m) $mhsAttach[] = $m->nim;
+                }
+            }
+
+            // create pengabdian
+            DB::beginTransaction();
+            try {
+                $p = Pengabdian::create([
+                    'judul_pengabdian' => $judul,
+                    'tanggal_pengabdian' => $tanggal,
+                    'ketua_pengabdian' => $ketua->nik ?? null,
+                ]);
+
+                if (!empty($dosenSync)) $p->dosen()->sync($dosenSync);
+                if (!empty($mhsAttach)) $p->mahasiswa()->attach(array_unique($mhsAttach));
+
+                // mitra: create if nama_mitra provided
+                $namaMitra = $rowAssoc['nama_mitra'] ?? null;
+                $lokasiMitra = $rowAssoc['lokasi_kegiatan'] ?? ($rowAssoc['lokasi'] ?? null);
+                if ($namaMitra) {
+                    $p->mitra()->create([
+                        'nama_mitra' => trim($namaMitra),
+                        'lokasi_mitra' => $lokasiMitra ? trim($lokasiMitra) : null,
+                    ]);
+                }
+
+                // sumber dana: use provided jenis/nama/total if present
+                $jenisSumber = $rowAssoc['jenis_sumber_dana (pisah ; )'] ?? $rowAssoc['jenis_sumber_dana'] ?? null;
+                $namaSumber = $rowAssoc['nama_sumber_dana (pisah ; )'] ?? $rowAssoc['nama_sumber_dana'] ?? null;
+                $totalDana = isset($rowAssoc['total_dana (numeric)']) ? preg_replace('/[^0-9.-]/', '', $rowAssoc['total_dana (numeric)']) : (isset($rowAssoc['total_dana']) ? preg_replace('/[^0-9.-]/', '', $rowAssoc['total_dana']) : null);
+
+                if ($jenisSumber || $namaSumber || $totalDana) {
+                    $partsJenis = $jenisSumber ? preg_split('/[;,]+/', $jenisSumber) : ['import'];
+                    $partsNama = $namaSumber ? preg_split('/[;,]+/', $namaSumber) : ['Import'];
+                    // create a single sumberDana record combining first entries
+                    $p->sumberDana()->create([
+                        'jenis' => trim($partsJenis[0] ?? 'import'),
+                        'nama_sumber' => trim($partsNama[0] ?? 'Import Excel'),
+                        'jumlah_dana' => is_numeric($totalDana) ? (float)$totalDana : 0,
+                    ]);
+                }
+
+                // Luaran: if provided in import, sync using existing helper
+                $luaranRaw = $rowAssoc['luaran_kegiatan'] ?? $rowAssoc['luaran'] ?? null;
+                if ($luaranRaw) {
+                    $luaranParts = array_filter(array_map('trim', preg_split('/[;,]+/', $luaranRaw)));
+                    if (!empty($luaranParts)) {
+                        $fakeReq = new \Illuminate\Http\Request();
+                        $fakeReq->merge(['luaran_jenis' => $luaranParts]);
+                        // sync luaran records (this will create luaran entries matching JenisLuaran)
+                        $this->syncLuaranDanDokumen($fakeReq, $p, false);
+                    }
+                }
+
+                DB::commit();
+                $created++;
+            } catch (\Exception $e) {
+                DB::rollBack();
+                $errors[] = "Baris $r: Gagal simpan - " . $e->getMessage();
+                $skipped++;
+            }
+        }
+
+        $msg = "Import selesai. Berhasil: $created, Dilewati: $skipped.";
+        if (!empty($errors)) session()->flash('import_errors', array_slice($errors, 0, 100));
+
+        return redirect()->route('admin.pengabdian.index')->with('success', $msg);
     }
 
     /**

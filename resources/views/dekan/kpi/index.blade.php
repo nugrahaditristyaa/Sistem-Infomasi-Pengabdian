@@ -182,7 +182,6 @@
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Standar Hasil Pengabdian (KPI - PGB)</h6>
-                    <span class="badge badge-primary">{{ $kpisPgb->count() }} item</span>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -233,7 +232,6 @@
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Standar Hasil Pengabdian (Indikator Tambahan - IKT)</h6>
-                    <span class="badge badge-info">{{ $kpisIkt->count() }} item</span>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -286,9 +284,9 @@
         aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header bg-light text-grey">
                     <h5 class="modal-title" id="editKpiModalLabel">
-                        <i class="fas fa-edit mr-2"></i>Edit KPI
+                        Edit KPI
                     </h5>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
@@ -302,7 +300,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="form-label font-weight-bold">
-                                        <i class="fas fa-code mr-1 text-primary"></i>Kode KPI
+                                        Kode KPI
                                     </label>
                                     <input type="text" class="form-control" id="edit_kode" disabled>
                                     <small class="form-text text-muted">Kode KPI tidak dapat diubah</small>
@@ -311,10 +309,11 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="form-label font-weight-bold">
-                                        <i class="fas fa-tag mr-1 text-primary"></i>Satuan
+                                        Satuan
                                     </label>
                                     <input type="text" class="form-control" name="satuan" id="edit_satuan"
                                         placeholder="Contoh: %, buah, orang" disabled>
+                                    <small class="form-text text-muted">Satuan tidak dapat diubah</small>
                                     <div class="invalid-feedback"></div>
                                 </div>
                             </div>
@@ -322,16 +321,17 @@
 
                         <div class="form-group">
                             <label class="form-label font-weight-bold">
-                                <i class="fas fa-bullseye mr-1 text-primary"></i>Nama Indikator
+                                Nama Indikator
                             </label>
                             <textarea class="form-control" name="indikator" id="edit_indikator" rows="4"
                                 placeholder="Masukkan nama indikator KPI" disabled></textarea>
+                                <small class="form-text text-muted">Nama Indikator tidak dapat diubah</small>
                             <div class="invalid-feedback"></div>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label font-weight-bold">
-                                <i class="fas fa-calculator mr-1 text-primary"></i>Angka (Target) <span
+                                Angka (Target) <span
                                     class="text-danger">*</span>
                             </label>
                             <input type="number" class="form-control" name="target" id="edit_target" min="0"
@@ -348,10 +348,10 @@
                     </div>
                     <div class="modal-footer bg-light">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                            <i class="fas fa-times mr-1"></i>Batal
+                            Batal
                         </button>
                         <button type="submit" class="btn btn-primary" id="saveKpiBtn">
-                            <i class="fas fa-save mr-1"></i>Simpan Perubahan
+                            Simpan Perubahan
                         </button>
                     </div>
                 </form>

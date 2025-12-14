@@ -89,12 +89,6 @@
             margin-right: 0;
         }
 
-        .badge-hki {
-            background-color: #1cc88a;
-            color: #fff;
-            font-weight: 600;
-        }
-
         /* Card padding more roomy */
         .card .card-body {
             padding: 1.5rem;
@@ -105,6 +99,46 @@
             /* Tambahkan !important di sini */
             cursor: pointer;
         }
+
+        /* Top controls (filter button + search) aligned on single row */
+        .dataTables_top_controls {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            margin-bottom: .5rem;
+        }
+
+        .dataTables_top_controls .dataTables_filter {
+            margin-left: 0;
+            /* we'll control spacing with gap */
+        }
+
+        /* Consistent sizing for action buttons in the Aksi column */
+        .aksi-column .btn {
+            min-width: 38px;
+            height: 34px;
+            padding: 0.35rem 0.5rem;
+            font-size: 0.86rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .aksi-column .btn i {
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        /* Reduce horizontal gap between buttons while keeping touch targets */
+        .aksi-column .btn-group .btn {
+            margin-right: 4px;
+        }
+
+        .aksi-column .btn-group .btn:last-child {
+            margin-right: 0;
+        }
     </style>
 @endpush
 
@@ -112,15 +146,21 @@
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Data Pengabdian</h1>
         <div class="d-flex">
+
+            <button type="button" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm mr-2" data-toggle="modal"
+                data-target="#importModal" title="Impor Excel">
+                <i class="fas fa-file-import fa-sm text-white-50"></i> Impor Data
+            </button>
+            <a href="{{ url('admin/pengabdian/export') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}"
+                class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm mr-2" title="Ekspor Excel">
+                <i class="fas fa-file-excel fa-sm text-white-50"></i> Ekspor Data
+            </a>
+
             <a href="{{ route('admin.pengabdian.create') }}"
                 class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm mr-2">
                 <i class="fas fa-plus fa-sm text-white-50"></i> Tambah Data Pengabdian
             </a>
-            <a href="{{ url('admin/pengabdian/export') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}"
-                class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm mr-2" title="Ekspor Excel">
-                <i class="fas fa-file-excel fa-sm text-white-50"></i> Ekspor Excel
-            </a>
-            <button type="button" class="btn btn-sm btn-outline-primary shadow-sm" data-toggle="modal"
+            <button type="button" id="filterBtnTop" class="btn btn-sm btn-outline-primary shadow-sm" data-toggle="modal"
                 data-target="#pengabdianFilterModal" title="Filter Pengabdian">
                 <i class="fas fa-filter mr-1"></i> Filter
             </button>
@@ -145,13 +185,27 @@
         </div>
     @endif
 
+    @if (session('import_errors'))
+        <div class="alert alert-warning">
+            <strong>Beberapa baris gagal diimpor (contoh):</strong>
+            <ul class="mb-0">
+                @foreach (session('import_errors') as $ie)
+                    <li>{{ $ie }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="row">
         <div class="col-12">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-file-alt mr-2"></i>Data Rekap Pengabdian
+                        Data Rekap Pengabdian
                     </h6>
+
+                    <div id="dataTable_custom_controls" class="d-flex align-items-center">
+                    </div>
                 </div>
                 <div class="card-body">
                     {{-- Controls row: place action buttons and table controls here --}}
@@ -173,8 +227,8 @@
                                     <th>Anggota Pengabdian</th>
                                     <th>Mahasiswa Terlibat</th>
                                     <th>Mitra</th>
-                                    <th>Luaran Yang Direncanakan</th>
                                     <th>Luaran Kegiatan</th>
+                                    <th>Status Kelengkapan</th>
                                     <th class="text-right-numeric">Total Dana</th>
                                     <th class="aksi-column">Aksi</th>
                                 </tr>
@@ -230,6 +284,8 @@
                                                                     data-dismiss="modal">Tutup</button>
                                                             </div>
                                                         </div>
+                                                        <!-- Import Modal -->
+                                                        {{-- import modal removed from here to avoid nesting inside anggota modal --}}
                                                     </div>
                                                 </div>
                                             @else
@@ -260,8 +316,8 @@
                                                                 <h5 class="modal-title"
                                                                     id="mahasiswaModalLabel{{ $loop->index }}">Mahasiswa
                                                                     Terlibat</h5>
-                                                                <button type="button" class="close" data-dismiss="modal"
-                                                                    aria-label="Close">
+                                                                <button type="button" class="close"
+                                                                    data-dismiss="modal" aria-label="Close">
                                                                     <span aria-hidden="true">&times;</span>
                                                                 </button>
                                                             </div>
@@ -299,21 +355,6 @@
                                             @endif
                                         </td>
 
-                                        <td style="text-align: center; font-weight: bold;">
-                                            @if (is_array($item->jumlah_luaran_direncanakan) && count($item->jumlah_luaran_direncanakan) > 0)
-                                                {{-- Lakukan perulangan di dalam array untuk menampilkan setiap nama luaran --}}
-                                                <div class="d-flex flex-column align-items-start">
-                                                    @foreach ($item->jumlah_luaran_direncanakan as $jenis)
-                                                        {{-- Menggunakan badge untuk tampilan yang rapi --}}
-                                                        <span
-                                                            class="badge badge-secondary mb-1">{{ $jenis }}</span>
-                                                    @endforeach
-                                                </div>
-                                            @else
-                                                <span class="text-muted">Tidak Ada</span>
-                                            @endif
-                                        </td>
-
                                         {{-- =============================================== --}}
                                         {{--   KODE UNTUK KOLOM LUARAN YANG SUDAH SESUAI     --}}
                                         {{-- =============================================== --}}
@@ -342,6 +383,40 @@
                                             @else
                                                 <span class="text-muted font-italic">Tidak ada luaran</span>
                                             @endif
+                                        </td>
+
+                                        <td style="text-align: center; font-weight: bold;">
+                                            @php
+                                                $requiredDocNames = [
+                                                    'Laporan Akhir',
+                                                    'Surat Tugas Dosen',
+                                                    'Surat Permohonan',
+                                                    'Surat Ucapan Terima Kasih',
+                                                    'MoU/MoA/Dokumen Kerja Sama Kegiatan',
+                                                ];
+
+                                                $dokumenColl = $item->dokumen ?? collect();
+                                                $present = 0;
+
+                                                foreach ($requiredDocNames as $rname) {
+                                                    $found = $dokumenColl->first(function ($d) use ($rname) {
+                                                        return optional($d->jenisDokumen)->nama_jenis_dokumen ===
+                                                            $rname;
+                                                    });
+                                                    if ($found) {
+                                                        $present++;
+                                                    }
+                                                }
+
+                                                $isComplete = $present === count($requiredDocNames);
+                                            @endphp
+
+                                            @if ($isComplete)
+                                                <span class="badge badge-success">Lengkap</span>
+                                            @else
+                                                <span class="badge badge-warning text-light">Belum Lengkap</span>
+                                            @endif
+
                                         </td>
 
                                         <td class="text-right-numeric">
@@ -394,6 +469,8 @@
                 "pageLength": 10,
                 "ordering": true,
                 "searching": true,
+                // Remove the length (page size) control by excluding 'l' from dom
+                "dom": "frtip",
                 "language": {
                     "search": "Cari:",
                     "lengthMenu": "Tampilkan _MENU_ entri",
@@ -453,8 +530,41 @@
                 });
             })();
 
-            // Style length select
+            // Style length select (length control removed via dom)
             $('.dataTables_length select').addClass('form-control form-control-sm');
+
+            // Place the Filter button and the search box into a single top-controls row
+            (function() {
+                var $filter = $('#filterBtnTop');
+                var $wrapper = $('.dataTables_wrapper');
+                if (!$filter.length || !$wrapper.length) return;
+
+                var $filterBox = $wrapper.find('.dataTables_filter');
+
+                // create a top-controls container before the existing filter box
+                var $top = $wrapper.find('.dataTables_top_controls');
+                if (!$top.length) {
+                    $top = $('<div class="dataTables_top_controls"></div>');
+                    if ($filterBox.length) {
+                        $filterBox.before($top);
+                    } else {
+                        $wrapper.prepend($top);
+                    }
+                }
+
+                // ensure there's a length-like container to hold the filter button
+                var $len = $top.find('.dataTables_length');
+                if (!$len.length) {
+                    $len = $('<div class="dataTables_length d-flex align-items-center"></div>');
+                    $top.append($len);
+                }
+
+                // move button and search into the new top container
+                $filter.addClass('mb-0').appendTo($len);
+                if ($filterBox.length) {
+                    $filterBox.appendTo($top);
+                }
+            })();
 
             // Column filters
             $('#filterTahun').on('change', function() {
@@ -604,3 +714,46 @@
         </div>
     </div>
 @endpush
+
+<!-- Import Modal (moved here so it's not nested inside table rows) -->
+<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel"><i class="fas fa-file-import mr-2"></i>Impor Data
+                    Pengabdian</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ route('admin.pengabdian.import') }}" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="import_file">Pilih file Excel (XLSX/XLS) atau CSV</label>
+                        <input type="file" name="file" id="import_file" class="form-control-file"
+                            accept=".xlsx,.xls,.csv" required>
+                    </div>
+                    <p class="small text-muted">Unduh template: <a
+                            href="{{ route('admin.pengabdian.template') }}">Template Pengabdian.xlsx</a></p>
+                    <p><strong>Petunjuk pengisian (kolom header wajib/format):</strong></p>
+                    <ul>
+                        <li>Judul wajib dan unik; baris dengan judul yang sama akan dilewati.</li>
+                        <li>Tanggal gunakan format `YYYY-MM-DD` atau `DD/MM/YYYY`.</li>
+                        <li>Nama ketua/anggota: isi dengan nama lengkap atau NIK; pisahkan anggota dengan `;`.</li>
+                        <li>Mahasiswa: masukkan NIM yang ada, pisahkan dengan `;`.</li>
+                        <li>Nama mitra dan lokasi: optional—akan dibuat jika diisi.</li>
+                        <li>Sumber dana: jika banyak, pisahkan nilai dan jenis secara sejajar dengan `;` (gunakan
+                            `jumlah_sumber_dana` untuk rincian jumlah per sumber).</li>
+                        <li>Luaran: pisahkan dengan `;` (harus sesuai tipe yang tersedia di sistem).</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Mulai Impor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

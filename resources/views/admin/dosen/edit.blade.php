@@ -36,8 +36,9 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="nik">NIK <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control @error('nik') is-invalid @enderror" name="nik"
-                                        id="nik" value="{{ old('nik', $dosen->nik) }}" required>
+                                    <input type="text" class="form-control @error('nik') is-invalid @enderror"
+                                        name="nik" id="nik" value="{{ old('nik', $dosen->nik) }}" required
+                                        readonly>
                                     @error('nik')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -60,7 +61,7 @@
                                 <div class="form-group">
                                     <label for="nidn">NIDN</label>
                                     <input type="text" class="form-control @error('nidn') is-invalid @enderror"
-                                        id="nidn" name="nidn" value="{{ old('nidn', $dosen->nidn) }}">
+                                        id="nidn" name="nidn" value="{{ old('nidn', $dosen->nidn) }}" readonly>
                                     @error('nidn')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror

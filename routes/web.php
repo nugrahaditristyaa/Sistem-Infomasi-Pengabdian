@@ -43,13 +43,20 @@ Route::middleware(['auth:admin'])->group(function () {
         // 3. PINDAHKAN ROUTE DASHBOARD KE SINI
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
+        // Export route for pengabdian (place before resource to avoid wildcard collisions)
+        Route::get('pengabdian/export', [App\Http\Controllers\Admin\PengabdianController::class, 'export'])->name('pengabdian.export');
+        // Template and Import routes for pengabdian
+        Route::get('pengabdian/template', [App\Http\Controllers\Admin\PengabdianController::class, 'template'])->name('pengabdian.template');
+        Route::post('pengabdian/import', [App\Http\Controllers\Admin\PengabdianController::class, 'import'])->name('pengabdian.import');
+
         // Resource Routes (tetap sama)
         Route::resource('pengabdian', PengabdianController::class);
 
         // Rekap Dosen (accessible to Admin) - place before resource('dosen') to avoid wildcard collision
         Route::get('dosen/rekap', [App\Http\Controllers\Admin\DosenRekapController::class, 'rekap'])->name('dosen.rekap');
         Route::get('dosen/rekap/export', [App\Http\Controllers\Admin\DosenRekapController::class, 'exportRekap'])->name('dosen.rekap.export');
-        Route::get('dosen/{nik}', [App\Http\Controllers\Admin\DosenRekapController::class, 'dosenDetail'])->name('dosen.detail');
+        // Use explicit detail path to avoid wildcard collision with resource routes (e.g. 'create')
+        Route::get('dosen/detail/{nik}', [App\Http\Controllers\Admin\DosenRekapController::class, 'dosenDetail'])->name('dosen.detail');
 
         Route::resource('dosen', DosenController::class);
         Route::resource('mahasiswa', MahasiswaController::class);
@@ -63,7 +70,7 @@ Route::middleware(['auth:admin'])->group(function () {
         // Rekap Dosen (accessible to Admin)
         Route::get('dosen/rekap', [App\Http\Controllers\Admin\DosenRekapController::class, 'rekap'])->name('dosen.rekap');
         Route::get('dosen/rekap/export', [App\Http\Controllers\Admin\DosenRekapController::class, 'exportRekap'])->name('dosen.rekap.export');
-        Route::get('dosen/{nik}', [App\Http\Controllers\Admin\DosenRekapController::class, 'dosenDetail'])->name('dosen.detail');
+        Route::get('dosen/detail/{nik}', [App\Http\Controllers\Admin\DosenRekapController::class, 'dosenDetail'])->name('dosen.detail');
     });
 });
 // ==========================================================

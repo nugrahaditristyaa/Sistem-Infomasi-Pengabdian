@@ -20,6 +20,9 @@
     <!-- Custom styles for this template-->
     <link href="{{ asset('assets/css/sb-admin-2.css') }}" rel="stylesheet">
 
+    <!-- Modern Chart.js -->
+    <link href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css" rel="stylesheet">
+
     <style>
         /* Modern UI Styles */
         .modern-card {
@@ -62,8 +65,6 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
     </style>
-
-    <link href="{{ asset('css/dashboard-styles.css') }}" rel="stylesheet">
 
     @stack('styles')
 </head>
@@ -127,25 +128,10 @@
             </div>
         </div>
     </div>
-    
-    @stack('page_modals')
 
     <!-- Bootstrap core JavaScript-->
     <script src="{{ asset('assets/vendor/jquery/jquery.min.js') }}"></script>
-
-    <!-- Popper.js (Required for Bootstrap tooltips and popovers) -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
-
-    <!-- Bootstrap Bundle (includes Bootstrap + Popper.js) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Fallback: Local Bootstrap -->
-    <script>
-        // Check if Bootstrap is loaded, if not load local version
-        if (typeof $.fn.modal === 'undefined') {
-            document.write('<script src="{{ asset('assets/vendor/bootstrap/js/bootstrap.min.js') }}"><\/script>');
-        }
-    </script>
+    <script src="{{ asset('assets/vendor/bootstrap/js/bootstrap.min.js') }}"></script>
 
     <!-- Core plugin JavaScript-->
     <script src="{{ asset('assets/vendor/jquery-easing/jquery.easing.min.js') }}"></script>
@@ -153,10 +139,10 @@
     <!-- Custom scripts for all pages-->
     <script src="{{ asset('assets/js/sb-admin-2.js') }}"></script>
 
-    <!-- Chart.js v3 (Compatible with treemap plugin) -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <!-- Modern Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <!-- Chart.js Data Labels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
     @stack('scripts')
 
