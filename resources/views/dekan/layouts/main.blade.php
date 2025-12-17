@@ -100,24 +100,7 @@ body.bg-gradient-primary,
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* Footer styling (samakan dengan halaman dashboard Kaprodi / SB Admin 2 default) */
-        footer.sticky-footer {
-            background-color: #fff !important;
-            padding: 1.25rem 0 !important;
-            border-top: 1px solid #e3e6f0 !important;
-        }
-
-        footer.sticky-footer .container {
-            padding: 0 1.5rem !important;
-        }
-
-        footer.sticky-footer .copyright {
-            font-size: 0.8rem !important;
-            color: #5a5c69 !important;
-        }
     </style>
-
-    <link href="{{ asset('css/dashboard-styles.css') }}" rel="stylesheet">
 
     @stack('styles')
 </head>
