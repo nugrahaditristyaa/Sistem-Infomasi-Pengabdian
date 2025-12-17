@@ -207,14 +207,17 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <!-- Controls row: place DataTables search on the left, custom buttons on the right -->
+                    <!-- Controls row: Match Admin Layout (Filter + Search on Left) -->
                     <div class="row align-items-center mb-3">
-                        <div class="col-sm-12 col-md-6" id="dtSearchContainer"></div>
-                        <div class="col-sm-12 col-md-6 d-flex justify-content-md-end mt-2 mt-md-0">
+                        <div class="col-sm-12 col-md-6 d-flex align-items-center" id="dtSearchContainerWrapper">
                             <button type="button" class="btn btn-sm btn-outline-primary mr-2" data-toggle="modal"
                                 data-target="#dosenFilterModal">
                                 <i class="fas fa-filter mr-1"></i> Filter
                             </button>
+                            <div id="dtSearchContainer" style="flex:1"></div>
+                        </div>
+                        <div class="col-sm-12 col-md-6 d-flex justify-content-md-end mt-2 mt-md-0">
+                            {{-- Reserved for future right-aligned controls --}}
                         </div>
                     </div>
 
@@ -270,16 +273,7 @@
                             </table>
                         </div>
 
-                        <!-- Pagination -->
-                        <div class="d-flex justify-content-between align-items-center mt-4">
-                            <div class="text-muted small">
-                                Menampilkan {{ $dosenData->firstItem() }} sampai {{ $dosenData->lastItem() }}
-                                dari {{ $dosenData->total() }} dosen
-                            </div>
-                            <div>
-                                {{ $dosenData->appends(request()->query())->links('pagination::bootstrap-4') }}
-                            </div>
-                        </div>
+                        <!-- DataTables Pagination is enabled in JS, remove manual links -->
                     @else
                         <div class="text-center py-5">
                             <i class="fas fa-users fa-3x text-muted mb-3"></i>
@@ -370,10 +364,10 @@
                     </div>
                     <div class="modal-footer">
                         <a href="{{ route($routeBase . '.dosen.rekap') }}" class="btn btn-secondary">
-                            <i class="fas fa-redo mr-1"></i> Reset
+                            Reset
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-check mr-1"></i> Terapkan Filter
+                            Terapkan Filter
                         </button>
                     </div>
                 </form>
@@ -399,16 +393,24 @@
 
                 // Initialize DataTable with custom settings
                 var dt = $('#dosenTable').DataTable({
-                    paging: false, // We use Laravel pagination
+                    paging: true,
+                    pageLength: 10,
+                    dom: 'frtip',
                     searching: true,
                     ordering: true,
-                    info: false,
+                    info: true, // Show "Showing 1 to 10 of X" info
                     fixedHeader: true,
                     language: {
                         search: 'Cari:',
                         searchPlaceholder: 'Nama dosen...',
                         zeroRecords: 'Tidak ada data yang sesuai',
-                        emptyTable: 'Tidak ada data tersedia'
+                        emptyTable: 'Tidak ada data tersedia',
+                        paginate: {
+                            first: 'Pertama',
+                            last: 'Terakhir',
+                            next: 'Berikutnya',
+                            previous: 'Sebelumnya'
+                        }
                     },
                     columnDefs: [{
                             orderable: false,

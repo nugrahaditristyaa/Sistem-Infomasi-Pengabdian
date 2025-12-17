@@ -1482,7 +1482,7 @@
             }));
 
             // Function to truncate long names
-            function truncateName(name, maxLength = 15) {
+            function truncateName(name, maxLength = 50) {
                 if (name.length <= maxLength) return name;
 
                 // Split by spaces and take first word + initial of second word
@@ -2059,10 +2059,16 @@
                                     },
                                     footer: function(tooltipItems) {
                                         let total = 0;
-                                        tooltipItems.forEach(function(tooltipItem) {
-                                            total += tooltipItem.raw;
+                                        const dataIndex = tooltipItems[0].dataIndex;
+                                        const datasets = tooltipItems[0].chart.data.datasets;
+                                        
+                                        datasets.forEach(dataset => {
+                                            if (!dataset.hidden) {
+                                                total += (dataset.data[dataIndex] || 0);
+                                            }
                                         });
-                                        return `📈 Total Dana: ${formatCurrency(total)}`;
+                                        
+                                        return `Total Keseluruhan: ${formatCurrency(total)}`;
                                     }
                                 }
                             },
