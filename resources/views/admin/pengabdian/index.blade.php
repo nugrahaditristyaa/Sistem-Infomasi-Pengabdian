@@ -372,7 +372,7 @@
                                                             <a href="{{ route('admin.hki.show', $detailHki->id_detail_hki) }}"
                                                                 title="{{ $detailHki->judul_ciptaan }}"
                                                                 data-toggle="tooltip" class="mr-1 mb-1">
-                                                                <span class="badge badge-hki">HKI</span>
+                                                                <span class="badge badge-secondary">HKI</span>
                                                             </a>
                                                         @else
                                                             <span

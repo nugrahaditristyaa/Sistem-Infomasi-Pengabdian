@@ -420,10 +420,10 @@ class KaprodiController extends Controller
             $persentasePengabdianDenganMahasiswaPrevious = $totalPengabdianPreviousForMahasiswa > 0 ?
                 round(($pengabdianDenganMahasiswaPrevious / $totalPengabdianPreviousForMahasiswa) * 100, 1) : 0;
 
-            if ($persentasePengabdianDenganMahasiswaPrevious > 0) {
-                $percentageChangeMahasiswa = round((($persentasePengabdianDenganMahasiswa - $persentasePengabdianDenganMahasiswaPrevious) / $persentasePengabdianDenganMahasiswaPrevious) * 100, 1);
+            if ($pengabdianDenganMahasiswaPrevious > 0) {
+                $percentageChangeMahasiswa = round((($pengabdianDenganMahasiswa - $pengabdianDenganMahasiswaPrevious) / $pengabdianDenganMahasiswaPrevious) * 100, 1);
             } else {
-                $percentageChangeMahasiswa = $persentasePengabdianDenganMahasiswa > 0 ? 100 : 0;
+                $percentageChangeMahasiswa = $pengabdianDenganMahasiswa > 0 ? 100 : 0;
             }
         }
 
@@ -502,14 +502,14 @@ class KaprodiController extends Controller
                 }
             }]);
 
-        // Filter hanya dosen yang memiliki pengabdian di tahun yang dipilih
-        if ($filterYear !== 'all') {
-            $dosenQuery->whereHas('pengabdian', function ($query) use ($filterYear) {
-                $query->whereYear('tanggal_pengabdian', $filterYear);
-            });
-        } else {
-            $dosenQuery->whereHas('pengabdian');
-        }
+        // Filter logic removed to include all lecturers
+        // if ($filterYear !== 'all') {
+        //     $dosenQuery->whereHas('pengabdian', function ($query) use ($filterYear) {
+        //         $query->whereYear('tanggal_pengabdian', $filterYear);
+        //     });
+        // } else {
+        //     $dosenQuery->whereHas('pengabdian');
+        // }
 
         $dosenCounts = $dosenQuery->orderBy('jumlah_pengabdian', 'desc')->get();
 

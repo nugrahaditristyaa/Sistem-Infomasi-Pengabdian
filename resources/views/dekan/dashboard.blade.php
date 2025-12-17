@@ -1066,7 +1066,7 @@
                                                 : 0;
                                     @endphp
                                     <div class="mt-1">
-                                        <span class="badge badge-primary mr-1">Total Dosen: {{ $allDosenCount }}</span>
+                                        <span class="badge badge-primary mr-1">Total Dosen: {{ $stats['total_dosen'] }}</span>
                                         @if (isset($prodiFilter) && $prodiFilter === 'Sistem Informasi' && ($totalJudulSI ?? 0) > 0)
                                             <span class="badge badge-secondary">Judul: {{ $totalJudulSI }}</span>
                                         @endif
@@ -1185,7 +1185,7 @@
                         <span id="statisticsModalTitle">Detail Statistik</span>
                     </h5>
                     <span id="statisticsModalCount" class="badge badge-primary ml-2 ml-sm-3">0 data</span>
-                    <button type="button" class="close text-white ml-auto" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close ml-auto" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>

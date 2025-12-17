@@ -1828,7 +1828,7 @@
                         </h5>
                         <span id="statisticsModalCount" class="badge badge-primary ml-2 ml-sm-3">0
                             data</span>
-                        <button type="button" class="close text-white ml-auto" data-dismiss="modal" aria-label="Close">
+                        <button type="button" class="close ml-auto" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -2094,20 +2094,20 @@
                     <tr>
                         <td>${index + 1}</td>
                         <td>
-                            <div class="font-weight-bold text-primary">${judul}</div>
-                            <small class="text-muted">${item.id_pengabdian || 'N/A'}</small>
+                            <div class="text-secondary">${judul}</div>
+
                         </td>
                         <td>${item.tanggal_pengabdian ? new Date(item.tanggal_pengabdian).toLocaleDateString('id-ID') : 'N/A'}</td>
                         <td>${item.ketua || 'N/A'}</td>
                         <td class="text-center">
-                            <span class="badge badge-success">${item.jumlah_mahasiswa || 0}</span>
+                            <span class="text-secondary">${item.jumlah_mahasiswa || 0}</span>
                         </td>
                         <td class="small">${mhsHtml}</td>
                         <td>
-                            <span class="badge badge-info">Informatika: ${item.mahasiswa_informatika || 0}</span>
-                            <span class="badge badge-warning">SI: ${item.mahasiswa_sistem_informasi || 0}</span>
+                            <span class="text-secondary">Informatika: ${item.mahasiswa_informatika || 0}</span>
+                            <span class="text-secondary">SI: ${item.mahasiswa_sistem_informasi || 0}</span>
                         </td>
-                        <td><span class="badge badge-secondary">${item.sumber_dana || 'N/A'}</span></td>
+                        <td><span class="text-secondary">${item.sumber_dana || 'N/A'}</span></td>
                     </tr>
                 `;
                         });
