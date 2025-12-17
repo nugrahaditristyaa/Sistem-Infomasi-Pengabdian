@@ -178,24 +178,24 @@
                     @enderror
                 </div>
                 <div class="form-group">
-                    <label for="dosen_ids">Pilih Dosen (Anggota)</label>
+                    <label for="anggota">Pilih Dosen (Anggota)</label>
                     @php
                         $anggota_ids = $pengabdian->dosen
                             ->where('pivot.status_anggota', 'anggota')
                             ->pluck('nik')
                             ->toArray();
                     @endphp
-                    <select id="dosen_ids" name="dosen_ids[]"
-                        class="form-control @error('dosen_ids.*') is-invalid @enderror" multiple
+                    <select id="anggota" name="anggota[]"
+                        class="form-control @error('anggota.*') is-invalid @enderror" multiple
                         data-placeholder="Pilih satu atau lebih...">
                         @foreach ($dosen as $d)
                             <option value="{{ $d->nik }}"
-                                {{ in_array($d->nik, old('dosen_ids', $anggota_ids)) ? 'selected' : '' }}>
+                                {{ in_array($d->nik, old('anggota', $anggota_ids)) ? 'selected' : '' }}>
                                 {{ $d->nama }} - {{ $d->nidn }}
                             </option>
                         @endforeach
                     </select>
-                    @error('dosen_ids.*')
+                    @error('anggota.*')
                         <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
@@ -608,7 +608,7 @@
                     $('#ketua_nik').select2({
                         width: '100%'
                     });
-                    $('#dosen_ids, #mahasiswa_ids, #hki_anggota_dosen').select2({
+                    $('#anggota, #mahasiswa_ids, #hki_anggota_dosen').select2({
                         width: '100%',
                         placeholder: function() {
                             return $(this).data('placeholder');
@@ -617,14 +617,14 @@
                 },
 
                 initDosenLogic: function() {
-                    $('#ketua_nik, #dosen_ids, #hki_anggota_dosen').on('change', () => this
+                    $('#ketua_nik, #anggota, #hki_anggota_dosen').on('change', () => this
                         .updateDosenRoles());
                     this.updateDosenRoles();
                 },
 
                 updateDosenRoles: function() {
                     const ketuaNik = $('#ketua_nik').val();
-                    const anggotaPengabdianSelect = $('#dosen_ids');
+                    const anggotaPengabdianSelect = $('#anggota');
                     const anggotaHkiSelect = $('#hki_anggota_dosen');
                     const selectedPengabdian = anggotaPengabdianSelect.val() || [];
                     const selectedHki = anggotaHkiSelect.val() || [];

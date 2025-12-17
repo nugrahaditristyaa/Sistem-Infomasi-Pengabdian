@@ -542,8 +542,8 @@ class PengabdianController extends Controller
             'jumlah_luaran_direncanakan'   => 'required|array|min:1',
             'jumlah_luaran_direncanakan.*' => 'required|exists:jenis_luaran,nama_jenis_luaran',
             'ketua_nik'             => 'required|exists:dosen,nik',
-            'dosen_ids'             => 'nullable|array',
-            'dosen_ids.*'           => 'nullable|exists:dosen,nik|different:ketua_nik',
+            'anggota'               => 'nullable|array',
+            'anggota.*'             => 'nullable|exists:dosen,nik|different:ketua_nik',
             'mahasiswa_ids'         => 'nullable|array',
             'mahasiswa_ids.*'       => 'nullable|exists:mahasiswa,nim',
             'mahasiswa_baru'        => ['nullable', 'array', new UniqueNimsInArray, new AllNimsMustHaveCorrectDigits, new NimsMustNotExist, new AllMahasiswaRowsMustBeComplete], // <-- SAYA MENAMBAHKAN ATURAN INI
@@ -605,7 +605,7 @@ class PengabdianController extends Controller
             'lokasi_kegiatan'       => 'Lokasi Kegiatan Mitra',
             'tanggal_pengabdian'    => 'Tanggal Pengabdian',
             'ketua_nik'             => 'Dosen (Ketua)',
-            'dosen_ids.*'           => 'Dosen (Anggota)',
+            'anggota.*'             => 'Dosen (Anggota)',
             'mahasiswa_ids.*'       => 'Mahasiswa',
             'mahasiswa_baru.*.nim'  => 'NIM Mahasiswa Baru',
             'mahasiswa_baru.*.nama' => 'Nama Mahasiswa Baru',
@@ -640,8 +640,23 @@ class PengabdianController extends Controller
             ]);
 
             $dosenData = [$request->ketua_nik => ['status_anggota' => 'ketua']];
-            if (!empty($request->dosen_ids)) {
-                foreach (array_filter($request->dosen_ids) as $nik) {
+            
+            // Ambil ID dosen dari input anggota utama
+            $mainDosenIds = $request->anggota ? array_filter($request->anggota) : [];
+            
+            // Ambil ID dosen dari input anggota HKI (jika ada)
+            $hkiDosenIds = [];
+            if ($request->has('luaran_data.HKI.anggota_dosen')) {
+                $hkiDosenIds = $request->input('luaran_data.HKI.anggota_dosen');
+                $hkiDosenIds = is_array($hkiDosenIds) ? array_filter($hkiDosenIds) : [];
+            }
+
+            // Gabungkan kedua list anggota (unik)
+            $allAnggotaIds = array_unique(array_merge($mainDosenIds, $hkiDosenIds));
+
+            if (!empty($allAnggotaIds)) {
+                foreach ($allAnggotaIds as $nik) {
+                    // Pastikan ketua tidak masuk sebagai anggota
                     if ($nik !== $request->ketua_nik) {
                         $dosenData[$nik] = ['status_anggota' => 'anggota'];
                     }
@@ -802,8 +817,8 @@ class PengabdianController extends Controller
             'jumlah_luaran_direncanakan'   => 'required|array|min:1',
             'jumlah_luaran_direncanakan.*' => 'required|exists:jenis_luaran,nama_jenis_luaran',
             'ketua_nik'             => 'required|exists:dosen,nik',
-            'dosen_ids'             => 'nullable|array',
-            'dosen_ids.*'           => 'nullable|exists:dosen,nik|different:ketua_nik',
+            'anggota'             => 'nullable|array',
+            'anggota.*'           => 'nullable|exists:dosen,nik|different:ketua_nik',
             'mahasiswa_ids'         => 'nullable|array',
             'mahasiswa_ids.*'       => 'nullable|exists:mahasiswa,nim',
             'mahasiswa_baru'        => 'nullable|array',
@@ -880,7 +895,7 @@ class PengabdianController extends Controller
             'lokasi_kegiatan'       => 'Lokasi Kegiatan Mitra',
             'tanggal_pengabdian'    => 'Tanggal Pengabdian',
             'ketua_nik'             => 'Dosen (Ketua)',
-            'dosen_ids.*'           => 'Dosen (Anggota)',
+            'anggota.*'           => 'Dosen (Anggota)',
             'mahasiswa_ids.*'       => 'Mahasiswa',
             'mahasiswa_baru.*.nim'  => 'NIM Mahasiswa Baru',
             'mahasiswa_baru.*.nama' => 'Nama Mahasiswa Baru',
@@ -915,8 +930,25 @@ class PengabdianController extends Controller
             ]);
 
             $dosenData = [$request->ketua_nik => ['status_anggota' => 'ketua']];
-            if (!empty($request->dosen_ids)) {
-                foreach (array_filter($request->dosen_ids) as $nik) {
+            
+            // Ambil ID dosen dari input anggota utama
+            $mainDosenIds = $request->anggota ? array_filter($request->anggota) : [];
+            
+            // Ambil ID dosen dari input anggota HKI (jika ada)
+            $hkiDosenIds = [];
+            // Perhatikan: saat update, data HKI mungkin ada di request meski HKI tidak dicentang jika user tidak mengubah centangnya?
+            // Tapi validasi / UI biasanya handle. Kita cek existence key-nya.
+            if ($request->has('luaran_data.HKI.anggota_dosen')) {
+                $hkiDosenIds = $request->input('luaran_data.HKI.anggota_dosen');
+                $hkiDosenIds = is_array($hkiDosenIds) ? array_filter($hkiDosenIds) : [];
+            }
+
+            // Gabungkan kedua list anggota (unik)
+            $allAnggotaIds = array_unique(array_merge($mainDosenIds, $hkiDosenIds));
+
+            if (!empty($allAnggotaIds)) {
+                foreach ($allAnggotaIds as $nik) {
+                     // Pastikan ketua tidak masuk sebagai anggota
                     if ($nik !== $request->ketua_nik) {
                         $dosenData[$nik] = ['status_anggota' => 'anggota'];
                     }

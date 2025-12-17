@@ -585,11 +585,8 @@ class DekanController extends Controller
             // Tentukan tipe KPI berdasarkan kode atau karakteristik
             $kpiType = $this->determineKpiType($kpi->kode);
 
-            // Override target untuk KPI IKT.I.5.i (bergradasi 0, 1, 2 prodi)
+            // Gunakan target dari database
             $targetValue = $kpi->target;
-            if ($kpi->kode === 'IKT.I.5.i') {
-                $targetValue = 2.0; // Target 2 prodi tercapai
-            }
 
             // Hitung skor normalisasi berdasarkan tipe KPI
             $skorNormalisasi = $this->calculateNormalizedScore($realisasi, $targetValue, $kpiType, $kpi->kode, $filterYear);
@@ -600,7 +597,7 @@ class DekanController extends Controller
             $radarData[] = [
                 'kode' => $kpi->kode,
                 'indikator' => $kpi->indikator,
-                'target' => $targetValue, // Gunakan target yang sudah disesuaikan
+                'target' => $targetValue, // Gunakan target dari database
                 'realisasi' => round($realisasi, 2),
                 'skor_normalisasi' => round($skorNormalisasi, 1),
                 'satuan' => $kpi->satuan,
@@ -1346,42 +1343,67 @@ class DekanController extends Controller
      */
     private function calculateHkiPerProdiCount($filterYear)
     {
-        // Query untuk mendapatkan HKI berdasarkan prodi
-        $baseQuery = DB::table('luaran')
-            ->join('pengabdian', 'luaran.id_pengabdian', '=', 'pengabdian.id_pengabdian')
-            ->join('jenis_luaran', 'luaran.id_jenis_luaran', '=', 'jenis_luaran.id_jenis_luaran')
-            ->where('jenis_luaran.nama_jenis_luaran', 'HKI');
+        // Helper untuk menghitung jumlah PkM yang:
+        // 1. Memiliki Luaran HKI
+        // 2. Melibatkan dosen dari prodi tertentu
+        // 3. Sesuai filter tahun
+        
+        $countPkmWithHkiByProdi = function($prodiName) use ($filterYear) {
+            $query = DB::table('pengabdian')
+                // 1. Cek existence HKI di luaran
+                ->whereExists(function ($sub) {
+                    $sub->select(DB::raw(1))
+                        ->from('luaran')
+                        ->join('jenis_luaran', 'luaran.id_jenis_luaran', '=', 'jenis_luaran.id_jenis_luaran')
+                        ->whereColumn('luaran.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('jenis_luaran.nama_jenis_luaran', 'HKI');
+                })
+                // 2. Cek existence Dosen Prodi (Ketua atau Anggota)
+                ->where(function($q) use ($prodiName) {
+                    // Cek di tabel anggota (pengabdian_dosen)
+                    $q->whereExists(function ($sub) use ($prodiName) {
+                        $sub->select(DB::raw(1))
+                            ->from('pengabdian_dosen')
+                            ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                            ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                            ->where('dosen.prodi', $prodiName);
+                    });
+                    
+                    // Opsi tambahan: Jika ketua tidak masuk pengabdian_dosen, cek via kolom ketua_pengabdian
+                    // Namun asumsi best practice adalah ketua juga masuk di pengabdian_dosen.
+                    // Untuk robust-ness kita bisa tambahkan OR cek ketua jika diperlukan,
+                    // tapi query exists pengabdian_dosen usually covers involvement.
+                    // Jika database menyimpan ketua terpisah:
+                    /*
+                    $q->orWhereExists(function ($sub) use ($prodiName) {
+                        $sub->select(DB::raw(1))
+                            ->from('dosen')
+                            ->whereColumn('dosen.nik', 'pengabdian.ketua_pengabdian')
+                            ->where('dosen.prodi', $prodiName);
+                    });
+                    */
+                });
 
-        // Filter by year if not 'all'
-        if ($filterYear !== 'all') {
-            $baseQuery->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
-        }
+            // 3. Filter tahun
+            if ($filterYear !== 'all') {
+                $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
+            }
 
-        // Hitung HKI untuk Informatika
-        $hkiInformatika = (clone $baseQuery)
-            ->join('pengabdian_dosen', 'pengabdian.id_pengabdian', '=', 'pengabdian_dosen.id_pengabdian')
-            ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
-            ->where('dosen.prodi', 'Informatika')
-            ->distinct('luaran.id_luaran')
-            ->count('luaran.id_luaran');
+            return $query->count();
+        };
 
-        // Hitung HKI untuk Sistem Informasi
-        $hkiSistemInformasi = (clone $baseQuery)
-            ->join('pengabdian_dosen', 'pengabdian.id_pengabdian', '=', 'pengabdian_dosen.id_pengabdian')
-            ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
-            ->where('dosen.prodi', 'Sistem Informasi')
-            ->distinct('luaran.id_luaran')
-            ->count('luaran.id_luaran');
+        $hkiInformatika = $countPkmWithHkiByProdi('Informatika');
+        $hkiSistemInformasi = $countPkmWithHkiByProdi('Sistem Informasi');
 
         return [
             'informatika' => $hkiInformatika,
             'sistem_informasi' => $hkiSistemInformasi,
             'total' => $hkiInformatika + $hkiSistemInformasi,
-            // Status: minimal 1 HKI per prodi
+            // Status: minimal 1 PkM ber-HKI per prodi
             'informatika_tercapai' => $hkiInformatika >= 1,
             'sistem_informasi_tercapai' => $hkiSistemInformasi >= 1,
             'kedua_prodi_tercapai' => ($hkiInformatika >= 1) && ($hkiSistemInformasi >= 1),
-            // Add per_prodi array for compatibility
+            // Add per_prodi array (Counts of fulfilled PkM, not HKI items)
             'per_prodi' => [
                 'Informatika' => $hkiInformatika,
                 'Sistem Informasi' => $hkiSistemInformasi

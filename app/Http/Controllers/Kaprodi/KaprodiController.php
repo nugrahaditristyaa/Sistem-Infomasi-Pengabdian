@@ -42,12 +42,20 @@ class KaprodiController extends Controller
         if (!$request->has('year')) {
             // Gunakan tahun dengan data pengabdian terbanyak sebagai default
             $baseProdiFilter = function ($query) use ($prodiFilter) {
-                $query->whereExists(function ($subQuery) use ($prodiFilter) {
-                    $subQuery->select(DB::raw(1))
-                        ->from('pengabdian_dosen')
-                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
-                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
-                        ->where('dosen.prodi', $prodiFilter);
+                $query->where(function ($q) use ($prodiFilter) {
+                    $q->whereExists(function ($subQuery) use ($prodiFilter) {
+                        $subQuery->select(DB::raw(1))
+                            ->from('pengabdian_dosen')
+                            ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                            ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                            ->where('dosen.prodi', $prodiFilter);
+                    })
+                    ->orWhereExists(function ($subQuery) use ($prodiFilter) {
+                        $subQuery->select(DB::raw(1))
+                            ->from('dosen')
+                            ->whereColumn('dosen.nik', 'pengabdian.ketua_pengabdian')
+                            ->where('dosen.prodi', $prodiFilter);
+                    });
                 });
             };
 
@@ -72,12 +80,20 @@ class KaprodiController extends Controller
 
         // FILTER PENGABDIAN: Hanya yang melibatkan dosen dari prodi ini
         $baseProdiFilter = function ($query) use ($prodiFilter) {
-            $query->whereExists(function ($subQuery) use ($prodiFilter) {
-                $subQuery->select(DB::raw(1))
-                    ->from('pengabdian_dosen')
-                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
-                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
-                    ->where('dosen.prodi', $prodiFilter);
+            $query->where(function ($q) use ($prodiFilter) {
+                $q->whereExists(function ($subQuery) use ($prodiFilter) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('pengabdian_dosen')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                        ->where('dosen.prodi', $prodiFilter);
+                })
+                ->orWhereExists(function ($subQuery) use ($prodiFilter) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('dosen')
+                        ->whereColumn('dosen.nik', 'pengabdian.ketua_pengabdian')
+                        ->where('dosen.prodi', $prodiFilter);
+                });
             });
         };
 
@@ -787,11 +803,8 @@ class KaprodiController extends Controller
             $realisasi = $this->calculateKpiAchievementForProdi($kpi, $filterYear, $prodiFilter);
             $kpiType = $this->determineKpiTypeForProdi($kpi->kode);
 
-            // Override target untuk IKT.I.5.i (target 2 prodi di level fakultas; untuk prodi, target 1 cukup)
+            // Gunakan target dari database
             $targetValue = $kpi->target;
-            if ($kpi->kode === 'IKT.I.5.i') {
-                $targetValue = 1.0; // Untuk prodi, minimal 1 HKI prodi tersebut
-            }
 
             $skorNormalisasi = $this->calculateNormalizedScoreForProdi($realisasi, $targetValue, $kpiType, $kpi->kode, $filterYear);
             $skorNormalisasi = max(0, min(100, $skorNormalisasi));
@@ -1125,10 +1138,13 @@ class KaprodiController extends Controller
         }
 
         $query = DB::table('pengabdian')
-            ->join('pengabdian_dosen', 'pengabdian.id_pengabdian', '=', 'pengabdian_dosen.id_pengabdian')
-            ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+            ->leftJoin('pengabdian_dosen', 'pengabdian.id_pengabdian', '=', 'pengabdian_dosen.id_pengabdian')
+            ->leftJoin('dosen as member', 'pengabdian_dosen.nik', '=', 'member.nik')
             ->leftJoin('dosen as ketua', 'pengabdian.ketua_pengabdian', '=', 'ketua.nik')
-            ->where('dosen.prodi', $prodi)
+            ->where(function($q) use ($prodi) {
+                $q->where('member.prodi', $prodi)
+                  ->orWhere('ketua.prodi', $prodi);
+            })
             ->select('pengabdian.*', 'ketua.nama as nama_ketua')
             ->distinct('pengabdian.id_pengabdian');
 
@@ -1140,9 +1156,13 @@ class KaprodiController extends Controller
             ->paginate(20);
 
         $availableYears = DB::table('pengabdian')
-            ->join('pengabdian_dosen', 'pengabdian.id_pengabdian', '=', 'pengabdian_dosen.id_pengabdian')
-            ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
-            ->where('dosen.prodi', $prodi)
+            ->leftJoin('pengabdian_dosen', 'pengabdian.id_pengabdian', '=', 'pengabdian_dosen.id_pengabdian')
+            ->leftJoin('dosen as member', 'pengabdian_dosen.nik', '=', 'member.nik')
+            ->leftJoin('dosen as ketua', 'pengabdian.ketua_pengabdian', '=', 'ketua.nik')
+            ->where(function($q) use ($prodi) {
+                $q->where('member.prodi', $prodi)
+                  ->orWhere('ketua.prodi', $prodi);
+            })
             ->selectRaw('DISTINCT YEAR(pengabdian.tanggal_pengabdian) as year')
             ->orderBy('year', 'desc')
             ->pluck('year');

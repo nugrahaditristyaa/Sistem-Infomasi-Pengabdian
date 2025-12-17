@@ -203,18 +203,18 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="form-group">
-                            <label for="dosen_ids">Pilih Dosen (Anggota)</label>
-                            <select id="dosen_ids" name="dosen_ids[]"
-                                class="form-control @error('dosen_ids.*') is-invalid @enderror" multiple
+                            <label for="anggota">Pilih Dosen (Anggota)</label>
+                            <select id="anggota" name="anggota[]"
+                                class="form-control @error('anggota.*') is-invalid @enderror" multiple
                                 data-placeholder="Pilih satu atau lebih...">
                                 @foreach ($dosen as $d)
                                     <option value="{{ $d->nik }}"
-                                        {{ in_array($d->nik, old('dosen_ids', [])) ? 'selected' : '' }}>
+                                        {{ in_array($d->nik, old('anggota', [])) ? 'selected' : '' }}>
                                         {{ $d->nama }} -
                                         {{ $d->nidn }}</option>
                                 @endforeach
                             </select>
-                            @error('dosen_ids.*')
+                            @error('anggota.*')
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
@@ -461,7 +461,8 @@
                         <input type="text"
                             class="form-control @error('luaran_data.HKI.judul_ciptaan') is-invalid @enderror"
                             name="luaran_data[HKI][judul_ciptaan]" id="hki_judul_ciptaan"
-                            value="{{ old('luaran_data.HKI.judul_ciptaan') }}">
+                            value="{{ old('luaran_data.HKI.judul_ciptaan') }}"
+                            placeholder="Masukkan judul ciptaan">
                         @error('luaran_data.HKI.judul_ciptaan')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -474,7 +475,8 @@
                                 <input type="text"
                                     class="form-control @error('luaran_data.HKI.pemegang_hak_cipta') is-invalid @enderror"
                                     name="luaran_data[HKI][pemegang_hak_cipta]" id="hki_pemegang_hak_cipta"
-                                    value="{{ old('luaran_data.HKI.pemegang_hak_cipta') }}">
+                                    value="{{ old('luaran_data.HKI.pemegang_hak_cipta') }}"
+                                    placeholder="Masukkan pemegang hak cipta">
                                 @error('luaran_data.HKI.pemegang_hak_cipta')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -486,7 +488,8 @@
                                 <input type="text"
                                     class="form-control @error('luaran_data.HKI.jenis_ciptaan') is-invalid @enderror"
                                     name="luaran_data[HKI][jenis_ciptaan]" id="hki_jenis_ciptaan"
-                                    value="{{ old('luaran_data.HKI.jenis_ciptaan') }}">
+                                    value="{{ old('luaran_data.HKI.jenis_ciptaan') }}"
+                                    placeholder="Masukkan jenis ciptaan">
                                 @error('luaran_data.HKI.jenis_ciptaan')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -689,7 +692,7 @@
                         width: '100%'
                     });
 
-                    $('#dosen_ids, #mahasiswa_ids, #hki_anggota_dosen').select2({
+                    $('#anggota, #mahasiswa_ids, #hki_anggota_dosen').select2({
                         width: '100%',
                         placeholder: function() {
                             return $(this).data('placeholder');
@@ -699,7 +702,7 @@
 
                 initDosenLogic: function() {
                     // Event listener sekarang memantau ketiga dropdown dosen
-                    $('#ketua_nik, #dosen_ids, #hki_anggota_dosen').on('change', () => this
+                    $('#ketua_nik, #anggota, #hki_anggota_dosen').on('change', () => this
                         .updateDosenRoles());
                     this.updateDosenRoles(); // Panggil saat halaman dimuat
                 },
@@ -707,16 +710,16 @@
                 // ===== FUNGSI YANG DIPERBARUI =====
                 updateDosenRoles: function() {
                     const ketuaNik = $('#ketua_nik').val();
-                    const anggotaPengabdianSelect = $('#dosen_ids');
+                    const anggotaPengabdianSelect = $('#anggota');
                     const anggotaHkiSelect = $('#hki_anggota_dosen');
 
                     const selectedPengabdian = anggotaPengabdianSelect.val() || [];
                     const selectedHki = anggotaHkiSelect.val() || [];
 
-                    // Fungsi untuk memperbarui dropdown Anggota Pengabdian (tetap seperti sebelumnya)
+                    // Fungsi untuk memperbarui dropdown Anggota Pengabdian
                     const updateAnggotaPengabdianOptions = () => {
-                        // Untuk Anggota Pengabdian: disable ketua dan yang sudah dipilih di HKI
-                        const niksToDisable = [ketuaNik, ...selectedHki].filter(Boolean);
+                        // Hanya disable Ketua. Biarkan anggota HKI tetap bisa dipilih sebagai anggota utama.
+                        const niksToDisable = [ketuaNik].filter(Boolean);
 
                         anggotaPengabdianSelect.find('option').each(function() {
                             const option = $(this);
@@ -724,7 +727,7 @@
 
                             if (!optionNik) return; // Lewati placeholder
 
-                            // Nonaktifkan jika NIK ada di daftar niksToDisable
+                            // Nonaktifkan jika NIK adalah Ketua
                             if (niksToDisable.includes(optionNik)) {
                                 option.prop('disabled', true);
                             } else {
