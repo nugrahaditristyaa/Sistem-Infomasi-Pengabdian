@@ -1583,17 +1583,10 @@
                         <!-- All Data Chart Container -->
                         <div id="allChartContainer" class="chart-container {{ $filterYear !== 'all' ? '' : 'd-none' }}">
                             <div class="chart-bar-scrollable"
-                                style="max-height: 600px; overflow-y: auto; overflow-x: hidden; border: 1px solid #e3e6f0; border-radius: 8px; padding: 20px; background-color: #f8f9fc;">
+                                style="max-height: 600px; overflow-y: auto; overflow-x: auto; border: none; border-radius: 8px; padding: 20px; background-color: #ffffff;">
                                 <div style="height: {{ $maxCanvasHeight }}px; min-width: 900px;">
                                     <canvas id="dosenAllChart" width="100%" height="{{ $maxCanvasHeight }}"></canvas>
                                 </div>
-                            </div>
-                            <div class="mt-3 text-center">
-                                <small class="text-muted">
-                                    <i class="fas fa-scroll mr-1"></i>
-                                    <strong>Tips:</strong> Gunakan scroll untuk navigasi. Total: <span
-                                        class="font-weight-bold text-primary">{{ $allDosenCount }}</span> dosen
-                                </small>
                             </div>
                         </div>
                     </div>
@@ -2451,7 +2444,7 @@
                         },
                         layout: {
                             padding: {
-                                right: 50,
+                                right: 80,
                                 top: 10,
                                 bottom: 10,
                                 left: 10
