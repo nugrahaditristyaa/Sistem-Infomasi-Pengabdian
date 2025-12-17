@@ -229,7 +229,7 @@
                         <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-info" id="btn-tampilkan-form-mhs-baru">
+                <button type="button" class="btn btn-sm btn-info" id="btn-tampilkan-form-mhs-baru">
                     <i class="fas fa-plus fa-sm mr-1"></i> Tambah Mahasiswa Baru (jika belum terdaftar)
                 </button>
                 <div id="mahasiswa-baru-section" style="display: none;">

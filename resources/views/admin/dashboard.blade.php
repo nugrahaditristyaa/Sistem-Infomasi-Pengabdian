@@ -1541,6 +1541,18 @@
 
                 <!-- [ 2. Rekap Pengabdian per Dosen ] (Unified Chart with Toggle) -->
                 <div class="card shadow mb-4 modern-card">
+                    @php
+                        // Hitung total semua dosen untuk chart sizing
+                        $allDosenCount = count($namaDosen ?? []);
+                        $top5DosenCount = min($allDosenCount, 5);
+                        $maxCanvasHeight = max(600, $allDosenCount * 100);
+
+                        // Hitung dosen aktif (yang punya pengabdian > 0) untuk badge
+                        // Menggunakan collect() untuk menangani baik Array maupun Collection
+                        $activeDosenCount = collect($jumlahPengabdianDosen ?? [])->filter(function($val) {
+                            return $val > 0;
+                        })->count();
+                    @endphp
                     <div class="card-header py-3">
                         <div class="row align-items-center">
                             <div class="col-md-6">
@@ -1567,16 +1579,11 @@
                                 </a>
                             </div>
                             <div class="mt-1">
-                                <span class="badge badge-primary mr-1">Total Dosen: {{ count($namaDosen ?? []) }}</span>
+                                <span class="badge badge-primary mr-1">Total Dosen: {{ $activeDosenCount }}</span>
                             </div>
                         </div>
                     </div>
                     <div class="card-body">
-                        @php
-                            $allDosenCount = count($namaDosen ?? []);
-                            $top5DosenCount = min($allDosenCount, 5);
-                            $maxCanvasHeight = max(600, $allDosenCount * 60);
-                        @endphp
 
                         <!-- Top 5 Chart Container -->
                         <div id="top5ChartContainer" class="chart-container {{ $filterYear !== 'all' ? 'd-none' : '' }}">
@@ -2401,10 +2408,11 @@
                         scales: {
                             x: {
                                 beginAtZero: true,
+                                grace: '10%', // Add breathing room for bars
                                 ticks: {
                                     precision: 0,
                                     font: {
-                                        size: 12
+                                        size: 10
                                     }
                                 },
                                 grid: {
@@ -2413,8 +2421,31 @@
                             },
                             y: {
                                 ticks: {
+                                    autoSkip: false, // Show all names
                                     font: {
                                         size: 14
+                                    },
+                                    callback: function(value) {
+                                        // Wrap long labels into multiple lines
+                                        const label = this.getLabelForValue(value);
+                                        const maxLength = 15; // Max chars per line
+                                        if (label.length > maxLength) {
+                                            const words = label.split(' ');
+                                            const lines = [];
+                                            let currentLine = words[0];
+
+                                            for (let i = 1; i < words.length; i++) {
+                                                if ((currentLine + " " + words[i]).length < maxLength) {
+                                                    currentLine += " " + words[i];
+                                                } else {
+                                                    lines.push(currentLine);
+                                                    currentLine = words[i];
+                                                }
+                                            }
+                                            lines.push(currentLine);
+                                            return lines;
+                                        }
+                                        return label;
                                     }
                                 },
                                 grid: {
@@ -2450,10 +2481,10 @@
                         },
                         layout: {
                             padding: {
-                                right: 80,
+                                right: 120, // Extra padding for value labels
                                 top: 10,
                                 bottom: 10,
-                                left: 10
+                                left: 40    // Extra padding for long names
                             }
                         }
                     }
@@ -2656,11 +2687,21 @@
 
                     const labels = luaranData.map(item => item.g);
                     const values = luaranData.map(item => item.v);
-                    const colors = [
-                        '#4e73df', '#1cc88a', '#36b9cc',
-                        '#f6c23e', '#e74a3b', '#858796',
-                        '#6f42c1', '#fd7e14', '#20c997'
-                    ];
+                    
+                    // Generate gradient colors based on values (darker = higher value)
+                    const backgroundColors = values.map(value => {
+                        const maxValue = Math.max(...values);
+                        const baseColor = [78, 115, 223]; // RGB for #4e73df (primary)
+                        
+                        if (maxValue === 0) return `rgb(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]})`;
+
+                        // Calculate opacity: max value = 1.0, min value = near 0.3
+                        const minOpacity = 0.3;
+                        const maxOpacity = 1.0;
+                        const opacity = minOpacity + (maxOpacity - minOpacity) * (value / maxValue);
+
+                        return `rgba(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, ${opacity.toFixed(2)})`;
+                    });
 
                     new Chart(document.getElementById("luaranBarChart"), {
                         type: 'bar',
@@ -2669,9 +2710,8 @@
                             datasets: [{
                                 label: 'Jumlah Luaran',
                                 data: values,
-                                backgroundColor: colors.slice(0, labels.length),
-                                borderColor: colors.slice(0, labels.length),
-                                borderWidth: 1,
+                                backgroundColor: backgroundColors,
+                                borderWidth: 0,
                                 borderRadius: 4,
                                 borderSkipped: false,
                             }]
@@ -2703,8 +2743,9 @@
                                 },
                                 y: {
                                     beginAtZero: true,
+                                    grace: '15%', // Extend axis by 15% to fit labels
                                     grid: {
-                                        color: 'rgba(0, 0, 0, 0.1)'
+                                        display: false
                                     },
                                     ticks: {
                                         stepSize: 1,
@@ -2755,11 +2796,21 @@
                                             };
                                         }
                                     }
+                                },
+                                datalabels: {
+                                    display: true,
+                                    anchor: 'end',
+                                    align: 'top',
+                                    color: '#858796',
+                                    font: {
+                                        weight: 'bold'
+                                    },
+                                    formatter: Math.round
                                 }
                             },
                             layout: {
                                 padding: {
-                                    top: 10,
+                                    top: 40,
                                     right: 20,
                                     bottom: 10,
                                     left: 10
