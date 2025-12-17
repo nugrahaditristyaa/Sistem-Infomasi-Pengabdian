@@ -1291,6 +1291,7 @@
                                     onclick="showStatisticsModal('pengabdian', 'Total Pengabdian')">
                                     <i class="fas fa-eye mr-1"></i> Lihat Detail
                                 </button>
+
                             </div>
                         </div>
                     </div>
@@ -1559,6 +1560,11 @@
                                     data-order="desc" title="Urutkan jumlah (tertinggi ke terendah)">
                                     <i class="fas fa-sort-amount-down mr-1"></i>Urutkan
                                 </button>
+
+                                <a href="{{ route('admin.dosen.rekap', ['year' => $filterYear]) }}" class="btn btn-sm btn-outline-primary mt-2"
+                                    title="Lihat Detail Lengkap">
+                                    <i class="fas fa-list mr-1"></i>Detail
+                                </a>
                             </div>
                             <div class="mt-1">
                                 <span class="badge badge-primary mr-1">Total Dosen: {{ count($namaDosen ?? []) }}</span>
@@ -3018,3 +3024,4 @@ $dataMissing = implode('|', $dataMissingArr);
 
         </script>
     @endpush
+            
