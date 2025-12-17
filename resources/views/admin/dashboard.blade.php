@@ -4,6 +4,7 @@
 
     @push('styles')
         {{-- <style>
+
             .quick-access-btn .icon-circle {
                 width: 40px;
                 height: 40px;
@@ -2408,7 +2409,7 @@
                         scales: {
                             x: {
                                 beginAtZero: true,
-                                grace: '10%', // Add breathing room for bars
+                                grace: '5%', // Add breathing room for bars
                                 ticks: {
                                     precision: 0,
                                     font: {
@@ -2481,10 +2482,10 @@
                         },
                         layout: {
                             padding: {
-                                right: 120, // Extra padding for value labels
+                                right: 0, // Extra padding for value labels
                                 top: 10,
-                                bottom: 10,
-                                left: 40    // Extra padding for long names
+                                bottom: 0,
+                                left: 19    // Extra padding for long names
                             }
                         }
                     }

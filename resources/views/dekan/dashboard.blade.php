@@ -2160,7 +2160,7 @@
                 const tooltip = d3.select("body").append("div")
                     .attr("class", "treemap-tooltip")
                     .style("opacity", 0)
-                    .style("position", "absolute")
+                    .style("position", "fixed") // Fixed positioning to prevent scroll issues
                     .style("text-align", "center")
                     .style("padding", "12px")
                     .style("font", "12px Nunito, sans-serif")
@@ -2169,7 +2169,7 @@
                     .style("border-radius", "8px")
                     .style("box-shadow", "0 4px 12px rgba(0, 0, 0, 0.15)")
                     .style("pointer-events", "none")
-                    .style("z-index", "1000");
+                    .style("z-index", "9999"); // High Z-Index
 
                 // Create cells
                 const leaf = g.selectAll("g")
@@ -2186,36 +2186,36 @@
                     .attr("stroke-width", 2)
                     .attr("rx", 6)
                     .style("cursor", "pointer")
-                    .style("transition", "all 0.3s ease")
+                    .style("transition", "all 0.1s ease") // Faster transition
                     .on("mouseover", function(event, d) {
-                        // Highlight effect
                         d3.select(this)
                             .attr("stroke-width", 3)
-                            .style("filter", "brightness(1.1)");
+                            .style("filter", "brightness(1.05)"); // Reduced brightness intensity
 
                         const percentage = ((d.value / total) * 100).toFixed(1);
 
-                        tooltip.transition()
-                            .duration(200)
-                            .style("opacity", .95);
-
-                        tooltip.html(`
-                            <div style="font-weight: bold; color: #1f2937; margin-bottom: 4px;">${d.data.name}</div>
-                            <div style="color: #374151;">Jumlah: ${d.value} luaran</div>
-                            <div style="color: #6b7280;">Persentase: ${percentage}%</div>
-                        `)
-                            .style("left", (event.pageX + 10) + "px")
-                            .style("top", (event.pageY - 28) + "px");
+                        tooltip.style("opacity", 1)
+                               .html(`
+                                    <div style="font-weight: bold; color: #1f2937; margin-bottom: 4px;">${d.data.name}</div>
+                                    <div style="color: #374151;">Jumlah: ${d.value} luaran</div>
+                                    <div style="color: #6b7280;">Persentase: ${percentage}%</div>
+                                `);
+                        
+                        // Initial Position
+                        tooltip.style("left", (event.clientX + 10) + "px")
+                               .style("top", (event.clientY - 28) + "px");
+                    })
+                    .on("mousemove", function(event) {
+                        // Update position on move
+                        tooltip.style("left", (event.clientX + 10) + "px")
+                               .style("top", (event.clientY - 28) + "px");
                     })
                     .on("mouseout", function(d) {
-                        // Remove highlight effect
                         d3.select(this)
                             .attr("stroke-width", 2)
                             .style("filter", "brightness(1)");
 
-                        tooltip.transition()
-                            .duration(500)
-                            .style("opacity", 0);
+                        tooltip.style("opacity", 0);
                     });
 
                 // Add text labels

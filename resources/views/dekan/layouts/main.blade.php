@@ -23,6 +23,42 @@
     <!-- Chart.js v3 CSS (if needed) -->
 
     <style>
+
+/* Konten halaman wajib putih (SB Admin 2 default) */
+/* 1. RESET & BASICS */
+html {
+    overflow-y: scroll; /* Prevent scrollbar jump */
+}
+
+html, body, #wrapper, #content-wrapper, #content {
+    background-color: #f8f9fc !important;
+    background-image: none !important;
+}
+
+/* SB Admin 2 requires html/body height 100% */
+html, body {
+    height: 100%;
+}
+
+/* 2. SIDEBAR - STRICTLY BLUE */
+#accordionSidebar {
+    background-color: #4e73df !important;
+    background-image: linear-gradient(180deg, #4e73df 10%, #224abe 100%) !important;
+    background-size: cover !important;
+    background-repeat: no-repeat !important;
+    /* Ensure no white leaks */
+    z-index: 1030; 
+}
+
+/* Prevent accidental gradient inheritance on wrapper */
+body.bg-gradient-primary,
+#wrapper.bg-gradient-primary,
+#content-wrapper.bg-gradient-primary {
+    background: #f8f9fc !important;
+    background-image: none !important;
+}
+
+
         /* Modern UI Styles */
         .modern-card {
             border-radius: 16px;
