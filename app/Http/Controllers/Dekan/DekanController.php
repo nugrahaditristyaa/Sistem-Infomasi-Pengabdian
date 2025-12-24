@@ -2001,114 +2001,152 @@ class DekanController extends Controller
     public function getSparklineData(Request $request)
     {
         try {
-            // Get all available years from pengabdian data
-            $availableYears = Pengabdian::selectRaw('YEAR(tanggal_pengabdian) as year')
-                ->distinct()
-                ->orderBy('year', 'asc')
-                ->pluck('year')
-                ->toArray();
-
-            // If no data, create a range from current year - 6 to current year
-            if (empty($availableYears)) {
-                $currentYear = date('Y');
-                $availableYears = range($currentYear - 6, $currentYear);
-            } else {
-                // Ensure we have at least 7 years of data for better trend visualization
-                $currentYear = date('Y');
-                $minYear = min($availableYears);
-                $maxYear = max($availableYears);
-
-                // Extend range if needed to show trends better
-                if ($maxYear - $minYear < 6) {
-                    $startYear = max($minYear, $currentYear - 6); // Show at least last 7 years
-                    $endYear = $currentYear;
-                    $yearRange = range($startYear, $endYear);
-                } else {
-                    $yearRange = $availableYears;
-                }
-            }
-
-            $sparklineData = [];
-
+            // Get year filter from request
+            $filterYear = $request->get('year', 'all');
+            
             // Determine prodi filter for Kaprodi users
             $prodiFilter = $this->getProdiFilterForCurrentUser();
 
-            foreach ($availableYears as $year) {
-                // Total pengabdian per year
-                $pengabdianCount = Pengabdian::whereYear('tanggal_pengabdian', $year)
-                    ->when($prodiFilter, function ($q) use ($prodiFilter) {
-                        $q->whereExists(function ($sub) use ($prodiFilter) {
-                            $sub->select(DB::raw(1))
-                                ->from('pengabdian_dosen')
-                                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
-                                ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
-                                ->where('dosen.prodi', $prodiFilter);
-                        });
-                    })
-                    ->count();
+            $sparklineData = [];
+            $period = 'yearly';
 
-                // Unique dosen per year
-                $dosenCount = DB::table('pengabdian_dosen')
-                    ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
-                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
-                    ->whereYear('pengabdian.tanggal_pengabdian', $year)
-                    ->when($prodiFilter, function ($q) use ($prodiFilter) {
-                        $q->where('dosen.prodi', $prodiFilter);
-                    })
-                    ->distinct('pengabdian_dosen.nik')
-                    ->count('pengabdian_dosen.nik');
+            // If a specific year is selected, show monthly data for that year
+            if ($filterYear !== 'all') {
+                $period = 'monthly';
+                
+                // Generate data for each month (1-12) of the selected year
+                for ($month = 1; $month <= 12; $month++) {
+                    // Total pengabdian per month
+                    $pengabdianCount = Pengabdian::whereYear('tanggal_pengabdian', $filterYear)
+                        ->whereMonth('tanggal_pengabdian', $month)
+                        ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                            $q->whereExists(function ($sub) use ($prodiFilter) {
+                                $sub->select(DB::raw(1))
+                                    ->from('pengabdian_dosen')
+                                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                                    ->where('dosen.prodi', $prodiFilter);
+                            });
+                        })
+                        ->count();
 
-                // Percentage of pengabdian with mahasiswa per year
-                $totalPengabdianYear = Pengabdian::whereYear('tanggal_pengabdian', $year)
-                    ->when($prodiFilter, function ($q) use ($prodiFilter) {
-                        $q->whereExists(function ($sub) use ($prodiFilter) {
-                            $sub->select(DB::raw(1))
-                                ->from('pengabdian_dosen')
-                                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
-                                ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
-                                ->where('dosen.prodi', $prodiFilter);
-                        });
-                    })
-                    ->count();
+                    // Unique dosen per month
+                    $dosenCount = DB::table('pengabdian_dosen')
+                        ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereYear('pengabdian.tanggal_pengabdian', $filterYear)
+                        ->whereMonth('pengabdian.tanggal_pengabdian', $month)
+                        ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                            $q->where('dosen.prodi', $prodiFilter);
+                        })
+                        ->distinct('pengabdian_dosen.nik')
+                        ->count('pengabdian_dosen.nik');
 
-                $pengabdianWithMahasiswaYear = Pengabdian::whereYear('tanggal_pengabdian', $year)
-                    ->when($prodiFilter, function ($q) use ($prodiFilter) {
-                        $q->whereExists(function ($sub) use ($prodiFilter) {
-                            $sub->select(DB::raw(1))
-                                ->from('pengabdian_dosen')
-                                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
-                                ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
-                                ->where('dosen.prodi', $prodiFilter);
-                        });
-                    })
-                    ->whereHas('mahasiswa')
-                    ->count();
+                    // Count of pengabdian with mahasiswa per month
+                    $pengabdianWithMahasiswaMonth = Pengabdian::whereYear('tanggal_pengabdian', $filterYear)
+                        ->whereMonth('tanggal_pengabdian', $month)
+                        ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                            $q->whereExists(function ($sub) use ($prodiFilter) {
+                                $sub->select(DB::raw(1))
+                                    ->from('pengabdian_dosen')
+                                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                                    ->where('dosen.prodi', $prodiFilter);
+                            });
+                        })
+                        ->whereHas('mahasiswa')
+                        ->count();
 
-                $mahasiswaPercentage = $totalPengabdianYear > 0
-                    ? round(($pengabdianWithMahasiswaYear / $totalPengabdianYear) * 100, 1)
-                    : 0;
+                    $sparklineData[] = [
+                        'period' => $month,
+                        'pengabdian' => $pengabdianCount,
+                        'dosen' => $dosenCount,
+                        'mahasiswa' => $pengabdianWithMahasiswaMonth
+                    ];
+                }
+                
+                // Extract only the values for each metric
+                $pengabdianData = array_column($sparklineData, 'pengabdian');
+                $dosenData = array_column($sparklineData, 'dosen');
+                $mahasiswaData = array_column($sparklineData, 'mahasiswa');
+                $periods = array_column($sparklineData, 'period');
+                
+            } else {
+                // Show yearly data for all years
+                // Get all available years from pengabdian data
+                $availableYears = Pengabdian::selectRaw('YEAR(tanggal_pengabdian) as year')
+                    ->distinct()
+                    ->orderBy('year', 'asc')
+                    ->pluck('year')
+                    ->toArray();
 
-                $sparklineData[] = [
-                    'year' => $year,
-                    'pengabdian' => $pengabdianCount,
-                    'dosen' => $dosenCount,
-                    'mahasiswa' => $mahasiswaPercentage
-                ];
+                // If no data, create a range from current year - 6 to current year
+                if (empty($availableYears)) {
+                    $currentYear = date('Y');
+                    $availableYears = range($currentYear - 6, $currentYear);
+                }
+
+                foreach ($availableYears as $year) {
+                    // Total pengabdian per year
+                    $pengabdianCount = Pengabdian::whereYear('tanggal_pengabdian', $year)
+                        ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                            $q->whereExists(function ($sub) use ($prodiFilter) {
+                                $sub->select(DB::raw(1))
+                                    ->from('pengabdian_dosen')
+                                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                                    ->where('dosen.prodi', $prodiFilter);
+                            });
+                        })
+                        ->count();
+
+                    // Unique dosen per year
+                    $dosenCount = DB::table('pengabdian_dosen')
+                        ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                        ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                        ->whereYear('pengabdian.tanggal_pengabdian', $year)
+                        ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                            $q->where('dosen.prodi', $prodiFilter);
+                        })
+                        ->distinct('pengabdian_dosen.nik')
+                        ->count('pengabdian_dosen.nik');
+
+                    // Count of pengabdian with mahasiswa per year
+                    $pengabdianWithMahasiswaYear = Pengabdian::whereYear('tanggal_pengabdian', $year)
+                        ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                            $q->whereExists(function ($sub) use ($prodiFilter) {
+                                $sub->select(DB::raw(1))
+                                    ->from('pengabdian_dosen')
+                                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                                    ->where('dosen.prodi', $prodiFilter);
+                            });
+                        })
+                        ->whereHas('mahasiswa')
+                        ->count();
+
+                    $sparklineData[] = [
+                        'period' => $year,
+                        'pengabdian' => $pengabdianCount,
+                        'dosen' => $dosenCount,
+                        'mahasiswa' => $pengabdianWithMahasiswaYear
+                    ];
+                }
+                
+                // Extract only the values for each metric
+                $pengabdianData = array_column($sparklineData, 'pengabdian');
+                $dosenData = array_column($sparklineData, 'dosen');
+                $mahasiswaData = array_column($sparklineData, 'mahasiswa');
+                $periods = array_column($sparklineData, 'period');
             }
-
-            // Extract only the values for each metric
-            $pengabdianData = array_column($sparklineData, 'pengabdian');
-            $dosenData = array_column($sparklineData, 'dosen');
-            $mahasiswaData = array_column($sparklineData, 'mahasiswa');
-            $years = array_column($sparklineData, 'year');
 
             return response()->json([
                 'success' => true,
                 'pengabdian' => $pengabdianData,
                 'dosen' => $dosenData,
                 'mahasiswa' => $mahasiswaData,
-                'years' => $years,
-                'period' => 'yearly',
+                'years' => $periods, // Keep 'years' key for backward compatibility
+                'period' => $period,
                 'count' => count($sparklineData)
             ]);
         } catch (\Exception $e) {

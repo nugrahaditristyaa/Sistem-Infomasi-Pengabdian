@@ -1255,8 +1255,11 @@
 
             // === SPARKLINE CHARTS ===
             function loadSparklineCharts() {
-                // Load sparkline data from API
-                fetch('{{ route('dekan.api.sparkline-data') }}')
+                // Get current year filter from the page
+                const currentYear = '{{ $filterYear }}';
+
+                // Load sparkline data from API with year parameter
+                fetch('{{ route('dekan.api.sparkline-data') }}?year=' + currentYear)
                     .then(response => response.json())
                     .then(data => {
                         console.log('Sparkline data received:', data); // Debug log
@@ -1337,6 +1340,14 @@
                             y: {
                                 display: false,
                                 beginAtZero: true
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                top: 3,
+                                bottom: 3,
+                                left: 2,
+                                right: 2
                             }
                         }
                     }

@@ -2250,8 +2250,11 @@
                 // Always render a visible placeholder immediately
                 renderDummySparklines();
 
-                // Load sparkline data from API
-                fetch('{{ route('dekan.api.sparkline-data') }}')
+                // Get current year filter from the page
+                const currentYear = '{{ $filterYear }}';
+
+                // Load sparkline data from API with year parameter
+                fetch('{{ route('dekan.api.sparkline-data') }}?year=' + currentYear)
                     .then(response => {
                         if (!response.ok) throw new Error('HTTP ' + response.status);
                         return response.json();
@@ -2360,6 +2363,14 @@
                             y: {
                                 display: false,
                                 beginAtZero: true
+                            }
+                        },
+                        layout: {
+                            padding: {
+                                top: 3,
+                                bottom: 3,
+                                left: 2,
+                                right: 2
                             }
                         }
                     }
