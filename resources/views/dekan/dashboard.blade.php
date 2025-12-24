@@ -1300,7 +1300,7 @@
                 new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: data.map((_, i) => ''),
+                        labels: years || data.map((_, i) => i + 1),
                         datasets: [{
                             data: data,
                             borderColor: color,
@@ -1308,11 +1308,14 @@
                             borderWidth: 2,
                             fill: true,
                             tension: 0.4,
-                            pointRadius: 0,
-                            pointHoverRadius: 0,
-                            pointBackgroundColor: 'transparent',
-                            pointBorderColor: 'transparent',
-                            pointBorderWidth: 0
+                            pointRadius: 2.5,
+                            pointBackgroundColor: color,
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 1,
+                            pointHoverRadius: 5,
+                            pointHoverBackgroundColor: color,
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2
                         }]
                     },
                     options: {
@@ -1320,14 +1323,36 @@
                         maintainAspectRatio: false,
                         interaction: {
                             intersect: false,
-                            mode: 'none'
+                            mode: 'index'
                         },
                         plugins: {
                             legend: {
                                 display: false
                             },
                             tooltip: {
-                                enabled: false
+                                enabled: true,
+                                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                borderColor: color,
+                                borderWidth: 1,
+                                padding: 8,
+                                displayColors: false,
+                                callbacks: {
+                                    title: function(context) {
+                                        const label = context[0].label;
+                                        // If it's a month number (1-12), convert to month name
+                                        if (label >= 1 && label <= 12) {
+                                            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                                            return monthNames[label - 1];
+                                        }
+                                        // Otherwise return the year
+                                        return 'Tahun ' + label;
+                                    },
+                                    label: function(context) {
+                                        return 'Total: ' + context.parsed.y;
+                                    }
+                                }
                             },
                             datalabels: {
                                 display: false
@@ -1339,15 +1364,16 @@
                             },
                             y: {
                                 display: false,
-                                beginAtZero: true
+                                beginAtZero: true,
+                                grace: '10%'  // Add 10% padding to top and bottom to prevent clipping
                             }
                         },
                         layout: {
                             padding: {
-                                top: 3,
-                                bottom: 3,
-                                left: 2,
-                                right: 2
+                                top: 5,
+                                bottom: 5,
+                                left: 3,
+                                right: 3
                             }
                         }
                     }
