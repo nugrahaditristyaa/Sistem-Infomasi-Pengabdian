@@ -24,7 +24,7 @@ class DekanController extends Controller
     {
         if (!$request->has('year')) {
             // Redirect to current year if 'year' parameter is missing
-            return redirect()->route('dekan.dashboard', ['year' => date('2024')]);
+            return redirect()->route('dekan.dashboard', ['year' => '2024']);
         }
 
         // Year filter logic (same as admin)

@@ -40,33 +40,7 @@ class KaprodiController extends Controller
     private function dashboard(Request $request, $prodiFilter)
     {
         if (!$request->has('year')) {
-            // Gunakan tahun dengan data pengabdian terbanyak sebagai default
-            $baseProdiFilter = function ($query) use ($prodiFilter) {
-                $query->where(function ($q) use ($prodiFilter) {
-                    $q->whereExists(function ($subQuery) use ($prodiFilter) {
-                        $subQuery->select(DB::raw(1))
-                            ->from('pengabdian_dosen')
-                            ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
-                            ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
-                            ->where('dosen.prodi', $prodiFilter);
-                    })
-                    ->orWhereExists(function ($subQuery) use ($prodiFilter) {
-                        $subQuery->select(DB::raw(1))
-                            ->from('dosen')
-                            ->whereColumn('dosen.nik', 'pengabdian.ketua_pengabdian')
-                            ->where('dosen.prodi', $prodiFilter);
-                    });
-                });
-            };
-
-            $mostRecentYear = Pengabdian::where($baseProdiFilter)
-                ->selectRaw('YEAR(tanggal_pengabdian) as year, COUNT(*) as count')
-                ->groupBy('year')
-                ->orderBy('count', 'desc')
-                ->orderBy('year', 'desc')
-                ->value('year');
-
-            $defaultYear = $mostRecentYear ?? date('Y');
+            $defaultYear = '2024';
             $route = $prodiFilter === 'Informatika' ? 'kaprodi.ti.dashboard' : 'kaprodi.si.dashboard';
             return redirect()->route($route, ['year' => $defaultYear]);
         }

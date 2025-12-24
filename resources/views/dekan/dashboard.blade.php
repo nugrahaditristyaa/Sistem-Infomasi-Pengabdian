@@ -839,7 +839,14 @@
                                             @endphp
                                             <div class="mb-2">
                                                 <span class="font-weight-bold">{{ $stats['total_dosen'] }}</span> dari
-                                                {{ $stats['total_dosen_keseluruhan'] }} Dosen FTI
+                                                {{ $stats['total_dosen_keseluruhan'] }}
+                                                @if ($userRole === 'Kaprodi TI')
+                                                    Dosen Informatika
+                                                @elseif($userRole === 'Kaprodi SI')
+                                                    Dosen Sistem Informasi
+                                                @else
+                                                    Dosen FTI
+                                                @endif
                                                 ({{ $participationRate }}%)
                                             </div>
                                         @endif
@@ -2228,7 +2235,24 @@
                 leaf.append("text")
                     .selectAll("tspan")
                     .data(d => {
+                        const width = d.x1 - d.x0;
+                        const height = d.y1 - d.y0;
+                        const area = width * height;
+                        
+                        // Tiered display logic based on Area
+                        // Tier 1: Small (Area < 4000) -> No text (Tooltip only)
+                        if (area < 4000) {
+                            return [];
+                        }
+
                         const words = d.data.name.split(/\s+/);
+                        
+                        // Tier 2: Medium (Area < 12000) -> Name only
+                        if (area < 12000) {
+                            return words;
+                        }
+
+                        // Tier 3: Large (Area >= 12000) -> Name + Value + Percentage
                         const percentage = ((d.value / total) * 100).toFixed(1);
                         return words.concat([`${d.value}`, `(${percentage}%)`]);
                     })
@@ -2244,32 +2268,29 @@
                     })
                     .style("font-size", (d, i, nodes) => {
                         const parentRect = d3.select(nodes[0].parentNode.previousSibling);
-                        const rectWidth = +parentRect.attr("width");
-                        const rectHeight = +parentRect.attr("height");
+                        const area = (+parentRect.attr("width")) * (+parentRect.attr("height"));
 
-                        // Dynamic font size based on rectangle size
-                        if (rectWidth < 80 || rectHeight < 60) return "10px";
-                        if (rectWidth < 120 || rectHeight < 80) return "11px";
-                        return "12px";
+                        // Dynamic font size based on area
+                        if (area < 12000) return "11px";  // Medium nodes
+                        return "13px";                    // Large nodes
                     })
                     .style("font-weight", (d, i, nodes) => {
-                        // First lines are category name (bold), last two lines are value and percentage
-                        const totalLines = nodes.length;
-                        return i >= totalLines - 2 ? "bold" : "600";
+                        const parentRect = d3.select(nodes[0].parentNode.previousSibling);
+                         const area = (+parentRect.attr("width")) * (+parentRect.attr("height"));
+
+                        // For large nodes (Tier 3), bold the name lines
+                        if (area >= 12000) {
+                             const totalLines = nodes.length;
+                             // Last 2 lines are Value and Percentage, previous are Name
+                             return i < totalLines - 2 ? "bold" : "600";
+                        }
+                        
+                        // For medium nodes (Tier 2), all text is name, so bold it
+                        return "bold";
                     })
                     .style("fill", "white")
                     .style("text-shadow", "0 1px 2px rgba(0,0,0,0.3)")
-                    .text(d => d)
-                    .each(function(d, i, nodes) {
-                        // Hide text if rectangle is too small
-                        const parentRect = d3.select(nodes[0].parentNode.previousSibling);
-                        const rectWidth = +parentRect.attr("width");
-                        const rectHeight = +parentRect.attr("height");
-
-                        if (rectWidth < 60 || rectHeight < 40) {
-                            d3.select(this).style("display", "none");
-                        }
-                    });
+                    .text(d => d);
 
                 // Add animation
                 leaf.selectAll("rect")

@@ -121,32 +121,7 @@
             color: white;
         }
 
-        /* Pagination styling */
-        .pagination .page-link {
-            border-radius: 6px;
-            margin: 0 2px;
-            border: none;
-            color: #4e73df;
-        }
-
-        .pagination .page-item.active .page-link {
-            background: linear-gradient(135deg, #4e73df 0%, #36b9cc 100%);
-            border: none;
-        }
-
-        .pagination {
-            margin-bottom: 0;
-        }
-
-        .pagination .page-item:first-child .page-link,
-        .pagination .page-item:last-child .page-link {
-            border-radius: 6px;
-        }
-
-        .pagination .page-link:hover {
-            background-color: #e3f2fd;
-            color: #2e59d9;
-        }
+        /* Pagination uses global/bootstrap styles to match pengabdian index */
 
         .detail-btn {
             background: linear-gradient(135deg, #4e73df 0%, #36b9cc 100%);
@@ -408,8 +383,8 @@
                         paginate: {
                             first: 'Pertama',
                             last: 'Terakhir',
-                            next: 'Berikutnya',
-                            previous: 'Sebelumnya'
+                            next: 'selanjutnya',
+                            previous: 'sebelumnya'
                         }
                     },
                     columnDefs: [{
