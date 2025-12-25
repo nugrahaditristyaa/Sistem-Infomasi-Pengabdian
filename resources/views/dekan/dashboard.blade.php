@@ -1142,26 +1142,29 @@
                 </div>
             </div>
 
-            @if (isset($prodiFilter) && $prodiFilter === 'Sistem Informasi')
-                <!-- Word Cloud Section (Only for Kaprodi SI) -->
+            @if (isset($prodiFilter) && ($prodiFilter === 'Sistem Informasi' || $prodiFilter === 'Informatika'))
+                <!-- Word Cloud Section (For Kaprodi SI and TI) -->
                 <div class="row">
                     <div class="col-lg-12 mb-4">
                         <div class="card shadow modern-card">
                             <div class="card-header py-3">
                                 <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                    Word Cloud - Pengabdian Sistem Informasi
+                                    Word Cloud - Pengabdian {{ $prodiFilter }}
                                     @if ($filterYear !== 'all')
                                         <span class="text-primary">({{ $filterYear }})</span>
                                     @endif
                                 </h6>
                             </div>
                             <div class="card-body">
-                                @if (count($judulPengabdianSI) > 0)
+                                @php
+                                    $judulData = $prodiFilter === 'Sistem Informasi' ? $judulPengabdianSI : $judulPengabdianTI;
+                                @endphp
+                                @if (count($judulData) > 0)
                                     <div id="wordCloudContainer"></div>
                                     <div class="mt-3 text-center">
                                         <small class="text-muted">
                                             <i class="fas fa-info-circle mr-1"></i>
-                                            <strong>Total:</strong> {{ count($judulPengabdianSI) }} judul pengabdian
+                                            <strong>Total:</strong> {{ count($judulData) }} judul pengabdian
                                         </small>
                                     </div>
                                 @else
@@ -2349,55 +2352,20 @@
 
             // === WORD CLOUD ===
             function createWordCloud() {
-                @if (isset($prodiFilter) && $prodiFilter === 'Sistem Informasi')
-                    const judulPengabdian = @json($judulPengabdianSI);
+                @if (isset($prodiFilter) && ($prodiFilter === 'Sistem Informasi' || $prodiFilter === 'Informatika'))
+                    // Select the appropriate pre-processed data based on prodi filter
+                    const wordCloudData = @if($prodiFilter === 'Sistem Informasi') 
+                        @json($wordCloudDataSI) 
+                    @else 
+                        @json($wordCloudDataTI) 
+                    @endif;
 
-                    if (!judulPengabdian || judulPengabdian.length === 0) {
+                    if (!wordCloudData || wordCloudData.length === 0) {
                         return;
                     }
 
                     // Clear previous content
                     d3.select("#wordCloudContainer").selectAll("*").remove();
-
-                    // Combine all titles into one text
-                    const allText = judulPengabdian.join(' ');
-
-                    // Common words to exclude (stopwords)
-                    const stopWords = new Set([
-                        'dan', 'atau', 'yang', 'di', 'ke', 'dari', 'pada', 'untuk', 'dengan',
-                        'adalah', 'sebagai', 'dalam', 'oleh', 'akan', 'dapat', 'telah', 'ini',
-                        'itu', 'ia', 'mereka', 'kami', 'kita', 'anda', 'saya', 'yang', 'ada',
-                        'tidak', 'juga', 'lebih', 'bisa', 'sudah', 'masih', 'harus', 'antara',
-                        'hingga', 'melalui', 'terhadap', 'atas', 'bagi', 'tersebut', 'suatu',
-                        'the', 'a', 'an', 'of', 'to', 'in', 'for', 'on', 'with', 'as', 'by',
-                        'at', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being'
-                    ]);
-
-                    // Process text to extract word frequencies
-                    const words = allText
-                        .toLowerCase()
-                        .replace(/[^\w\s]/g, ' ') // Remove punctuation
-                        .split(/\s+/)
-                        .filter(word => word.length > 3 && !stopWords.has(word)); // Filter short words and stopwords
-
-                    // Count word frequencies
-                    const wordFreq = {};
-                    words.forEach(word => {
-                        wordFreq[word] = (wordFreq[word] || 0) + 1;
-                    });
-
-                    // Convert to array and sort by frequency
-                    const wordData = Object.entries(wordFreq)
-                        .map(([word, freq]) => ({
-                            word,
-                            freq
-                        }))
-                        .sort((a, b) => b.freq - a.freq)
-                        .slice(0, 50); // Top 50 words
-
-                    if (wordData.length === 0) {
-                        return;
-                    }
 
                     // Set dimensions
                     const container = document.getElementById('wordCloudContainer');
@@ -2406,17 +2374,12 @@
 
                     // Configuration to control positions and layout
                     const cfg = {
-                        centerX: 0.5, // Titik pusat horizontal (tetap 0.5)
-                        centerY: 0.5, // Titik pusat vertikal (tetap 0.5)
-
-                        // Perkecil nilai sebaran (spread) untuk lebih compact
-                        spreadX: 0.2, // Naikkan sedikit untuk memberi ruang
-                        spreadY: 0.2, // Naikkan sedikit untuk memberi ruang
-
-                        padding: 15, // Naikkan padding untuk memberi ruang
-                        collisionPad: 8, // Naikkan untuk mencegah tumpang tindih
-
-                        // Sudut (angles) tetap sama
+                        centerX: 0.5,
+                        centerY: 0.5,
+                        spreadX: 0.2,
+                        spreadY: 0.2,
+                        padding: 15,
+                        collisionPad: 8,
                         angles: [0, 0, 0, 90]
                     };
 
@@ -2433,29 +2396,27 @@
                         '#e74a3b', '#858796', '#5a5c69', '#2e59d9'
                     ]);
 
-                    // Font size scale based on frequency
-                    const maxFreq = d3.max(wordData, d => d.freq);
-                    const minFreq = d3.min(wordData, d => d.freq);
+                    // Font size scale based on count (frequency)
+                    const maxCount = d3.max(wordCloudData, d => d.count);
+                    const minCount = d3.min(wordCloudData, d => d.count);
                     const fontScale = d3.scaleLinear()
-                        .domain([minFreq, maxFreq])
+                        .domain([minCount, maxCount])
                         .range([14, 60]);
 
-                    // Simple word cloud layout using force simulation (configurable)
-                    // Kata dengan frekuensi tinggi diposisikan lebih dekat ke center
-                    const nodes = wordData.map((d, i) => {
-                        // Hitung faktor jarak berdasarkan ranking (kata teratas lebih dekat ke center)
-                        const rankFactor = i / wordData.length; // 0 untuk kata pertama, mendekati 1 untuk kata terakhir
-                        const spreadMultiplier = 0.3 + (rankFactor * 1.5); // Kata teratas: 0.3x, kata terbawah: 1.8x
+                    // Create nodes from pre-processed data
+                    const nodes = wordCloudData.map((d, i) => {
+                        const rankFactor = i / wordCloudData.length;
+                        const spreadMultiplier = 0.3 + (rankFactor * 1.5);
 
                         return {
                             word: d.word,
-                            freq: d.freq,
-                            fontSize: fontScale(d.freq),
+                            count: d.count,
+                            fontSize: fontScale(d.count),
                             x: width * cfg.centerX + (Math.random() - 0.5) * width * cfg.spreadX * spreadMultiplier,
                             y: height * cfg.centerY + (Math.random() - 0.5) * height * cfg.spreadY * spreadMultiplier,
                             color: colorScale(i),
                             rotate: cfg.angles[Math.floor(Math.random() * cfg.angles.length)],
-                            rankFactor: rankFactor // Simpan untuk digunakan di force simulation
+                            rankFactor: rankFactor
                         };
                     });
 
@@ -2480,6 +2441,21 @@
                                 .duration(200)
                                 .attr("font-size", (d.fontSize * 1.2) + "px")
                                 .style("opacity", 1);
+                            
+                            // Show tooltip with frequency
+                            const tooltip = d3.select("body").append("div")
+                                .attr("class", "wordcloud-tooltip")
+                                .style("position", "absolute")
+                                .style("background", "rgba(0, 0, 0, 0.85)")
+                                .style("color", "#fff")
+                                .style("padding", "8px 12px")
+                                .style("border-radius", "4px")
+                                .style("font-size", "12px")
+                                .style("pointer-events", "none")
+                                .style("z-index", "1000")
+                                .html(`<strong>${d.word}</strong><br/>Muncul: ${d.count}x`)
+                                .style("left", (event.pageX + 10) + "px")
+                                .style("top", (event.pageY - 28) + "px");
                         })
                         .on("mouseout", function(event, d) {
                             d3.select(this)
@@ -2487,36 +2463,36 @@
                                 .duration(200)
                                 .attr("font-size", d.fontSize + "px")
                                 .style("opacity", 0.9);
+                            
+                            // Remove tooltip
+                            d3.selectAll(".wordcloud-tooltip").remove();
+                        })
+                        .on("mousemove", function(event) {
+                            d3.selectAll(".wordcloud-tooltip")
+                                .style("left", (event.pageX + 10) + "px")
+                                .style("top", (event.pageY - 28) + "px");
                         });
 
-                    // Apply force simulation to prevent overlaps - DIPERBARUI
+                    // Apply force simulation to prevent overlaps
                     const simulation = d3.forceSimulation(nodes)
-                        .force("charge", d3.forceManyBody().strength(-50)) // Naikkan tolakan untuk mencegah tumpang tindih
-                        .force("center", d3.forceCenter(width * cfg.centerX, height * cfg.centerY).strength(
-                            0.8)) // Kurangi tarikan pusat
+                        .force("charge", d3.forceManyBody().strength(-50))
+                        .force("center", d3.forceCenter(width * cfg.centerX, height * cfg.centerY).strength(0.8))
                         .force("collision", d3.forceCollide().radius(d => {
-                            // Hitung radius berdasarkan ukuran teks yang sebenarnya
                             const textWidth = d.word.length * d.fontSize * 0.6;
                             const textHeight = d.fontSize;
-                            // Gunakan dimensi yang lebih besar untuk collision
                             return Math.max(textWidth, textHeight) / 2 + cfg.collisionPad;
-                        }).strength(1).iterations(3)) // Tambah iterations untuk collision lebih akurat
+                        }).strength(1).iterations(3))
                         .force("x", d3.forceX(width * cfg.centerX).strength(d => {
-                            // Kata dengan frekuensi tinggi (rankFactor kecil) lebih kuat ditarik ke center
-                            return 0.15 + (1 - d.rankFactor) * 0.2; // 0.35 untuk kata teratas, 0.15 untuk kata terbawah
+                            return 0.15 + (1 - d.rankFactor) * 0.2;
                         }))
                         .force("y", d3.forceY(height * cfg.centerY).strength(d => {
-                            // Kata dengan frekuensi tinggi (rankFactor kecil) lebih kuat ditarik ke center
-                            return 0.15 + (1 - d.rankFactor) * 0.2; // 0.35 untuk kata teratas, 0.15 untuk kata terbawah
+                            return 0.15 + (1 - d.rankFactor) * 0.2;
                         }))
-                        .velocityDecay(0.4) // Tambah decay untuk stabilisasi lebih cepat
+                        .velocityDecay(0.4)
                         .on("tick", () => {
-                            // Clamp positions to keep words inside padded area
                             nodes.forEach(d => {
-                                d.x = Math.max(cfg.padding + d.fontSize, Math.min(width - cfg.padding - d.fontSize,
-                                    d.x));
-                                d.y = Math.max(cfg.padding + d.fontSize, Math.min(height - cfg.padding - d.fontSize,
-                                    d.y));
+                                d.x = Math.max(cfg.padding + d.fontSize, Math.min(width - cfg.padding - d.fontSize, d.x));
+                                d.y = Math.max(cfg.padding + d.fontSize, Math.min(height - cfg.padding - d.fontSize, d.y));
                             });
                             text.attr("transform", d => `translate(${d.x},${d.y}) rotate(${d.rotate})`);
                         });
@@ -2528,7 +2504,7 @@
                         .style("opacity", 0.9);
 
                     // Stop simulation after stabilization
-                    setTimeout(() => simulation.stop(), 5000); // Perpanjang waktu simulasi
+                    setTimeout(() => simulation.stop(), 5000);
                 @endif
             }
 

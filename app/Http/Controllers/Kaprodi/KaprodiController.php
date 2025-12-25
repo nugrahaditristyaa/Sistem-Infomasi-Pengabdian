@@ -8,6 +8,7 @@ use App\Models\MonitoringKpi;
 use App\Models\Pengabdian;
 use App\Models\Dosen;
 use App\Models\SumberDana;
+use App\Services\WordCloudServiceEnhanced;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -496,8 +497,27 @@ class KaprodiController extends Controller
         // Jenis Luaran Data (dengan filter prodi)
         $jenisLuaranData = $this->getJenisLuaranTreemapDataWithProdiFilter($filterYear, $prodiFilter);
 
-        // Ambil judul pengabdian untuk word cloud (khusus untuk Kaprodi SI)
+        // Ambil judul pengabdian untuk word cloud (untuk Kaprodi TI dan SI)
         $judulPengabdianSI = [];
+        $judulPengabdianTI = [];
+        $wordCloudDataSI = [];
+        $wordCloudDataTI = [];
+        
+        // Initialize Enhanced WordCloudService with full configuration
+        $wordCloudService = new WordCloudServiceEnhanced([
+            'minTokenLength' => 4,      // Minimum 4 characters
+            'minCount' => 2,            // Must appear at least 2 times (3 for small datasets)
+            'maxWords' => 50,           // Top 50 words/phrases total
+            'maxBigrams' => 20,         // Top 20 bigrams
+            'maxTrigrams' => 10,        // Top 10 trigrams
+            'applyStemming' => true,    // Apply Indonesian stemming
+            'useBigrams' => true,       // Extract 2-word phrases
+            'useTrigrams' => true,      // Extract 3-word phrases
+            'phraseFirst' => true,      // Prioritize phrases over single words
+            'removeSingleOccurrence' => true,  // Remove words that appear only once
+            'smallDatasetThreshold' => 50,     // Adjust rules for datasets < 50 titles
+        ]);
+        
         if ($prodiFilter === 'Sistem Informasi') {
             $judulQuery = Pengabdian::whereExists(function ($query) use ($prodiFilter) {
                 $query->select(DB::raw(1))
@@ -512,6 +532,27 @@ class KaprodiController extends Controller
             }
 
             $judulPengabdianSI = $judulQuery->pluck('judul_pengabdian')->toArray();
+            
+            // Process with Enhanced Service (entity filtering + normalization + trigrams)
+            $wordCloudDataSI = $wordCloudService->processWordCloud($judulPengabdianSI);
+            
+        } elseif ($prodiFilter === 'Informatika') {
+            $judulQuery = Pengabdian::whereExists(function ($query) use ($prodiFilter) {
+                $query->select(DB::raw(1))
+                    ->from('pengabdian_dosen')
+                    ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                    ->whereColumn('pengabdian_dosen.id_pengabdian', 'pengabdian.id_pengabdian')
+                    ->where('dosen.prodi', $prodiFilter);
+            });
+
+            if ($filterYear !== 'all') {
+                $judulQuery->whereYear('tanggal_pengabdian', $filterYear);
+            }
+
+            $judulPengabdianTI = $judulQuery->pluck('judul_pengabdian')->toArray();
+            
+            // Process with Enhanced Service (entity filtering + normalization + trigrams)
+            $wordCloudDataTI = $wordCloudService->processWordCloud($judulPengabdianTI);
         }
 
         // Gunakan view inqa.dashboard
@@ -529,6 +570,9 @@ class KaprodiController extends Controller
             'jumlahPengabdianDosen',
             'jenisLuaranData',
             'judulPengabdianSI',
+            'judulPengabdianTI',
+            'wordCloudDataSI',
+            'wordCloudDataTI',
             'prodiFilter'
         ));
     }
