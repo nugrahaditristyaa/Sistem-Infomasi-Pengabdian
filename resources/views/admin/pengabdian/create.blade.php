@@ -199,6 +199,12 @@
                     @error('ketua_nik')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
+
+                    {{-- 2. TAMBAHKAN TOMBOL INI --}}
+                    <button type="button" class="btn btn-sm btn-info" id="btn-tambah-dosen-eksternal">
+                        <i class="fas fa-plus fa-fw mr-2"></i> Tambah Dosen Eksternal
+                    </button>
+                    {{-- 2. TAMBAHKAN TOMBOL INI --}}
                 </div>
                 <div class="row">
                     <div class="col-md-12">
@@ -218,6 +224,12 @@
                                 <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
+
+                        {{-- 2. TAMBAHKAN TOMBOL INI --}}
+                        <button type="button" class="btn btn-sm btn-info" id="btn-tambah-dosen-eksternal">
+                            <i class="fas fa-plus fa-fw mr-2"></i> Tambah Dosen Eksternal
+                        </button>
+                        {{-- 2. TAMBAHKAN TOMBOL INI --}}
                     </div>
                 </div>
             </div>

@@ -2352,7 +2352,25 @@
 
             // === WORD CLOUD ===
             function createWordCloud() {
+                console.log('=== WORD CLOUD DEBUG START ===');
+                console.log('createWordCloud() called');
+                console.log('prodiFilter isset:', {{ isset($prodiFilter) ? 'true' : 'false' }});
+                @if (isset($prodiFilter))
+                    console.log('prodiFilter value:', '{{ $prodiFilter }}');
+                @endif
+                
                 @if (isset($prodiFilter) && ($prodiFilter === 'Sistem Informasi' || $prodiFilter === 'Informatika'))
+                    console.log('✓ Prodi Filter matched:', '{{ $prodiFilter }}');
+                    
+                    // Log raw title data
+                    @if($prodiFilter === 'Sistem Informasi')
+                        console.log('Raw Judul Data (SI):', @json($judulPengabdianSI ?? []));
+                        console.log('Raw Judul Count (SI):', {{ count($judulPengabdianSI ?? []) }});
+                    @else
+                        console.log('Raw Judul Data (TI):', @json($judulPengabdianTI ?? []));
+                        console.log('Raw Judul Count (TI):', {{ count($judulPengabdianTI ?? []) }});
+                    @endif
+                    
                     // Select the appropriate pre-processed data based on prodi filter
                     const wordCloudData = @if($prodiFilter === 'Sistem Informasi') 
                         @json($wordCloudDataSI) 
@@ -2360,9 +2378,22 @@
                         @json($wordCloudDataTI) 
                     @endif;
 
+                    console.log('Processed Word Cloud Data:', wordCloudData);
+                    console.log('Word Cloud Data Length:', wordCloudData ? wordCloudData.length : 0);
+                    console.log('Word Cloud Data Type:', typeof wordCloudData);
+
                     if (!wordCloudData || wordCloudData.length === 0) {
+                        console.warn('⚠️ No word cloud data available after processing');
+                        console.log('This means either:');
+                        console.log('1. No pengabdian titles exist for this prodi/year');
+                        console.log('2. WordCloudServiceEnhanced filtered out all words');
+                        console.log('3. Check the database for pengabdian records');
+                        console.log('=== WORD CLOUD DEBUG END ===');
                         return;
                     }
+                    
+                    console.log('✓ Word cloud data is valid, proceeding to render...');
+
 
                     // Clear previous content
                     d3.select("#wordCloudContainer").selectAll("*").remove();
@@ -2497,6 +2528,7 @@
                             text.attr("transform", d => `translate(${d.x},${d.y}) rotate(${d.rotate})`);
                         });
 
+
                     // Fade in animation
                     text.transition()
                         .delay((d, i) => i * 20)
@@ -2504,7 +2536,14 @@
                         .style("opacity", 0.9);
 
                     // Stop simulation after stabilization
-                    setTimeout(() => simulation.stop(), 5000);
+                    setTimeout(() => {
+                        simulation.stop();
+                        console.log('✓ Word cloud rendering complete!');
+                        console.log('=== WORD CLOUD DEBUG END ===');
+                    }, 5000);
+                @else
+                    console.log('✗ Prodi filter not matched or not set');
+                    console.log('=== WORD CLOUD DEBUG END ===');
                 @endif
             }
 
