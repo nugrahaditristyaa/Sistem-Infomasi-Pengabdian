@@ -24,7 +24,8 @@ class DosenRekapController extends Controller
             ->orderBy('year', 'desc')
             ->pluck('year');
 
-        $dosenQuery = Dosen::with(['pengabdian' => function ($query) use ($filterYear) {
+        // Apply FTI filter first (only Informatika and Sistem Informasi)
+        $dosenQuery = Dosen::fti()->with(['pengabdian' => function ($query) use ($filterYear) {
             if ($filterYear !== 'all') {
                 $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
             }
@@ -44,7 +45,8 @@ class DosenRekapController extends Controller
         $dosenData = $dosenQuery->orderBy('jumlah_pengabdian', 'desc')
             ->paginate(20);
 
-        $prodiOptions = Dosen::select('prodi')
+        // Get prodi options (only FTI)
+        $prodiOptions = Dosen::fti()->select('prodi')
             ->distinct()
             ->orderBy('prodi')
             ->pluck('prodi');
@@ -71,7 +73,8 @@ class DosenRekapController extends Controller
         $filterYear = $request->get('year', date('Y'));
         $filterProdi = $request->get('prodi', 'all');
 
-        $dosenQuery = Dosen::with(['pengabdian' => function ($query) use ($filterYear) {
+        // Apply FTI filter first (only Informatika and Sistem Informasi)
+        $dosenQuery = Dosen::fti()->with(['pengabdian' => function ($query) use ($filterYear) {
             if ($filterYear !== 'all') {
                 $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
             }

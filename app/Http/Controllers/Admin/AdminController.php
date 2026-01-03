@@ -45,7 +45,11 @@ class AdminController extends Controller
         if ($filterYear === 'all') {
             // Show all time statistics
             $totalPengabdian = Pengabdian::count();
-            $totalDosenTerlibat = DB::table('pengabdian_dosen')->distinct('nik')->count('nik');
+            $totalDosenTerlibat = DB::table('pengabdian_dosen')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereIn('dosen.prodi', ['Informatika', 'Sistem Informasi'])
+                ->distinct('pengabdian_dosen.nik')
+                ->count('pengabdian_dosen.nik');
             $pengabdianDenganMahasiswa = Pengabdian::whereHas('mahasiswa')->count();
 
             // Comparison with previous year
@@ -55,12 +59,16 @@ class AdminController extends Controller
 
             $dosenTerlibatComparison = DB::table('pengabdian_dosen')
                 ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereIn('dosen.prodi', ['Informatika', 'Sistem Informasi'])
                 ->whereYear('pengabdian.tanggal_pengabdian', $currentYear)
                 ->distinct('pengabdian_dosen.nik')
                 ->count('pengabdian_dosen.nik');
 
             $dosenTerlibatPrevious = DB::table('pengabdian_dosen')
                 ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereIn('dosen.prodi', ['Informatika', 'Sistem Informasi'])
                 ->whereYear('pengabdian.tanggal_pengabdian', $previousYear)
                 ->distinct('pengabdian_dosen.nik')
                 ->count('pengabdian_dosen.nik');
@@ -76,6 +84,8 @@ class AdminController extends Controller
             $totalPengabdian = Pengabdian::whereYear('tanggal_pengabdian', $filterYear)->count();
             $totalDosenTerlibat = DB::table('pengabdian_dosen')
                 ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereIn('dosen.prodi', ['Informatika', 'Sistem Informasi'])
                 ->whereYear('pengabdian.tanggal_pengabdian', $filterYear)
                 ->distinct('pengabdian_dosen.nik')
                 ->count('pengabdian_dosen.nik');
@@ -91,6 +101,8 @@ class AdminController extends Controller
             $dosenTerlibatComparison = $totalDosenTerlibat;
             $dosenTerlibatPrevious = DB::table('pengabdian_dosen')
                 ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereIn('dosen.prodi', ['Informatika', 'Sistem Informasi'])
                 ->whereYear('pengabdian.tanggal_pengabdian', $previousFilterYear)
                 ->distinct('pengabdian_dosen.nik')
                 ->count('pengabdian_dosen.nik');
@@ -292,8 +304,8 @@ class AdminController extends Controller
                 ->count('pengabdian_mahasiswa.nim');
         }
 
-        // Get total number of all lecturers in FTI
-        $totalDosenKeseluruhan = Dosen::count();
+        // Get total number of all lecturers in FTI (only Informatika and Sistem Informasi)
+        $totalDosenKeseluruhan = Dosen::fti()->count();
 
         $stats = [
             'total_pengabdian' => $totalPengabdian,
@@ -353,8 +365,8 @@ class AdminController extends Controller
         // Additional data for charts (kept for backward compatibility with the Blade)
         // Data for document completeness chart - will be calculated after completeness logic
 
-        // Hitung total pengabdian (sebagai ketua + anggota) untuk setiap dosen dengan filter tahun
-        $dosenQuery = Dosen::withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
+        // Hitung total pengabdian (sebagai ketua + anggota) untuk setiap dosen FTI dengan filter tahun
+        $dosenQuery = Dosen::fti()->withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
             if ($filterYear !== 'all') {
                 $query->whereYear('tanggal_pengabdian', $filterYear);
             }

@@ -24,6 +24,18 @@ class Dosen extends Model
         'email'
     ];
 
+    // Scopes
+    /**
+     * Scope to filter only FTI lecturers (Informatika and Sistem Informasi)
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeFti($query)
+    {
+        return $query->whereIn('prodi', ['Informatika', 'Sistem Informasi']);
+    }
+
     // Relationships
     public function pengabdianDosen()
     {

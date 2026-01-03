@@ -63,7 +63,7 @@
             data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <a class="collapse-item {{ request()->routeIs('admin.dosen.index') ? 'active' : '' }}"
-                    href="{{ route('admin.dosen.index') }}">Data Dosen FTI</a>
+                    href="{{ route('admin.dosen.index') }}">Data Dosen</a>
                 <a class="collapse-item {{ request()->routeIs('admin.dosen.rekap') ? 'active' : '' }}"
                     href="{{ route('admin.dosen.rekap') }}">Rekap Pengabdian Dosen</a>
             </div>

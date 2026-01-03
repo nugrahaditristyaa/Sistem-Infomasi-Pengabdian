@@ -128,12 +128,16 @@ class DekanController extends Controller
 
             $dosenTerlibatComparison = DB::table('pengabdian_dosen')
                 ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereIn('dosen.prodi', ['Informatika', 'Sistem Informasi'])
                 ->whereYear('pengabdian.tanggal_pengabdian', $currentYear)
                 ->distinct('pengabdian_dosen.nik')
                 ->count('pengabdian_dosen.nik');
 
             $dosenTerlibatPrevious = DB::table('pengabdian_dosen')
                 ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereIn('dosen.prodi', ['Informatika', 'Sistem Informasi'])
                 ->whereYear('pengabdian.tanggal_pengabdian', $previousYear)
                 ->distinct('pengabdian_dosen.nik')
                 ->count('pengabdian_dosen.nik');
@@ -238,12 +242,16 @@ class DekanController extends Controller
 
             $dosenTerlibatComparison = DB::table('pengabdian_dosen')
                 ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereIn('dosen.prodi', ['Informatika', 'Sistem Informasi'])
                 ->whereYear('pengabdian.tanggal_pengabdian', $filterYear)
                 ->distinct('pengabdian_dosen.nik')
                 ->count('pengabdian_dosen.nik');
 
             $dosenTerlibatPrevious = DB::table('pengabdian_dosen')
                 ->join('pengabdian', 'pengabdian_dosen.id_pengabdian', '=', 'pengabdian.id_pengabdian')
+                ->join('dosen', 'pengabdian_dosen.nik', '=', 'dosen.nik')
+                ->whereIn('dosen.prodi', ['Informatika', 'Sistem Informasi'])
                 ->whereYear('pengabdian.tanggal_pengabdian', $previousFilterYear)
                 ->distinct('pengabdian_dosen.nik')
                 ->count('pengabdian_dosen.nik');
@@ -253,7 +261,8 @@ class DekanController extends Controller
             $yearLabel = "vs $previousFilterYear";
         }
 
-        $totalDosenKeseluruhan = Dosen::count();
+        // Get total number of all lecturers in FTI (only Informatika and Sistem Informasi)
+        $totalDosenKeseluruhan = Dosen::fti()->count();
 
         // Calculate percentage change
         $percentageChangePengabdian = $totalPengabdianPrevious > 0 ?
@@ -363,8 +372,8 @@ class DekanController extends Controller
             'mahasiswa_sistem_informasi' => $mahasiswaSistemInformasi,
         ];
 
-        // Hitung total pengabdian (sebagai ketua + anggota) untuk setiap dosen dengan filter tahun
-        $dosenQuery = Dosen::withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
+        // Hitung total pengabdian (sebagai ketua + anggota) untuk setiap dosen FTI dengan filter tahun
+        $dosenQuery = Dosen::fti()->withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
             if ($filterYear !== 'all') {
                 $query->whereYear('tanggal_pengabdian', $filterYear);
             }
@@ -1626,8 +1635,8 @@ class DekanController extends Controller
             ->orderBy('year', 'desc')
             ->pluck('year');
 
-        // Get dosen data with pengabdian count and details
-        $dosenQuery = Dosen::with(['pengabdian' => function ($query) use ($filterYear) {
+        // Get dosen data with pengabdian count and details (FTI only)
+        $dosenQuery = Dosen::fti()->with(['pengabdian' => function ($query) use ($filterYear) {
             if ($filterYear !== 'all') {
                 $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
             }
@@ -1648,8 +1657,8 @@ class DekanController extends Controller
         $dosenData = $dosenQuery->orderBy('jumlah_pengabdian', 'desc')
             ->paginate(20);
 
-        // Get prodi options for filter
-        $prodiOptions = Dosen::select('prodi')
+        // Get prodi options for filter (FTI only)
+        $prodiOptions = Dosen::fti()->select('prodi')
             ->distinct()
             ->orderBy('prodi')
             ->pluck('prodi');
@@ -1676,8 +1685,8 @@ class DekanController extends Controller
         $filterYear = $request->get('year', date('Y'));
         $filterProdi = $request->get('prodi', 'all');
 
-        // Get dosen data with pengabdian count and details
-        $dosenQuery = Dosen::with(['pengabdian' => function ($query) use ($filterYear) {
+        // Get dosen data with pengabdian count and details (FTI only)
+        $dosenQuery = Dosen::fti()->with(['pengabdian' => function ($query) use ($filterYear) {
             if ($filterYear !== 'all') {
                 $query->whereYear('pengabdian.tanggal_pengabdian', $filterYear);
             }

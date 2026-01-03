@@ -78,6 +78,14 @@
             display: none;
         }
 
+        #dosen-baru-ketua-section {
+            display: none;
+        }
+
+        #dosen-baru-anggota-section {
+            display: none;
+        }
+
         /* Selalu sembunyikan tombol hapus pada baris pertama sumber dana */
         #sumber-dana-container .sumber-dana-item:first-child .btn-hapus-sumber-dana {
             display: none;
@@ -89,6 +97,11 @@
 
         /* Selalu sembunyikan tombol hapus di baris pertama mahasiswa baru */
         #mahasiswa-baru-container .mahasiswa-baru-item:first-child .btn-hapus-mhs-baru {
+            display: none;
+        }
+
+        /* Selalu sembunyikan tombol hapus di baris pertama dosen baru anggota */
+        #dosen-baru-anggota-container .dosen-baru-anggota-item:first-child .btn-hapus-dosen-baru-anggota {
             display: none;
         }
     </style>
@@ -157,7 +170,7 @@
                 <div class="form-group">
                     <label>Jenis Luaran yang Direncanakan <span class="text-danger">*</span></label>
                     <small class="form-text text-muted mb-2">
-                        Pilih jenis-jenis luaran yang akan dicapai sesuai proposal.
+                        <i class="fas fa-info-circle text-info"></i> <strong class="text-info">Pilih jenis-jenis luaran yang akan dicapai sesuai proposal.</strong>
                     </small>
                     <div class="checkbox-group @error('jumlah_luaran_direncanakan') is-invalid @enderror">
                         @foreach ($jenisLuaran as $jl)
@@ -180,16 +193,19 @@
             </div>
         </div>
 
-        {{-- Tim Pengabdian --}}
+        {{-- Ketua Pengabdian --}}
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-users fa-fw mr-2"></i>Tim Pengabdian</h6>
+                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-user-tie fa-fw mr-2"></i>Ketua Pengabdian</h6>
             </div>
             <div class="card-body">
+                <small class="form-text text-info mb-3">
+                    <i class="fas fa-info-circle"></i> <strong>Pilih Ketua dari Dosen yang sudah ADA atau tambah Dosen Eksternal (hanya satu cara).</strong>
+                </small>
+                
                 <div class="form-group">
-                    <label for="ketua_nik">Pilih Dosen (Ketua) <span class="text-danger">*</span></label>
-                    <select id="ketua_nik" name="ketua_nik" class="form-control @error('ketua_nik') is-invalid @enderror"
-                        required>
+                    <label for="ketua_nik">Pilih Dosen (Ketua) <span class="text-danger" id="ketua-nik-required">*</span></label>
+                    <select id="ketua_nik" name="ketua_nik" class="form-control @error('ketua_nik') is-invalid @enderror">
                         <option value="" disabled selected>— Pilih Ketua — </option>
                         @foreach ($dosen as $d)
                             <option value="{{ $d->nik }}" {{ old('ketua_nik') == $d->nik ? 'selected' : '' }}>
@@ -199,38 +215,222 @@
                     @error('ketua_nik')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-
-                    {{-- 2. TAMBAHKAN TOMBOL INI --}}
-                    <button type="button" class="btn btn-sm btn-info" id="btn-tambah-dosen-eksternal">
-                        <i class="fas fa-plus fa-fw mr-2"></i> Tambah Dosen Eksternal
-                    </button>
-                    {{-- 2. TAMBAHKAN TOMBOL INI --}}
                 </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <label for="anggota">Pilih Dosen (Anggota)</label>
-                            <select id="anggota" name="anggota[]"
-                                class="form-control @error('anggota.*') is-invalid @enderror" multiple
-                                data-placeholder="Pilih satu atau lebih...">
-                                @foreach ($dosen as $d)
-                                    <option value="{{ $d->nik }}"
-                                        {{ in_array($d->nik, old('anggota', [])) ? 'selected' : '' }}>
-                                        {{ $d->nama }} -
-                                        {{ $d->nidn }}</option>
-                                @endforeach
-                            </select>
-                            @error('anggota.*')
-                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                            @enderror
-                        </div>
 
-                        {{-- 2. TAMBAHKAN TOMBOL INI --}}
-                        <button type="button" class="btn btn-sm btn-info" id="btn-tambah-dosen-eksternal">
-                            <i class="fas fa-plus fa-fw mr-2"></i> Tambah Dosen Eksternal
-                        </button>
-                        {{-- 2. TAMBAHKAN TOMBOL INI --}}
+                {{-- Tombol Tambah Dosen Eksternal (Ketua) --}}
+                <button type="button" class="btn btn-sm btn-info" id="btn-tampilkan-form-dosen-baru-ketua">
+                    <i class="fas fa-plus fa-sm mr-1"></i> Tambah Dosen Eksternal (Ketua)
+                </button>
+
+                {{-- Section Dosen Baru Ketua --}}
+                <div id="dosen-baru-ketua-section" style="display: none;">
+                    <hr class="mt-4 mb-3">
+                    <h6 class="font-weight-bold text-secondary mb-3"><i class="fas fa-user-plus fa-fw mr-1"></i>Tambah Dosen Eksternal (Ketua)</h6>
+                    @error('dosen_baru_ketua')
+                        <div class="alert alert-danger">{{ $message }}</div>
+                    @enderror
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <div class="form-group mb-md-0">
+                                <label>NIK <span class="text-danger">*</span></label>
+                                <input type="text" name="dosen_baru_ketua[nik]" id="dosen_baru_ketua_nik"
+                                    class="form-control @error('dosen_baru_ketua.nik') is-invalid @enderror" 
+                                    placeholder="NIK Dosen" value="{{ old('dosen_baru_ketua.nik') }}">
+                                @error('dosen_baru_ketua.nik')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group mb-md-0">
+                                <label>Nama <span class="text-danger">*</span></label>
+                                <input type="text" name="dosen_baru_ketua[nama]" id="dosen_baru_ketua_nama"
+                                    class="form-control @error('dosen_baru_ketua.nama') is-invalid @enderror" 
+                                    placeholder="Nama Dosen" value="{{ old('dosen_baru_ketua.nama') }}">
+                                @error('dosen_baru_ketua.nama')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group mb-md-0">
+                                <label>NIDN</label>
+                                <input type="text" name="dosen_baru_ketua[nidn]" id="dosen_baru_ketua_nidn"
+                                    class="form-control @error('dosen_baru_ketua.nidn') is-invalid @enderror" 
+                                    placeholder="NIDN" value="{{ old('dosen_baru_ketua.nidn') }}">
+                                @error('dosen_baru_ketua.nidn')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group mb-md-0">
+                                <label>Jabatan</label>
+                                <input type="text" name="dosen_baru_ketua[jabatan]" id="dosen_baru_ketua_jabatan"
+                                    class="form-control @error('dosen_baru_ketua.jabatan') is-invalid @enderror" 
+                                    placeholder="Jabatan" value="{{ old('dosen_baru_ketua.jabatan') }}">
+                                @error('dosen_baru_ketua.jabatan')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group mb-md-0">
+                                <label>Prodi <span class="text-danger">*</span></label>
+                                <input type="text" name="dosen_baru_ketua[prodi]" id="dosen_baru_ketua_prodi"
+                                    class="form-control @error('dosen_baru_ketua.prodi') is-invalid @enderror" 
+                                    placeholder="Program Studi" value="{{ old('dosen_baru_ketua.prodi') }}">
+                                @error('dosen_baru_ketua.prodi')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
                     </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group mb-md-0">
+                                <label>Bidang Keahlian</label>
+                                <input type="text" name="dosen_baru_ketua[bidang_keahlian]" id="dosen_baru_ketua_bidang_keahlian"
+                                    class="form-control @error('dosen_baru_ketua.bidang_keahlian') is-invalid @enderror" 
+                                    placeholder="Bidang Keahlian" value="{{ old('dosen_baru_ketua.bidang_keahlian') }}">
+                                @error('dosen_baru_ketua.bidang_keahlian')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-md-0">
+                                <label>Email <span class="text-danger">*</span></label>
+                                <input type="email" name="dosen_baru_ketua[email]" id="dosen_baru_ketua_email"
+                                    class="form-control @error('dosen_baru_ketua.email') is-invalid @enderror" 
+                                    placeholder="Email" value="{{ old('dosen_baru_ketua.email') }}">
+                                @error('dosen_baru_ketua.email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Anggota Pengabdian --}}
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-users fa-fw mr-2"></i>Anggota Pengabdian</h6>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="anggota">Pilih Dosen FTI (Anggota)</label>
+                    <select id="anggota" name="anggota[]"
+                        class="form-control @error('anggota.*') is-invalid @enderror" multiple
+                        data-placeholder="Pilih satu atau lebih...">
+                        @foreach ($dosen as $d)
+                            <option value="{{ $d->nik }}"
+                                {{ in_array($d->nik, old('anggota', [])) ? 'selected' : '' }}>
+                                {{ $d->nama }} - {{ $d->nidn }}</option>
+                        @endforeach
+                    </select>
+                    @error('anggota.*')
+                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                {{-- Tombol Tambah Dosen Eksternal (Anggota) --}}
+                <button type="button" class="btn btn-sm btn-info" id="btn-tampilkan-form-dosen-baru-anggota">
+                    <i class="fas fa-plus fa-sm mr-1"></i> Tambah Dosen Eksternal (Anggota)
+                </button>
+
+                {{-- Section Dosen Baru Anggota --}}
+                <div id="dosen-baru-anggota-section" style="display: none;">
+                    <hr class="mt-4 mb-3">
+                    <h6 class="font-weight-bold text-secondary mb-3"><i class="fas fa-user-plus fa-fw mr-1"></i>Tambah Dosen Eksternal (Anggota)</h6>
+                    @error('dosen_baru_anggota')
+                        <div class="alert alert-danger">{{ $message }}</div>
+                    @enderror
+                    <div id="dosen-baru-anggota-container">
+                        @forelse (old('dosen_baru_anggota', []) as $index => $dsn)
+                            <div class="dosen-baru-anggota-item mb-3">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-md-0">
+                                            <label>NIK</label>
+                                            <input type="text" name="dosen_baru_anggota[{{ $index }}][nik]" 
+                                                class="form-control @error('dosen_baru_anggota.' . $index . '.nik') is-invalid @enderror" 
+                                                placeholder="NIK" value="{{ $dsn['nik'] ?? '' }}">
+                                            @error('dosen_baru_anggota.' . $index . '.nik')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-md-0">
+                                            <label>Nama</label>
+                                            <input type="text" name="dosen_baru_anggota[{{ $index }}][nama]" 
+                                                class="form-control @error('dosen_baru_anggota.' . $index . '.nama') is-invalid @enderror" 
+                                                placeholder="Nama" value="{{ $dsn['nama'] ?? '' }}">
+                                            @error('dosen_baru_anggota.' . $index . '.nama')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1">
+                                        <div class="form-group mb-md-0">
+                                            <label>NIDN</label>
+                                            <input type="text" name="dosen_baru_anggota[{{ $index }}][nidn]" 
+                                                class="form-control @error('dosen_baru_anggota.' . $index . '.nidn') is-invalid @enderror" 
+                                                placeholder="NIDN" value="{{ $dsn['nidn'] ?? '' }}">
+                                            @error('dosen_baru_anggota.' . $index . '.nidn')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-md-0">
+                                            <label>Prodi</label>
+                                            <input type="text" name="dosen_baru_anggota[{{ $index }}][prodi]" 
+                                                class="form-control @error('dosen_baru_anggota.' . $index . '.prodi') is-invalid @enderror" 
+                                                placeholder="Prodi" value="{{ $dsn['prodi'] ?? '' }}">
+                                            @error('dosen_baru_anggota.' . $index . '.prodi')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-md-0">
+                                            <label>Bidang Keahlian</label>
+                                            <input type="text" name="dosen_baru_anggota[{{ $index }}][bidang_keahlian]" 
+                                                class="form-control @error('dosen_baru_anggota.' . $index . '.bidang_keahlian') is-invalid @enderror" 
+                                                placeholder="Bidang Keahlian" value="{{ $dsn['bidang_keahlian'] ?? '' }}">
+                                            @error('dosen_baru_anggota.' . $index . '.bidang_keahlian')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group mb-md-0">
+                                            <label>Email</label>
+                                            <input type="email" name="dosen_baru_anggota[{{ $index }}][email]" 
+                                                class="form-control @error('dosen_baru_anggota.' . $index . '.email') is-invalid @enderror" 
+                                                placeholder="Email" value="{{ $dsn['email'] ?? '' }}">
+                                            @error('dosen_baru_anggota.' . $index . '.email')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1 d-flex align-items-end">
+                                        <button type="button" class="btn btn-danger btn-sm btn-hapus-dosen-baru-anggota">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                        @endforelse
+                    </div>
+                    <button type="button" class="btn btn-sm btn-info mt-2" id="btn-tambah-dosen-baru-anggota">
+                        <i class="fas fa-plus fa-sm mr-1"></i> Tambah Dosen Anggota
+                    </button>
                 </div>
             </div>
         </div>
@@ -629,6 +829,35 @@
         </div>
     </script>
 
+    {{-- Template untuk Dosen Baru Anggota --}}
+    <script type="text/html" id="dosen-baru-anggota-template">
+        <div class="dosen-baru-anggota-item mb-3">
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="form-group mb-md-0"><label>NIK</label><input type="text" name="dosen_baru_anggota[__INDEX__][nik]" class="form-control" placeholder="NIK"></div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-md-0"><label>Nama</label><input type="text" name="dosen_baru_anggota[__INDEX__][nama]" class="form-control" placeholder="Nama"></div>
+                </div>
+                <div class="col-md-1">
+                    <div class="form-group mb-md-0"><label>NIDN</label><input type="text" name="dosen_baru_anggota[__INDEX__][nidn]" class="form-control" placeholder="NIDN"></div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-md-0"><label>Prodi</label><input type="text" name="dosen_baru_anggota[__INDEX__][prodi]" class="form-control" placeholder="Prodi"></div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-md-0"><label>Bidang Keahlian</label><input type="text" name="dosen_baru_anggota[__INDEX__][bidang_keahlian]" class="form-control" placeholder="Bidang Keahlian"></div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group mb-md-0"><label>Email</label><input type="email" name="dosen_baru_anggota[__INDEX__][email]" class="form-control" placeholder="Email"></div>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger btn-sm btn-hapus-dosen-baru-anggota"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        </div>
+    </script>
+
     {{-- Template untuk Sumber Dana (tidak berubah) --}}
     <script type="text/html" id="sumber-dana-template">
         <div class="row sumber-dana-item mb-3">
@@ -692,6 +921,7 @@
                 init: function() {
                     this.initPlugins();
                     this.initDosenLogic();
+                    this.initDosenBaruLogic();
                     this.initMahasiswaBaruLogic();
                     this.initSumberDanaLogic();
                     this.initLuaranLogic();
@@ -778,6 +1008,204 @@
                 },
 
 
+                initDosenBaruLogic: function() {
+                    // === KETUA SECTION ===
+                    const showFormKetuaButton = $('#btn-tampilkan-form-dosen-baru-ketua');
+                    const dosenBaruKetuaSection = $('#dosen-baru-ketua-section');
+                    const ketuaNikSelect = $('#ketua_nik');
+                    const ketuaNikRequired = $('#ketua-nik-required');
+                    
+                    // External ketua form inputs
+                    const externalKetuaInputs = [
+                        '#dosen_baru_ketua_nik',
+                        '#dosen_baru_ketua_nama',
+                        '#dosen_baru_ketua_nidn',
+                        '#dosen_baru_ketua_jabatan',
+                        '#dosen_baru_ketua_prodi',
+                        '#dosen_baru_ketua_bidang_keahlian',
+                        '#dosen_baru_ketua_email'
+                    ];
+
+                    // Function to check if external ketua form has any data
+                    const hasExternalKetuaData = () => {
+                        return externalKetuaInputs.some(selector => {
+                            const val = $(selector).val();
+                            return val && val.trim() !== '';
+                        });
+                    };
+
+                    // Function to clear external ketua form
+                    const clearExternalKetuaForm = () => {
+                        externalKetuaInputs.forEach(selector => {
+                            $(selector).val('').removeClass('is-invalid');
+                        });
+                        // Hide any validation errors
+                        dosenBaruKetuaSection.find('.invalid-feedback').hide();
+                    };
+
+                    // Function to update mutual exclusivity state
+                    const updateKetuaMutualExclusivity = () => {
+                        const hasExternal = hasExternalKetuaData();
+                        const hasInternal = ketuaNikSelect.val() && ketuaNikSelect.val() !== '';
+
+                        if (hasExternal) {
+                            // External ketua is filled - disable internal select
+                            ketuaNikSelect.prop('disabled', true).addClass('bg-light');
+                            ketuaNikSelect.val('').trigger('change.select2');
+                            ketuaNikRequired.hide();
+                            // Add visual indicator (only if not already present)
+                            if (!$('#ketua-disabled-hint').length) {
+                                ketuaNikSelect.closest('.form-group').find('label').first().append(
+                                    ' <small class="text-muted" id="ketua-disabled-hint">(Dinonaktifkan karena Dosen Eksternal dipilih)</small>'
+                                );
+                            }
+                        } else if (hasInternal) {
+                            // Internal ketua is selected - clear and disable external form
+                            clearExternalKetuaForm();
+                            externalKetuaInputs.forEach(selector => {
+                                $(selector).prop('disabled', true).addClass('bg-light');
+                            });
+                            // Add visual indicator to external form (only if not already present)
+                            if (!$('#external-ketua-disabled-hint').length) {
+                                dosenBaruKetuaSection.find('h6').first().append(
+                                    ' <small class="text-muted" id="external-ketua-disabled-hint">(Dinonaktifkan karena Dosen FTI dipilih)</small>'
+                                );
+                            }
+                        } else {
+                            // Neither is filled - enable both
+                            ketuaNikSelect.prop('disabled', false).removeClass('bg-light');
+                            ketuaNikRequired.show();
+                            $('#ketua-disabled-hint').remove();
+                            
+                            externalKetuaInputs.forEach(selector => {
+                                $(selector).prop('disabled', false).removeClass('bg-light');
+                            });
+                            $('#external-ketua-disabled-hint').remove();
+                        }
+                    };
+
+                    // Toggle external ketua form visibility
+                    showFormKetuaButton.on('click', function() {
+                        dosenBaruKetuaSection.toggle();
+                        if (dosenBaruKetuaSection.is(':visible')) {
+                            $(this).removeClass('btn-info').addClass('btn-secondary');
+                            $(this).text(' Sembunyikan Form Ketua').prepend('<i class=\"fas fa-minus fa-sm mr-1\"></i>');
+                        } else {
+                            $(this).removeClass('btn-secondary').addClass('btn-info');
+                            $(this).text(' Tambah Dosen Eksternal (Ketua)').prepend('<i class=\"fas fa-plus fa-sm mr-1\"></i>');
+                            // Clear form when hiding
+                            clearExternalKetuaForm();
+                            updateKetuaMutualExclusivity();
+                        }
+                    });
+
+                    // Listen to internal ketua select changes
+                    ketuaNikSelect.on('change', function() {
+                        updateKetuaMutualExclusivity();
+                    });
+
+                    // Listen to external ketua input changes
+                    externalKetuaInputs.forEach(selector => {
+                        $(document).on('input change', selector, function() {
+                            updateKetuaMutualExclusivity();
+                        });
+                    });
+
+                    // Jika ada data 'old' untuk ketua, tampilkan formnya
+                    @if (old('dosen_baru_ketua') && (old('dosen_baru_ketua.nik') || old('dosen_baru_ketua.nama')))
+                        showFormKetuaButton.click();
+                        updateKetuaMutualExclusivity();
+                    @endif
+
+                    // Initial state check
+                    updateKetuaMutualExclusivity();
+
+                    // === ANGGOTA SECTION ===
+                    const showFormAnggotaButton = $('#btn-tampilkan-form-dosen-baru-anggota');
+                    const dosenBaruAnggotaSection = $('#dosen-baru-anggota-section');
+                    const anggotaContainer = $('#dosen-baru-anggota-container');
+                    const anggotaTemplate = $('#dosen-baru-anggota-template');
+                    const addAnggotaButton = $('#btn-tambah-dosen-baru-anggota');
+
+                    const manageDeleteButtonsAnggota = () => {
+                        const rows = anggotaContainer.find('.dosen-baru-anggota-item');
+                        // Tampilkan dulu semua tombol hapus
+                        rows.find('.btn-hapus-dosen-baru-anggota').show();
+                        // Kemudian, sembunyikan tombol hapus HANYA pada baris pertama
+                        rows.first().find('.btn-hapus-dosen-baru-anggota').hide();
+                    };
+
+                    const addAnggotaRow = () => {
+                        const idx = new Date().getTime();
+                        const newEl = anggotaTemplate.html().replace(/__INDEX__/g, idx);
+                        anggotaContainer.append(newEl);
+                        manageDeleteButtonsAnggota();
+                    };
+
+                    const clearAnggotaForm = () => {
+                        // Clear all rows
+                        anggotaContainer.empty();
+                        // Remove validation errors
+                        dosenBaruAnggotaSection.find('.invalid-feedback').hide();
+                        dosenBaruAnggotaSection.find('.is-invalid').removeClass('is-invalid');
+                    };
+
+                    // Toggle button behavior (show/hide)
+                    showFormAnggotaButton.on('click', function() {
+                        if (dosenBaruAnggotaSection.is(':visible')) {
+                            // Hide the form
+                            dosenBaruAnggotaSection.hide();
+                            $(this).removeClass('btn-secondary').addClass('btn-info');
+                            $(this).html('<i class="fas fa-plus fa-sm mr-1"></i> Tambah Dosen Eksternal (Anggota)');
+                            // Clear form when hiding
+                            clearAnggotaForm();
+                        } else {
+                            // Show the form
+                            dosenBaruAnggotaSection.show();
+                            $(this).removeClass('btn-info').addClass('btn-secondary');
+                            $(this).html('<i class="fas fa-minus fa-sm mr-1"></i> Sembunyikan Form Anggota');
+                            // Jika belum ada baris, tambahkan satu
+                            if (anggotaContainer.children('.dosen-baru-anggota-item').length === 0) {
+                                addAnggotaRow();
+                            }
+                        }
+                    });
+
+                    addAnggotaButton.on('click', addAnggotaRow);
+
+                    // Event Delegation untuk Hapus
+                    anggotaContainer.on('click', '.btn-hapus-dosen-baru-anggota', function() {
+                        $(this).closest('.dosen-baru-anggota-item').remove();
+
+                        // Cek jika kontainer kosong
+                        if (anggotaContainer.children('.dosen-baru-anggota-item').length === 0) {
+                            // Auto-hide when all rows are deleted
+                            dosenBaruAnggotaSection.hide();
+                            showFormAnggotaButton.removeClass('btn-secondary').addClass('btn-info');
+                            showFormAnggotaButton.html('<i class="fas fa-plus fa-sm mr-1"></i> Tambah Dosen Eksternal (Anggota)');
+                        } else {
+                            // Perbarui status tombol hapus jika ada baris tersisa
+                            manageDeleteButtonsAnggota();
+                        }
+                    });
+
+                    // Jika ada data 'old' untuk anggota, tampilkan formnya
+                    @if (old('dosen_baru_anggota') && count(old('dosen_baru_anggota')) > 0)
+                        const oldAnggota = @json(old('dosen_baru_anggota'));
+                        let hasData = false;
+                        for (let i = 0; i < oldAnggota.length; i++) {
+                            if (oldAnggota[i].nik || oldAnggota[i].nama) {
+                                hasData = true;
+                                break;
+                            }
+                        }
+                        if (hasData) {
+                            showFormAnggotaButton.click();
+                            manageDeleteButtonsAnggota();
+                        }
+                    @endif
+                },
+
                 initMahasiswaBaruLogic: function() {
                     const showFormButton = $('#btn-tampilkan-form-mhs-baru');
                     const mahasiswaBaruSection = $('#mahasiswa-baru-section');
@@ -802,12 +1230,32 @@
                         manageDeleteButtons();
                     };
 
+                    const clearMahasiswaForm = () => {
+                        // Clear all rows
+                        container.empty();
+                        // Remove validation errors
+                        mahasiswaBaruSection.find('.invalid-feedback').hide();
+                        mahasiswaBaruSection.find('.is-invalid').removeClass('is-invalid');
+                    };
+
+                    // Toggle button behavior (show/hide)
                     showFormButton.on('click', function() {
-                        mahasiswaBaruSection.show();
-                        $(this).hide();
-                        // Jika belum ada baris, tambahkan satu
-                        if (container.children('.mahasiswa-baru-item').length === 0) {
-                            addRow();
+                        if (mahasiswaBaruSection.is(':visible')) {
+                            // Hide the form
+                            mahasiswaBaruSection.hide();
+                            $(this).removeClass('btn-secondary').addClass('btn-info');
+                            $(this).html('<i class="fas fa-plus fa-sm mr-1"></i> Tambah Mahasiswa Baru');
+                            // Clear form when hiding
+                            clearMahasiswaForm();
+                        } else {
+                            // Show the form
+                            mahasiswaBaruSection.show();
+                            $(this).removeClass('btn-info').addClass('btn-secondary');
+                            $(this).html('<i class="fas fa-minus fa-sm mr-1"></i> Sembunyikan Form Mahasiswa');
+                            // Jika belum ada baris, tambahkan satu
+                            if (container.children('.mahasiswa-baru-item').length === 0) {
+                                addRow();
+                            }
                         }
                     });
 
@@ -819,8 +1267,10 @@
 
                         // Cek jika kontainer kosong
                         if (container.children('.mahasiswa-baru-item').length === 0) {
+                            // Auto-hide when all rows are deleted
                             mahasiswaBaruSection.hide();
-                            showFormButton.show();
+                            showFormButton.removeClass('btn-secondary').addClass('btn-info');
+                            showFormButton.html('<i class="fas fa-plus fa-sm mr-1"></i> Tambah Mahasiswa Baru');
                         } else {
                             // Perbarui status tombol hapus jika ada baris tersisa
                             manageDeleteButtons();
@@ -830,8 +1280,7 @@
                     // Jika ada data 'old', tampilkan formnya
                     @if (old('mahasiswa_baru') && count(array_filter(old('mahasiswa_baru')[0])))
                         showFormButton.click();
-                        manageDeleteButtons
-                            (); // Panggil ini untuk memastikan tombol disabled jika hanya satu baris
+                        manageDeleteButtons(); // Panggil ini untuk memastikan tombol disabled jika hanya satu baris
                     @endif
                 },
 
