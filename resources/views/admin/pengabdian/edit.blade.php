@@ -71,6 +71,7 @@
 @endpush
 
 @section('content')
+    @include('admin.pengabdian.select2_config')
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Form Edit Pengabdian Masyarakat</h1>
         <a href="{{ route('admin.pengabdian.index') }}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
@@ -180,8 +181,8 @@
                 
                 <div class="form-group">
                     <label for="ketua_nik">Pilih Dosen (Ketua) <span class="text-danger" id="ketua-nik-required">*</span></label>
-                    <select id="ketua_nik" name="ketua_nik" class="form-control @error('ketua_nik') is-invalid @enderror">
-                        <option value="" disabled {{ old('ketua_nik', $pengabdian->ketua_pengabdian) ? '' : 'selected' }}>— Pilih Ketua — </option>
+                    <select id="ketua_nik" name="ketua_nik" class="form-control @error('ketua_nik') is-invalid @enderror" data-placeholder="— Pilih Ketua —">
+                        <option value=""></option>
                         @foreach ($dosen as $d)
                             <option value="{{ $d->nik }}"
                                 {{ old('ketua_nik', $pengabdian->ketua_pengabdian) == $d->nik ? 'selected' : '' }}>
@@ -845,22 +846,14 @@
                 },
 
                 initPlugins: function() {
-                    // PERBAIKAN 4: Inisialisasi Flatpickr
                     $(".datepicker").flatpickr({
                         dateFormat: "Y-m-d",
                         altInput: true,
                         altFormat: "d/m/Y",
                         allowInput: true
                     });
-                    $('#ketua_nik').select2({
-                        width: '100%'
-                    });
-                    $('#anggota, #mahasiswa_ids, #hki_anggota_dosen').select2({
-                        width: '100%',
-                        placeholder: function() {
-                            return $(this).data('placeholder');
-                        }
-                    });
+                    initSelect2WithClear('#ketua_nik');
+                    initSelect2WithClear('#anggota, #mahasiswa_ids, #hki_anggota_dosen');
                 },
 
                 initDosenLogic: function() {
