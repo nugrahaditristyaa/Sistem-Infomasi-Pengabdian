@@ -894,9 +894,50 @@ class PengabdianController extends Controller
             'tanggal_pengabdian'    => ['required', new ValidTanggal(2000)],
             'jumlah_luaran_direncanakan'   => 'required|array|min:1',
             'jumlah_luaran_direncanakan.*' => 'required|exists:jenis_luaran,nama_jenis_luaran',
-            'ketua_nik'             => 'required|exists:dosen,nik',
+            
+            // Ketua: required UNLESS dosen_baru_ketua is filled
+            'ketua_nik'             => 'required_without:dosen_baru_ketua.nik|nullable|exists:dosen,nik',
+            
+            // Dosen Baru Ketua (for update, allow existing NIK if it's the current ketua)
+            'dosen_baru_ketua.nik'  => [
+                'required_with:dosen_baru_ketua.nama',
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('dosen', 'nik')->ignore($pengabdian->ketua_pengabdian, 'nik')
+            ],
+            'dosen_baru_ketua.nama' => 'required_with:dosen_baru_ketua.nik|nullable|string|max:255',
+            'dosen_baru_ketua.nidn' => 'nullable|string|max:255',
+            'dosen_baru_ketua.jabatan' => 'nullable|string|max:255',
+            'dosen_baru_ketua.prodi' => 'required_with:dosen_baru_ketua.nik|nullable|string|max:255',
+            'dosen_baru_ketua.bidang_keahlian' => 'nullable|string|max:255',
+            'dosen_baru_ketua.email' => [
+                'required_with:dosen_baru_ketua.nik',
+                'nullable',
+                'email',
+                'max:255',
+                // Allow existing email if it belongs to current ketua
+                function ($attribute, $value, $fail) use ($pengabdian) {
+                    if (!$value) return;
+                    $existing = \App\Models\Dosen::where('email', $value)->first();
+                    if ($existing && $existing->nik !== $pengabdian->ketua_pengabdian) {
+                        $fail('Email ini sudah terdaftar untuk dosen lain.');
+                    }
+                }
+            ],
+            
             'anggota'             => 'nullable|array',
             'anggota.*'           => 'nullable|exists:dosen,nik|different:ketua_nik',
+            
+            // Dosen Baru Anggota
+            'dosen_baru_anggota'        => 'nullable|array',
+            'dosen_baru_anggota.*.nik'  => 'required_with:dosen_baru_anggota.*.nama|nullable|string|max:255|distinct',
+            'dosen_baru_anggota.*.nama' => 'nullable|string|max:255',
+            'dosen_baru_anggota.*.nidn' => 'nullable|string|max:255',
+            'dosen_baru_anggota.*.jabatan' => 'nullable|string|max:255',
+            'dosen_baru_anggota.*.prodi' => 'nullable|string|max:255',
+            'dosen_baru_anggota.*.bidang_keahlian' => 'nullable|string|max:255',
+            'dosen_baru_anggota.*.email' => 'nullable|email|max:255',
             'mahasiswa_ids'         => 'nullable|array',
             'mahasiswa_ids.*'       => 'nullable|exists:mahasiswa,nim',
             'mahasiswa_baru'        => 'nullable|array',
@@ -948,6 +989,7 @@ class PengabdianController extends Controller
             // --- Pesan Kustom (Custom Messages) ---
             'required'      => ':attribute wajib diisi.',
             'required_with' => ':attribute wajib diisi jika kolom lainnya terisi.',
+            'required_without' => ':attribute wajib diisi jika tidak mengisi Dosen Eksternal.',
             'required_if'   => ':attribute wajib diisi jika luaran HKI dipilih.',
             'string'        => ':attribute harus berupa teks.',
             'date'          => ':attribute harus berupa format tanggal yang valid.',
@@ -965,6 +1007,7 @@ class PengabdianController extends Controller
             'min'           => ':attribute minimal harus memiliki :min data.',
             'mimes'         => 'Format file :attribute harus :values.',
             'file'          => ':attribute harus berupa file.',
+            'ketua_nik.required_without' => 'Pilih Ketua dari Dosen FTI atau tambahkan Dosen Eksternal (harus memilih salah satu).',
 
         ], [
             // --- Nama Atribut (Custom Attributes) ---
@@ -973,7 +1016,21 @@ class PengabdianController extends Controller
             'lokasi_kegiatan'       => 'Lokasi Kegiatan Mitra',
             'tanggal_pengabdian'    => 'Tanggal Pengabdian',
             'ketua_nik'             => 'Dosen (Ketua)',
+            'dosen_baru_ketua.nik'  => 'NIK Dosen Ketua Baru',
+            'dosen_baru_ketua.nama' => 'Nama Dosen Ketua Baru',
+            'dosen_baru_ketua.nidn' => 'NIDN Dosen Ketua Baru',
+            'dosen_baru_ketua.jabatan' => 'Jabatan Dosen Ketua Baru',
+            'dosen_baru_ketua.prodi' => 'Prodi Dosen Ketua Baru',
+            'dosen_baru_ketua.bidang_keahlian' => 'Bidang Keahlian Dosen Ketua Baru',
+            'dosen_baru_ketua.email' => 'Email Dosen Ketua Baru',
             'anggota.*'           => 'Dosen (Anggota)',
+            'dosen_baru_anggota.*.nik'  => 'NIK Dosen Anggota Baru',
+            'dosen_baru_anggota.*.nama' => 'Nama Dosen Anggota Baru',
+            'dosen_baru_anggota.*.nidn' => 'NIDN Dosen Anggota Baru',
+            'dosen_baru_anggota.*.jabatan' => 'Jabatan Dosen Anggota Baru',
+            'dosen_baru_anggota.*.prodi' => 'Prodi Dosen Anggota Baru',
+            'dosen_baru_anggota.*.bidang_keahlian' => 'Bidang Keahlian Dosen Anggota Baru',
+            'dosen_baru_anggota.*.email' => 'Email Dosen Anggota Baru',
             'mahasiswa_ids.*'       => 'Mahasiswa',
             'mahasiswa_baru.*.nim'  => 'NIM Mahasiswa Baru',
             'mahasiswa_baru.*.nama' => 'Nama Mahasiswa Baru',
@@ -1000,17 +1057,56 @@ class PengabdianController extends Controller
 
         DB::beginTransaction();
         try {
+            // === CREATE/UPDATE DOSEN BARU KETUA (if provided) ===
+            $ketuaNik = $request->ketua_nik;
+            if ($request->filled('dosen_baru_ketua.nik') && $request->filled('dosen_baru_ketua.nama')) {
+                $dosenKetua = Dosen::updateOrCreate(
+                    ['nik' => $request->input('dosen_baru_ketua.nik')],
+                    [
+                        'nama' => $request->input('dosen_baru_ketua.nama'),
+                        'nidn' => $request->input('dosen_baru_ketua.nidn'),
+                        'jabatan' => $request->input('dosen_baru_ketua.jabatan'),
+                        'prodi' => $request->input('dosen_baru_ketua.prodi'),
+                        'bidang_keahlian' => $request->input('dosen_baru_ketua.bidang_keahlian'),
+                        'email' => $request->input('dosen_baru_ketua.email'),
+                    ]
+                );
+                $ketuaNik = $dosenKetua->nik;
+            }
+
             $pengabdian->update([
                 'judul_pengabdian' => $request->judul_pengabdian,
                 'tanggal_pengabdian' => $request->tanggal_pengabdian,
-                'ketua_pengabdian' => $request->ketua_nik,
+                'ketua_pengabdian' => $ketuaNik,
                 'jumlah_luaran_direncanakan' => $request->jumlah_luaran_direncanakan,
             ]);
 
-            $dosenData = [$request->ketua_nik => ['status_anggota' => 'ketua']];
+            // === BUILD DOSEN DATA ===
+            $dosenData = [$ketuaNik => ['status_anggota' => 'ketua']];
             
             // Ambil ID dosen dari input anggota utama
             $mainDosenIds = $request->anggota ? array_filter($request->anggota) : [];
+            
+            // === CREATE/UPDATE DOSEN BARU ANGGOTA (if provided) ===
+            $newAnggotaIds = [];
+            if ($request->filled('dosen_baru_anggota')) {
+                foreach ($request->dosen_baru_anggota as $dsn) {
+                    if (!empty($dsn['nik']) && !empty($dsn['nama'])) {
+                        $dosenAnggota = Dosen::updateOrCreate(
+                            ['nik' => $dsn['nik']],
+                            [
+                                'nama' => $dsn['nama'],
+                                'nidn' => $dsn['nidn'] ?? null,
+                                'jabatan' => $dsn['jabatan'] ?? null,
+                                'prodi' => $dsn['prodi'] ?? null,
+                                'bidang_keahlian' => $dsn['bidang_keahlian'] ?? null,
+                                'email' => $dsn['email'] ?? null,
+                            ]
+                        );
+                        $newAnggotaIds[] = $dosenAnggota->nik;
+                    }
+                }
+            }
             
             // Ambil ID dosen dari input anggota HKI (jika ada)
             $hkiDosenIds = [];
@@ -1021,13 +1117,13 @@ class PengabdianController extends Controller
                 $hkiDosenIds = is_array($hkiDosenIds) ? array_filter($hkiDosenIds) : [];
             }
 
-            // Gabungkan kedua list anggota (unik)
-            $allAnggotaIds = array_unique(array_merge($mainDosenIds, $hkiDosenIds));
+            // Gabungkan semua list anggota (unik)
+            $allAnggotaIds = array_unique(array_merge($mainDosenIds, $newAnggotaIds, $hkiDosenIds));
 
             if (!empty($allAnggotaIds)) {
                 foreach ($allAnggotaIds as $nik) {
                      // Pastikan ketua tidak masuk sebagai anggota
-                    if ($nik !== $request->ketua_nik) {
+                    if ($nik !== $ketuaNik) {
                         $dosenData[$nik] = ['status_anggota' => 'anggota'];
                     }
                 }

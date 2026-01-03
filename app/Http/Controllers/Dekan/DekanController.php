@@ -1890,9 +1890,10 @@ class DekanController extends Controller
     {
         $prodiFilter = $this->getProdiFilterForCurrentUser();
 
-        $query = Dosen::when($prodiFilter, function ($q) use ($prodiFilter) {
-            $q->where('prodi', $prodiFilter);
-        })
+        $query = Dosen::fti() // Apply FTI filter to show only Informatika and Sistem Informasi
+            ->when($prodiFilter, function ($q) use ($prodiFilter) {
+                $q->where('prodi', $prodiFilter);
+            })
             ->withCount(['pengabdian as jumlah_pengabdian' => function ($query) use ($filterYear) {
                 if ($filterYear !== 'all') {
                     $query->whereYear('tanggal_pengabdian', $filterYear);

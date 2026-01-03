@@ -1003,7 +1003,10 @@
                                         ->count();
                                 @endphp
                                 <span class="badge badge-success mr-1">{{ $tercapai }} Tercapai</span>
-                                <span class="badge badge-warning">{{ $totalKpi - $tercapai }} Belum Tercapai</span>
+                                <span class="badge badge-warning mr-2">{{ $totalKpi - $tercapai }} Belum Tercapai</span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="showKpiDetail()">
+                                    <i class="fas fa-list mr-1"></i>Detail
+                                </button>
                             </div>
                         </div>
                         <div class="card-body">
@@ -1216,6 +1219,46 @@
         </div>
     </div>
 
+    <!-- KPI Detail Modal -->
+    <div class="modal fade" id="kpiDetailModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold text-primary">Detail Capaian KPI Pengabdian ({{ $filterYear !== 'all' ? $filterYear : 'Semua Tahun' }})</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Kolom Tercapai -->
+                        <div class="col-md-6 border-right">
+                            <h6 class="text-success font-weight-bold mb-3 border-bottom pb-2">
+                                <i class="fas fa-check-circle mr-2"></i>Tercapai
+                            </h6>
+                            <div id="kpiTercapaiList" class="kpi-list">
+                                <!-- List items will be injected here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Kolom Belum Tercapai -->
+                        <div class="col-md-6">
+                            <h6 class="text-warning font-weight-bold mb-3 border-bottom pb-2">
+                                <i class="fas fa-times-circle mr-2"></i>Belum Tercapai
+                            </h6>
+                            <div id="kpiBelumTercapaiList" class="kpi-list">
+                                <!-- List items will be injected here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <!-- D3.js for Treemap -->
         <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -1255,6 +1298,60 @@
                 });
             });
 
+
+            // === KPI DETAIL MODAL ===
+            function showKpiDetail() {
+                const kpiData = @json($kpiRadarData);
+                const listTercapai = $('#kpiTercapaiList');
+                const listBelum = $('#kpiBelumTercapaiList');
+                
+                listTercapai.empty();
+                listBelum.empty();
+                
+                kpiData.forEach(item => {
+                    // Logic: skor_normalisasi >= 100 is tercapai
+                    const isTercapai = item.skor_normalisasi >= 100;
+                    
+                    // Format score to 1 decimal
+                    const score = parseFloat(item.skor_normalisasi).toFixed(1);
+                    
+                    const html = `
+                        <div class="mb-3 p-3 rounded shadow-sm border ${isTercapai ? 'border-success' : 'border-warning'}" style="background-color: ${isTercapai ? '#f0fff4' : '#fff9ec'}; border-left-width: 5px !important;">
+                            <div class="font-weight-bold text-dark mb-1">${item.indikator}</div>
+                            <div class="small text-muted mb-2">(${item.kode})</div>
+                            
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>Target: <strong>${item.target} ${item.satuan}</strong></span>
+                                <span>Realisasi: <strong>${item.realisasi} ${item.satuan}</strong></span>
+                            </div>
+                            
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar ${isTercapai ? 'bg-success' : 'bg-warning'}" 
+                                     style="width: ${Math.min(score, 100)}%"></div>
+                            </div>
+                            <div class="text-right small font-weight-bold mt-1 ${isTercapai ? 'text-success' : 'text-warning'}">
+                                Capaian: ${score}%
+                            </div>
+                        </div>
+                    `;
+                    
+                    if(isTercapai) {
+                        listTercapai.append(html);
+                    } else {
+                        listBelum.append(html);
+                    }
+                });
+
+                // Handle empty states
+                if(listTercapai.children().length === 0) {
+                    listTercapai.html('<div class="text-center py-4 text-muted border rounded bg-light"><i class="fas fa-info-circle mr-1"></i>Belum ada KPI yang tercapai</div>');
+                }
+                if(listBelum.children().length === 0) {
+                    listBelum.html('<div class="text-center py-4 text-success border rounded bg-light"><i class="fas fa-check-circle mr-1"></i>Semua KPI telah tercapai!</div>');
+                }
+
+                $('#kpiDetailModal').modal('show');
+            }
 
             // === SPARKLINE CHARTS ===
             function loadSparklineCharts() {
